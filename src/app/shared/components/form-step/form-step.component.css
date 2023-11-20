@@ -1,0 +1,19 @@
+/* .mat-mdc-form-field:not(.mat-form-field-no-animations) .mdc-text-field__input {
+    background-color: transparent;
+}
+
+.mat-mdc-text-field-wrapper:not(.mdc-text-field--outlined) .mat-mdc-form-field-infix {
+    background-color: red;
+}
+
+.mat-mdc-form-field {
+    background-color: red;
+} */
+
+.mdc-text-field--filled:not(.mdc-text-field--disabled) {
+  background-color: transparent;
+}
+.mat-mdc-text-field-wrapper:not(.mdc-text-field--outlined)
+  .mat-mdc-form-field-infix {
+  padding: 0;
+}

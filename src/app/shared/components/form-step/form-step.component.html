@@ -1,0 +1,63 @@
+<form [formGroup]="igfFormGroup">
+    <table class="min-w-full mb-4 border-2 border-black">
+        <tr>
+            <th class="border-2 border-black"></th>
+            <th class="border-2 border-black">Weight (%)</th>
+            <th class="border-2 border-black">Individual Goal Commitment (%)</th>
+            <th class="border-2 border-black">Accomplishment (%)</th>
+            <th class="border-2 border-black">Equivalent Rating (1-4)</th>
+        </tr>
+        <tr>
+            <td class="border-2 border-black">Key Performance Indicators (KPIs)</td>
+            <td class="border-2 border-black"></td>
+            <td class="border-2 border-black"></td>
+            <td class="border-2 border-black"></td>
+            <td class="border-2 border-black"></td>
+        </tr>
+        <tr >
+
+            <!-- Your template -->
+            <!-- <td class="p-4 border-2 border-black">
+                <mat-form-field>
+                    <mat-label>{{}}</mat-label>
+                    <input matInput   required>
+                </mat-form-field>
+            </td> -->
+            <!-- <td class="p-4 border-2 border-black ">
+                <mat-form-field>
+                    <mat-label>{{label}}</mat-label>
+                    <input matInput [placeholder]="_placeholder" [formControlName]="'weightCtrl' + label" required>
+                </mat-form-field>
+            </td>
+            <td class="p-4 border-2 border-black ">
+                <mat-form-field>
+                    <mat-label>{{label}}</mat-label>
+                    <input matInput [placeholder]="_placeholder"
+                        [formControlName]="'individualGoalCommitmentCtrl' + label" required>
+                </mat-form-field>
+            </td>
+            <td class="p-4 border-2 border-black ">
+                <mat-form-field>
+                    <mat-label>{{label}}</mat-label>
+                    <input matInput [placeholder]="_placeholder" [formControlName]="'accomplishmentCtrl' + label"
+                        required>
+                </mat-form-field>
+            </td>
+            <td class="p-4 border-2 border-black">
+                <mat-form-field>
+                    <mat-label>{{label}}</mat-label>
+                    <input matInput [placeholder]="_placeholder" [formControlName]="'equivalentRatingCtrl' + label"
+                        required>
+                </mat-form-field>
+            </td> -->
+
+
+        </tr>
+
+    </table>
+
+    <div>
+        <button mat-button matStepperPrevious *ngIf="index !== 0">Back</button>
+        <button mat-button matStepperNext (click)="onSubmit()">Next</button>
+    </div>
+</form>

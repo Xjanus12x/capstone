@@ -1,0 +1,31 @@
+<mat-drawer-container class="relative flex min-h-full">
+
+    <mat-drawer class="pl-32 pr-20" #drawer mode="push">
+
+        <mat-nav-list class="grid gap-4 ">
+            <mat-list-item routerLink="/login">
+                <button class="text-white" type="button" mat-button>
+                    Create Form
+                </button>
+            </mat-list-item>
+
+            <mat-list-item>
+                <button class="text-white" mat-button>
+                    Create Account
+                </button>
+            </mat-list-item>
+
+            <mat-list-item>
+                <button class="text-white" mat-button>
+                    Generate Report
+                </button>
+            </mat-list-item>
+        </mat-nav-list>
+    </mat-drawer>
+
+    <div class="">
+
+        <ng-content></ng-content>
+
+    </div>
+</mat-drawer-container>

@@ -1,0 +1,15 @@
+<app-header></app-header>
+<div class="relative grid min-h-full bg-orange-500 ">
+    <div class="absolute left-0 z-50 w-20 min-h-full p-2 bg-red-800">
+        <app-side-toolbar></app-side-toolbar>
+    </div>
+    <app-sidenav>
+        <div class="min-h-full mx-auto max-w-7xl">
+            <app-dashboard-header></app-dashboard-header>
+            <div class="grid gap-3">
+                <router-outlet name="dashboardContent"></router-outlet>
+            </div>
+        </div>
+    </app-sidenav>
+</div>
+<app-footer></app-footer>

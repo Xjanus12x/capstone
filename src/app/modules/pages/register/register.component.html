@@ -1,0 +1,54 @@
+<div class="register min-h-[100vh] bg-no-repeat bg-cover bg-center grid place-content-center ">
+
+    <article class="border-1 border-white rounded-xl p-6 min-w-[30rem] bg-slate-100 text-black 
+    
+        bg-clip-padding backdrop-filter backdrop-blur-sm bg-opacity-10 border border-gray-100
+
+    ">
+
+        <h2 class="text-center text-white text-5xl font-bold mb-4">Create an account</h2>
+        <form #form class="flex overflow-hidden">
+
+            <div class="grid gap-6 min-w-full ">
+                <div class="flex justify-between">
+                    <input class="border-2 border-white bg-transparent placeholder-white py-1 px-2 rounded-[3px]"
+                        type="text" id="firstname" name="firstname" placeholder="First Name" />
+                    <input class="border-2 border-white bg-transparent placeholder-white py-1 px-2 rounded-[3px]" type="
+                                                            password" id="lastname" name="lastname"
+                        placeholder="Last Name" />
+                </div>
+                <input class="border-2 border-white bg-transparent placeholder-white py-1 px-2 rounded-[3px]"
+                    type="text" id="email" name="email" placeholder="Email" />
+                <input class="border-2 border-white bg-transparent placeholder-white py-1 px-2 rounded-[3px]" type="
+                                            password" id="password" name="password" placeholder="Password" />
+                <div class="flex justify-between">
+                    <button type="button" id="previous" class="bg-white text-black py-2 px-5 rounded-lg"
+                        (click)="handleFormEvent($event)">Previous</button>
+                    <button type="button" id="next" class="bg-black text-white py-2 px-9 rounded-lg"
+                        (click)="handleFormEvent($event)">Next</button>
+                </div>
+            </div>
+
+            <div class="gap-6 min-w-full bg-red-400 hidden">
+                <div class="flex justify-between">
+                    <input class="border-2 border-white bg-transparent placeholder-white py-1 px-2 rounded-[3px]"
+                        type="text" id="firstname" name="firstname" placeholder="First Name" />
+                    <input class="border-2 border-white bg-transparent placeholder-white py-1 px-2 rounded-[3px]" type="
+                                                                        password" id="lastname" name="lastname"
+                        placeholder="Last Name" />
+                </div>
+                <input class="border-2 border-white bg-transparent placeholder-white py-1 px-2 rounded-[3px]"
+                    type="text" id="email" name="email" placeholder="Email" />
+                <input class="border-2 border-white bg-transparent placeholder-white py-1 px-2 rounded-[3px]" type="
+                                                        password" id="password" name="password"
+                    placeholder="Password" />
+                <div class="flex justify-between">
+                    <button type="button" id="previous"
+                        class="bg-white text-black py-2 px-5 rounded-lg">Previous</button>
+                    <button type="button" id="next" class="bg-black text-white py-2 px-9 rounded-lg">Next</button>
+                </div>
+            </div>
+        </form>
+    </article>
+
+</div>

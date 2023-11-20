@@ -1,0 +1,572 @@
+<div class="min-h-full p-4 mx-auto max-w-[85rem]">
+    <div class="p-4">
+        <header class="font-bold">
+            <h2>GUIDELINES:</h2>
+        </header>
+        <ol class="list-decimal">
+            <li>This form is to be filled out by the Ratee (subordinate), if necessary, with the help of the Rater
+                (superior) on the
+                first month of every academic year, and to be submitted to HRD towards the end of the indicated school
+                year.</li>
+            <li>Please indicate corresponding weight of every KPI, maintaining a sum of 100 for all listed KPIs or
+                the four
+                perspectives as reflected in the department’s/ unit’s Balanced Scorecard.</li>
+            <li>Individual Goal Commitment is target contribution of the employee to attain the department’s
+                objective. Must be
+                measurable.</li>
+            <li>Accomplishment is actual output of the employee in terms of his/her individual goal commitment.</li>
+        </ol>
+    </div>
+
+    <!-- <button mat-raised-button (click)="isLinear = !isLinear" id="toggle-linear">
+        {{!isLinear ? 'Enable linear mode' : 'Disable linear mode'}}
+    </button> -->
+    <mat-stepper [linear]="isLinear" #stepper>
+
+        <mat-step [stepControl]="studentServicesFormGroup">
+            <ng-template matStepLabel>Student Services</ng-template>
+            <form [formGroup]="studentServicesFormGroup">
+
+
+                <table class="min-w-full mb-4 border-2 border-black">
+                    <tr>
+                        <th class="border-2 border-black"></th>
+                        <th class="border-2 border-black">Weight (%)</th>
+                        <th class="border-2 border-black">Individual Goal Commitment (%)</th>
+                        <th class="border-2 border-black">Accomplishment (%)</th>
+                        <th class="border-2 border-black">Equivalent Rating (1-4)</th>
+                    </tr>
+                    <tr>
+                        <td class="border-2 border-black">Key Performance Indicators (KPIs)</td>
+                        <td class="border-2 border-black"></td>
+                        <td class="border-2 border-black"></td>
+                        <td class="border-2 border-black"></td>
+                        <td class="border-2 border-black"></td>
+                    </tr>
+                    <tr>
+                        <td class="p-4 border-2 border-black">
+                            <mat-form-field>
+                                <mat-label>1.</mat-label>
+                                <input matInput placeholder="Last name, First name" formControlName="kpi1" required>
+                            </mat-form-field>
+                        </td>
+                        <td class="p-4 border-2 border-black ">
+                            <mat-form-field>
+                                <mat-label>1.</mat-label>
+                                <input matInput placeholder="Last name, First name" formControlName="weight1" required>
+                            </mat-form-field>
+                        </td>
+                        <td class="p-4 border-2 border-black ">
+                            <mat-form-field>
+                                <mat-label>1.</mat-label>
+                                <input matInput placeholder="Last name, First name"
+                                    formControlName="individualGoalCommitment1" required>
+                            </mat-form-field>
+                        </td>
+
+                        <td class="p-4 border-2 border-black ">
+                            <mat-form-field>
+                                <mat-label>1.</mat-label>
+                                <input matInput placeholder="Last name, First name" formControlName="accomplishment1"
+                                    required>
+                            </mat-form-field>
+                        </td>
+                        <td class="p-4 border-2 border-black ">
+                            <mat-form-field>
+                                <mat-label>1.</mat-label>
+                                <input matInput placeholder="Last name, First name" formControlName="rating1" required>
+                            </mat-form-field>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td class="p-4 border-2 border-black">
+                            <mat-form-field>
+                                <mat-label>2.</mat-label>
+                                <input matInput placeholder="Last name, First name" formControlName="kpi2" required>
+                            </mat-form-field>
+                        </td>
+                        <td class="p-4 border-2 border-black ">
+                            <mat-form-field>
+                                <mat-label>2.</mat-label>
+                                <input matInput placeholder="Last name, First name" formControlName="weight2" required>
+                            </mat-form-field>
+                        </td>
+                        <td class="p-4 border-2 border-black ">
+                            <mat-form-field>
+                                <mat-label>2.</mat-label>
+                                <input matInput placeholder="Last name, First name"
+                                    formControlName="individualGoalCommitment2" required>
+                            </mat-form-field>
+                        </td>
+
+                        <td class="p-4 border-2 border-black ">
+                            <mat-form-field>
+                                <mat-label>2.</mat-label>
+                                <input matInput placeholder="Last name, First name" formControlName="accomplishment2"
+                                    required>
+                            </mat-form-field>
+                        </td>
+                        <td class="p-4 border-2 border-black ">
+                            <mat-form-field>
+                                <mat-label>2.</mat-label>
+                                <input matInput placeholder="Last name, First name" formControlName="rating2" required>
+                            </mat-form-field>
+                        </td>
+                    </tr>
+                </table>
+                <div>
+                    <button mat-button matStepperNext>Next</button>
+                </div>
+            </form>
+        </mat-step>
+
+
+        <mat-step [stepControl]="communityFormGroup">
+            <ng-template matStepLabel>Community</ng-template>
+            <form [formGroup]="communityFormGroup">
+                <table class="min-w-full mb-4 border-2 border-black">
+                    <tr>
+                        <th class="border-2 border-black"></th>
+                        <th class="border-2 border-black">Weight (%)</th>
+                        <th class="border-2 border-black">Individual Goal Commitment (%)</th>
+                        <th class="border-2 border-black">Accomplishment (%)</th>
+                        <th class="border-2 border-black">Equivalent Rating (1-4)</th>
+                    </tr>
+                    <tr>
+                        <td class="border-2 border-black">Key Performance Indicators (KPIs)</td>
+                        <td class="border-2 border-black"></td>
+                        <td class="border-2 border-black"></td>
+                        <td class="border-2 border-black"></td>
+                        <td class="border-2 border-black"></td>
+                    </tr>
+                    <tr>
+                        <td class="p-4 border-2 border-black">
+                            <mat-form-field>
+                                <mat-label>Name</mat-label>
+                                <input matInput placeholder="Last name, First name" formControlName="kpi1" required>
+                            </mat-form-field>
+                        </td>
+                        <td class="p-4 border-2 border-black ">
+                            <mat-form-field>
+                                <mat-label>Name</mat-label>
+                                <input matInput placeholder="Last name, First name" formControlName="weight1" required>
+                            </mat-form-field>
+                        </td>
+                        <td class="p-4 border-2 border-black ">
+                            <mat-form-field>
+                                <mat-label>Name</mat-label>
+                                <input matInput placeholder="Last name, First name"
+                                    formControlName="individualGoalCommitment1" required>
+                            </mat-form-field>
+                        </td>
+
+                        <td class="p-4 border-2 border-black ">
+                            <mat-form-field>
+                                <mat-label>Name</mat-label>
+                                <input matInput placeholder="Last name, First name" formControlName="accomplishment1"
+                                    required>
+                            </mat-form-field>
+                        </td>
+                        <td class="p-4 border-2 border-black ">
+                            <mat-form-field>
+                                <mat-label>Name</mat-label>
+                                <input matInput placeholder="Last name, First name" formControlName="rating1" required>
+                            </mat-form-field>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td class="p-4 border-2 border-black">
+                            <mat-form-field>
+                                <mat-label>Name</mat-label>
+                                <input matInput placeholder="Last name, First name" formControlName="kpi2" required>
+                            </mat-form-field>
+                        </td>
+                        <td class="p-4 border-2 border-black ">
+                            <mat-form-field>
+                                <mat-label>Name</mat-label>
+                                <input matInput placeholder="Last name, First name" formControlName="weight2" required>
+                            </mat-form-field>
+                        </td>
+                        <td class="p-4 border-2 border-black ">
+                            <mat-form-field>
+                                <mat-label>Name</mat-label>
+                                <input matInput placeholder="Last name, First name"
+                                    formControlName="individualGoalCommitment2" required>
+                            </mat-form-field>
+                        </td>
+
+                        <td class="p-4 border-2 border-black ">
+                            <mat-form-field>
+                                <mat-label>Name</mat-label>
+                                <input matInput placeholder="Last name, First name" formControlName="accomplishment2"
+                                    required>
+                            </mat-form-field>
+                        </td>
+                        <td class="p-4 border-2 border-black ">
+                            <mat-form-field>
+                                <mat-label>Name</mat-label>
+                                <input matInput placeholder="Last name, First name" formControlName="rating2" required>
+                            </mat-form-field>
+                        </td>
+                    </tr>
+                </table>
+                <div>
+                    <button mat-button matStepperPrevious>Back</button>
+                    <button mat-button matStepperNext>Next</button>
+                </div>
+            </form>
+        </mat-step>
+
+        <mat-step [stepControl]="workForceLeadershipFormGroup">
+            <ng-template matStepLabel>Workforce Leadership</ng-template>
+            <form [formGroup]="workForceLeadershipFormGroup">
+                <table class="min-w-full mb-4 border-2 border-black">
+                    <tr>
+                        <th class="border-2 border-black"></th>
+                        <th class="border-2 border-black">Weight (%)</th>
+                        <th class="border-2 border-black">Individual Goal Commitment (%)</th>
+                        <th class="border-2 border-black">Accomplishment (%)</th>
+                        <th class="border-2 border-black">Equivalent Rating (1-4)</th>
+                    </tr>
+                    <tr>
+                        <td class="border-2 border-black">Key Performance Indicators (KPIs)</td>
+                        <td class="border-2 border-black"></td>
+                        <td class="border-2 border-black"></td>
+                        <td class="border-2 border-black"></td>
+                        <td class="border-2 border-black"></td>
+                    </tr>
+                    <tr>
+                        <td class="p-4 border-2 border-black">
+                            <mat-form-field>
+                                <mat-label>Name</mat-label>
+                                <input matInput placeholder="Last name, First name" formControlName="kpi1" required>
+                            </mat-form-field>
+                        </td>
+                        <td class="p-4 border-2 border-black ">
+                            <mat-form-field>
+                                <mat-label>Name</mat-label>
+                                <input matInput placeholder="Last name, First name" formControlName="weight1" required>
+                            </mat-form-field>
+                        </td>
+                        <td class="p-4 border-2 border-black ">
+                            <mat-form-field>
+                                <mat-label>Name</mat-label>
+                                <input matInput placeholder="Last name, First name"
+                                    formControlName="individualGoalCommitment1" required>
+                            </mat-form-field>
+                        </td>
+
+                        <td class="p-4 border-2 border-black ">
+                            <mat-form-field>
+                                <mat-label>Name</mat-label>
+                                <input matInput placeholder="Last name, First name" formControlName="accomplishment1"
+                                    required>
+                            </mat-form-field>
+                        </td>
+                        <td class="p-4 border-2 border-black ">
+                            <mat-form-field>
+                                <mat-label>Name</mat-label>
+                                <input matInput placeholder="Last name, First name" formControlName="rating1" required>
+                            </mat-form-field>
+                        </td>
+                    </tr>
+                </table>
+                <div>
+                    <button mat-button matStepperPrevious>Back</button>
+                    <button mat-button matStepperNext>Next</button>
+                </div>
+            </form>
+        </mat-step>
+
+        <mat-step [stepControl]="qualityAssuranceFormGroup">
+            <ng-template matStepLabel>Quality Assurance</ng-template>
+            <form [formGroup]="qualityAssuranceFormGroup">
+
+                <table class="min-w-full mb-4 border-2 border-black">
+                    <tr>
+                        <th class="border-2 border-black"></th>
+                        <th class="border-2 border-black">Weight (%)</th>
+                        <th class="border-2 border-black">Individual Goal Commitment (%)</th>
+                        <th class="border-2 border-black">Accomplishment (%)</th>
+                        <th class="border-2 border-black">Equivalent Rating (1-4)</th>
+                    </tr>
+                    <tr>
+                        <td class="border-2 border-black">Key Performance Indicators (KPIs)</td>
+                        <td class="border-2 border-black"></td>
+                        <td class="border-2 border-black"></td>
+                        <td class="border-2 border-black"></td>
+                        <td class="border-2 border-black"></td>
+                    </tr>
+                    <tr>
+                        <td class="p-4 border-2 border-black">
+                            <mat-form-field>
+                                <mat-label>Name</mat-label>
+                                <input matInput placeholder="Last name, First name" formControlName="kpi1" required>
+                            </mat-form-field>
+                        </td>
+                        <td class="p-4 border-2 border-black ">
+                            <mat-form-field>
+                                <mat-label>Name</mat-label>
+                                <input matInput placeholder="Last name, First name" formControlName="weight1" required>
+                            </mat-form-field>
+                        </td>
+                        <td class="p-4 border-2 border-black ">
+                            <mat-form-field>
+                                <mat-label>Name</mat-label>
+                                <input matInput placeholder="Last name, First name"
+                                    formControlName="individualGoalCommitment1" required>
+                            </mat-form-field>
+                        </td>
+
+                        <td class="p-4 border-2 border-black ">
+                            <mat-form-field>
+                                <mat-label>Name</mat-label>
+                                <input matInput placeholder="Last name, First name" formControlName="accomplishment1"
+                                    required>
+                            </mat-form-field>
+                        </td>
+                        <td class="p-4 border-2 border-black ">
+                            <mat-form-field>
+                                <mat-label>Name</mat-label>
+                                <input matInput placeholder="Last name, First name" formControlName="rating1" required>
+                            </mat-form-field>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td class="p-4 border-2 border-black">
+                            <mat-form-field>
+                                <mat-label>Name</mat-label>
+                                <input matInput placeholder="Last name, First name" formControlName="kpi2" required>
+                            </mat-form-field>
+                        </td>
+                        <td class="p-4 border-2 border-black ">
+                            <mat-form-field>
+                                <mat-label>Name</mat-label>
+                                <input matInput placeholder="Last name, First name" formControlName="weight2" required>
+                            </mat-form-field>
+                        </td>
+                        <td class="p-4 border-2 border-black ">
+                            <mat-form-field>
+                                <mat-label>Name</mat-label>
+                                <input matInput placeholder="Last name, First name"
+                                    formControlName="individualGoalCommitment2" required>
+                            </mat-form-field>
+                        </td>
+
+                        <td class="p-4 border-2 border-black ">
+                            <mat-form-field>
+                                <mat-label>Name</mat-label>
+                                <input matInput placeholder="Last name, First name" formControlName="accomplishment2"
+                                    required>
+                            </mat-form-field>
+                        </td>
+                        <td class="p-4 border-2 border-black ">
+                            <mat-form-field>
+                                <mat-label>Name</mat-label>
+                                <input matInput placeholder="Last name, First name" formControlName="rating2" required>
+                            </mat-form-field>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td class="p-4 border-2 border-black">
+                            <mat-form-field>
+                                <mat-label>Name</mat-label>
+                                <input matInput placeholder="Last name, First name" formControlName="kpi3" required>
+                            </mat-form-field>
+                        </td>
+                        <td class="p-4 border-2 border-black ">
+                            <mat-form-field>
+                                <mat-label>Name</mat-label>
+                                <input matInput placeholder="Last name, First name" formControlName="weight3" required>
+                            </mat-form-field>
+                        </td>
+                        <td class="p-4 border-2 border-black ">
+                            <mat-form-field>
+                                <mat-label>Name</mat-label>
+                                <input matInput placeholder="Last name, First name"
+                                    formControlName="individualGoalCommitment3" required>
+                            </mat-form-field>
+                        </td>
+
+                        <td class="p-4 border-2 border-black ">
+                            <mat-form-field>
+                                <mat-label>Name</mat-label>
+                                <input matInput placeholder="Last name, First name" formControlName="accomplishment3"
+                                    required>
+                            </mat-form-field>
+                        </td>
+                        <td class="p-4 border-2 border-black ">
+                            <mat-form-field>
+                                <mat-label>Name</mat-label>
+                                <input matInput placeholder="Last name, First name" formControlName="rating3" required>
+                            </mat-form-field>
+                        </td>
+                    </tr>
+                </table>
+
+                <div>
+                    <button mat-button matStepperPrevious>Back</button>
+                    <button mat-button matStepperNext>Next</button>
+                </div>
+            </form>
+        </mat-step>
+
+
+        <mat-step [stepControl]="researchFormGroup">
+            <form [formGroup]="researchFormGroup">
+                <ng-template matStepLabel>Research</ng-template>
+                <table class="min-w-full mb-4 border-2 border-black">
+                    <tr>
+                        <th class="border-2 border-black"></th>
+                        <th class="border-2 border-black">Weight (%)</th>
+                        <th class="border-2 border-black">Individual Goal Commitment (%)</th>
+                        <th class="border-2 border-black">Accomplishment (%)</th>
+                        <th class="border-2 border-black">Equivalent Rating (1-4)</th>
+                    </tr>
+                    <tr>
+                        <td class="border-2 border-black">Key Performance Indicators (KPIs)</td>
+                        <td class="border-2 border-black"></td>
+                        <td class="border-2 border-black"></td>
+                        <td class="border-2 border-black"></td>
+                        <td class="border-2 border-black"></td>
+                    </tr>
+                    <tr>
+                        <td class="p-4 border-2 border-black">
+                            <mat-form-field>
+                                <mat-label>Name</mat-label>
+                                <input matInput placeholder="Last name, First name" formControlName="kpi1" required>
+                            </mat-form-field>
+                        </td>
+                        <td class="p-4 border-2 border-black ">
+                            <mat-form-field>
+                                <mat-label>Name</mat-label>
+                                <input matInput placeholder="Last name, First name" formControlName="weight1" required>
+                            </mat-form-field>
+                        </td>
+                        <td class="p-4 border-2 border-black ">
+                            <mat-form-field>
+                                <mat-label>Name</mat-label>
+                                <input matInput placeholder="Last name, First name"
+                                    formControlName="individualGoalCommitment1" required>
+                            </mat-form-field>
+                        </td>
+
+                        <td class="p-4 border-2 border-black ">
+                            <mat-form-field>
+                                <mat-label>Name</mat-label>
+                                <input matInput placeholder="Last name, First name" formControlName="accomplishment1"
+                                    required>
+                            </mat-form-field>
+                        </td>
+                        <td class="p-4 border-2 border-black ">
+                            <mat-form-field>
+                                <mat-label>Name</mat-label>
+                                <input matInput placeholder="Last name, First name" formControlName="rating1" required>
+                            </mat-form-field>
+                        </td>
+                    </tr>
+                </table>
+                <div>
+                    <button mat-button matStepperPrevious>Back</button>
+                    <button mat-button matStepperNext>Next</button>
+                </div>
+            </form>
+        </mat-step>
+
+        <mat-step [stepControl]="doneFormGroup">
+            <form class="grid gap-4" [formGroup]="doneFormGroup">
+                <ng-template matStepLabel>Done</ng-template>
+
+
+                <header>
+                    <h2>OBSERVATION AND RECOMMENDATIONS. PLEASE ACCOMPLISH ALL ITEMS BELOW.</h2>
+                </header>
+                <div formArrayName="topThreeLeastAccomplishedGoalCommitments">
+                    <header>
+                        a. Top three least accomplished goal commitments:
+                    </header>
+                    <div class="flex gap-1">
+                        <ng-container
+                            *ngFor="let control of getFormControls('topThreeLeastAccomplishedGoalCommitments');let i = index ">
+                            <mat-form-field>
+                                <mat-label>{{'Least Accomplished Goal Commitment ' + (i + 1) }}</mat-label>
+                                <input matInput [placeholder]="'Enter Goal ' + (i + 1)" [formControlName]="i" required>
+                            </mat-form-field>
+                        </ng-container>
+                    </div>
+
+                </div>
+
+                <div formArrayName="topThreeHighlyAccomplishedGoalCommitments">
+                    <header>
+                        b. Top three highly accomplished goal commitments:
+                    </header>
+                    <div class="flex gap-1">
+                        <ng-container
+                            *ngFor="let control of getFormControls('topThreeHighlyAccomplishedGoalCommitments');let i = index ">
+                            <mat-form-field>
+                                <mat-label>{{'Least Accomplished Goal Commitment ' + (i + 1) }}</mat-label>
+                                <input matInput [placeholder]="'Enter Goal ' + (i + 1)" [formControlName]="i" required>
+                            </mat-form-field>
+                        </ng-container>
+                    </div>
+
+                </div>
+
+                <div formArrayName="topThreeCompetenciesThatNeedImprovement">
+                    <header>
+                        c. Top three competencies that need improvement:
+                    </header>
+                    <div class="flex gap-1">
+                        <ng-container
+                            *ngFor="let control of getFormControls('topThreeCompetenciesThatNeedImprovement');let i = index ">
+                            <mat-form-field>
+                                <mat-label>{{'Least Accomplished Goal Commitment ' + (i + 1) }}</mat-label>
+                                <input matInput [placeholder]="'Enter Goal ' + (i + 1)" [formControlName]="i" required>
+                            </mat-form-field>
+                        </ng-container>
+                    </div>
+                </div>
+
+                <div formArrayName="topThreeCompetencyStrengths">
+                    <header>
+                        d. Top three competency strengths:
+                    </header>
+                    <div class="flex gap-1">
+                        <ng-container
+                            *ngFor="let control of getFormControls('topThreeCompetencyStrengths');let i = index ">
+                            <mat-form-field>
+                                <mat-label>{{'Competency Strength ' + (i + 1) }}</mat-label>
+                                <input matInput [placeholder]="'Enter Goal ' + (i + 1)" [formControlName]="i" required>
+                            </mat-form-field>
+                        </ng-container>
+                    </div>
+                </div>
+
+                <div formArrayName="topThreeCompetencyStrengths">
+                    <header>
+                        e. Top three training and development suggestions based on previous items:
+                    </header>
+                    <div class="flex gap-1">
+                        <ng-container
+                            *ngFor="let control of getFormControls('topThreeTrainingAndDevelopmentSuggestionsBasedOnPreviousItems');let i = index ">
+                            <mat-form-field>
+                                <mat-label>{{'Competencfdsfth ' + (i + 1) }}</mat-label>
+                                <input matInput [placeholder]="'Enter Goal ' + (i + 1)" [formControlName]="i" required>
+                            </mat-form-field>
+                        </ng-container>
+                    </div>
+                </div>
+
+                <!-- <signature-pad #signature [options]="signaturePadOptions" (drawStart)="drawStart($event)"
+                    (drawEnd)="drawComplete($event)"></signature-pad> -->
+                <!-- <button (click)="clear()">Clear</button> -->
+                <div>
+                    <button mat-button matStepperPrevious>Back</button>
+                    <button mat-button (click)="stepper.reset()">Reset</button>
+                </div>
+            </form>
+        </mat-step>
+    </mat-stepper>
+
+</div>

@@ -1,0 +1,85 @@
+<header class="bg-black px-3">
+    <div class="flex items-center  py-8 max-w-7xl mx-auto relative">
+        <img class="invert-[200%] aspect-square w-8 cursor-pointer" src="../../../../assets/icons/hamburger_icon.png"
+            alt="Hamburger icon" (click)="toggleSideNav()">
+
+
+        <div class="flex gap-1 justify-self-center mx-auto">
+            <input class="min-w-[20rem] px-3  rounded-tl rounded-bl " type="text" placeholder="search">
+            <button class="grid items-center bg-white text-black p-1 rounded-tr rounded-br group hover:bg-black">
+                <mat-icon class="group-hover:text-white  duration-300">search</mat-icon>
+            </button>
+        </div>
+
+        <div class="flex items-center">
+            <button>
+                <img class="aspect-square w-12 " src="../../../../assets/icons/calendar-icon.png" alt="">
+            </button>
+            <button>
+                <img class="aspect-square w-12" src="../../../../assets/icons/bell-icon.png" alt=""
+                    (click)="toggleNotification()">
+            </button>
+            <button>
+                <img class="aspect-square w-12" src="../../../../assets/icons/options-icon.png" alt="">
+            </button>
+        </div>
+        <div class="grid gap-1  p-3 rounded-md bg-gray-400 absolute right-16 top-20 z-50" [class.hidden]="!isNotified">
+            <p class="bg-white text-black p-1 rounded-sm ">Chuchu submitted 5mins ago</p>
+            <p class="bg-white text-black p-1 rounded-sm ">Chuchu submitted 5mins ago</p>
+            <p class="bg-white text-black p-1 rounded-sm ">Chuchu submitted 5mins ago</p>
+            <button class="mt-4 bg-black py-2 rounded-md">View more</button>
+        </div>
+    </div>
+</header>
+
+
+<!-- <div>
+    <div class="max-w-7xl  mx-auto">
+        <header class="flex items-center justify-between py-8 text-black">
+            <div class="flex items-center gap-8">
+                <div class="grid place-content-center aspect-square w-7 bg-gray-400">
+                    <input class="aspect-square w-4" type="checkbox">
+                </div>
+
+                <div class="flex gap-2 ">
+                    <mat-icon>delete</mat-icon>
+                    <mat-icon>edit</mat-icon>
+                </div>
+            </div>
+            <div class="flex items-center gap-2">
+                <div class="flex items-center">
+                    <mat-icon>arrow_back</mat-icon>
+                    <span>
+                        1/50
+                    </span>
+                    <mat-icon>arrow_forward</mat-icon>
+                </div>
+                <mat-icon>more_vert</mat-icon>
+            </div>
+
+
+
+        </header>
+
+        <div class="grid gap-3">
+
+            <div class="group text-black hover:bg-gray-300 p-1 ">
+                <div class="flex items-center justify-between">
+                    <div class="flex gap-1">
+                        <input class="aspect-square w-4" type="checkbox">
+                        <label for="">Data</label>
+                    </div>
+
+                    <div
+                        class="flex items-center gap-3  opacity-0 group-hover:opacity-100 transition-opacity duration-300">
+                        <mat-icon>delete</mat-icon>
+                        <mat-icon>edit</mat-icon>
+                    </div>
+                </div>
+            </div>
+
+
+
+        </div>
+    </div>
+</div> -->

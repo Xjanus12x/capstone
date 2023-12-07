@@ -1,15 +1,15 @@
 <div class="register min-h-[100vh] bg-no-repeat bg-cover bg-center grid place-content-center ">
 
-    <article class="border-1 border-white rounded-xl p-6 min-w-[30rem] bg-slate-100 text-black 
+    <!-- <article class="border-1 border-white rounded-xl p-6 min-w-[30rem] bg-slate-100 text-black 
     
         bg-clip-padding backdrop-filter backdrop-blur-sm bg-opacity-10 border border-gray-100
 
     ">
 
-        <h2 class="text-center text-white text-5xl font-bold mb-4">Create an account</h2>
+        <h2 class="mb-4 text-5xl font-bold text-center text-white">Create an account</h2>
         <form #form class="flex overflow-hidden">
 
-            <div class="grid gap-6 min-w-full ">
+            <div class="grid min-w-full gap-6 ">
                 <div class="flex justify-between">
                     <input class="border-2 border-white bg-transparent placeholder-white py-1 px-2 rounded-[3px]"
                         type="text" id="firstname" name="firstname" placeholder="First Name" />
@@ -22,14 +22,14 @@
                 <input class="border-2 border-white bg-transparent placeholder-white py-1 px-2 rounded-[3px]" type="
                                             password" id="password" name="password" placeholder="Password" />
                 <div class="flex justify-between">
-                    <button type="button" id="previous" class="bg-white text-black py-2 px-5 rounded-lg"
+                    <button type="button" id="previous" class="px-5 py-2 text-black bg-white rounded-lg"
                         (click)="handleFormEvent($event)">Previous</button>
-                    <button type="button" id="next" class="bg-black text-white py-2 px-9 rounded-lg"
+                    <button type="button" id="next" class="py-2 text-white bg-black rounded-lg px-9"
                         (click)="handleFormEvent($event)">Next</button>
                 </div>
             </div>
 
-            <div class="gap-6 min-w-full bg-red-400 hidden">
+            <div class="hidden min-w-full gap-6 bg-red-400">
                 <div class="flex justify-between">
                     <input class="border-2 border-white bg-transparent placeholder-white py-1 px-2 rounded-[3px]"
                         type="text" id="firstname" name="firstname" placeholder="First Name" />
@@ -44,11 +44,149 @@
                     placeholder="Password" />
                 <div class="flex justify-between">
                     <button type="button" id="previous"
-                        class="bg-white text-black py-2 px-5 rounded-lg">Previous</button>
-                    <button type="button" id="next" class="bg-black text-white py-2 px-9 rounded-lg">Next</button>
+                        class="px-5 py-2 text-black bg-white rounded-lg">Previous</button>
+                    <button type="button" id="next" class="py-2 text-white bg-black rounded-lg px-9">Next</button>
                 </div>
             </div>
         </form>
-    </article>
+    </article> -->
+
+    <mat-stepper #stepper [linear]="false" class="border-1  rounded-xl p-6 min-w-[30rem] bg-slate-100 text-black 
+    
+        bg-clip-padding backdrop-filter backdrop-blur-sm bg-opacity-10 border border-gray-100">
+        <mat-step [stepControl]="getFormGroup('personalInformationFormGroup')">
+            <ng-template matStepLabel>
+                <h2 class="text-white">Personal Information</h2>
+            </ng-template>
+            <form class="grid gap-1" [formGroup]="getFormGroup('personalInformationFormGroup')">
+                <div class="grid grid-cols-2 gap-3 ">
+
+                    <div class="grid">
+                        <mat-form-field>
+                            <mat-label>First name</mat-label>
+                            <input matInput placeholder="First name" formControlName="emp_firstName" required>
+                            <mat-error class="text-white">Firstname is <strong>required</strong></mat-error>
+                        </mat-form-field>
+                    </div>
+                    <div class="grid">
+                        <mat-form-field>
+                            <mat-label>Last Name</mat-label>
+                            <input matInput placeholder="Last name" formControlName="emp_lastName" required>
+                            <mat-error class="text-white">Lastname is <strong>required</strong></mat-error>
+                        </mat-form-field>
+                    </div>
+                </div>
+                <mat-form-field>
+                    <mat-label>Employee number</mat-label>
+                    <input matInput type="number" placeholder="Ex. 12345" formControlName="emp_number" required>
+                    <mat-error class="text-white">Employee number is <strong>required</strong></mat-error>
+                </mat-form-field>
+
+                <mat-form-field>
+                    <mat-label>Position</mat-label>
+                    <input matInput placeholder="Ex. 12345" formControlName="emp_position" required>
+                    <mat-error class="text-white">Employee Position is <strong>required</strong></mat-error>
+                </mat-form-field>
+
+                <mat-form-field>
+                    <mat-label>Department</mat-label>
+                    <mat-select formControlName="emp_department" required>
+                        <mat-option>--</mat-option>
+                        <mat-option *ngFor="let department of departments" [value]="department">
+                            {{department}}
+                        </mat-option>
+                    </mat-select>
+                    <mat-error class="text-white">Please choose a department.</mat-error>
+
+                </mat-form-field>
+                <div class="bg-white" *ngFor="let t of details">
+
+                    <p>id = {{t.emp_id}}</p>
+                    <p>firstname = {{t.emp_firstname}}</p>
+                    <p>lastname = {{t.emp_lastname}}</p>
+                    <p>emp number = {{t.emp_number}}</p>
+                    <p>position = {{t.emp_position}}</p>
+
+
+
+
+                    <img class="aspect-square" [src]="t.emp_signature" alt="">
+
+
+
+
+
+
+
+
+                </div>
+
+
+
+                <div>
+                    <button mat-button matStepperNext>Next</button>
+                </div>
+            </form>
+        </mat-step>
+        <mat-step [stepControl]="getFormGroup('userAccountFormGroup')">
+            <ng-template matStepLabel>
+                <h2 class="text-white">User Account</h2>
+            </ng-template>
+            <form class='grid gap-2' [formGroup]="getFormGroup('userAccountFormGroup')">
+                <mat-form-field>
+                    <mat-label>Email</mat-label>
+                    <input type="email" matInput formControlName="email" required [errorStateMatcher]="matcher"
+                        placeholder="Ex. pat@example.com">
+                    <mat-error class="text-white">
+                        Email is <strong>required</strong>
+                    </mat-error>
+                    <mat-error class="text-white"
+                        *ngIf="getFormControl('userAccountFormGroup','email').hasError('email') && !getFormControl('userAccountFormGroup','email').hasError('required')">
+                        Please enter a valid email address
+                    </mat-error>
+
+                </mat-form-field>
+
+                <mat-form-field>
+                    <mat-label>Password</mat-label>
+                    <input matInput formControlName="password" placeholder="Ex. 1 Main St, New York, NY" required>
+                </mat-form-field>
+                <mat-form-field>
+                    <mat-label>Role</mat-label>
+                    <mat-select formControlName="role" required>
+                        <mat-option>--</mat-option>
+                        <mat-option *ngFor="let role of roles" [value]="role">
+                            {{role}}
+                        </mat-option>
+                    </mat-select>
+                    <mat-error class="text-white"
+                        *ngIf="getFormControl('userAccountFormGroup','role').hasError('required')">Please choose a
+                        department.</mat-error>
+                </mat-form-field>
+                <div>
+                    <button mat-button matStepperPrevious>Back</button>
+                    <button mat-button matStepperNext>Next</button>
+                </div>
+            </form>
+        </mat-step>
+        <mat-step>
+            <ng-template matStepLabel>
+                <h2 class="text-white">Done</h2>
+            </ng-template>
+            <div class="grid gap-3">
+                <h2 class="text-white">Draw User's signature</h2>
+                <signature-pad #signature [options]="signaturePadOptions" (drawStart)="drawStart($event)"
+                    (drawEnd)="drawComplete($event)"></signature-pad>
+
+
+                <button class="text-white " (click)="clear()">Clear</button>
+            </div>
+            <div>
+                <button mat-button matStepperPrevious>Back</button>
+
+                <button mat-button (click)="register()">Register</button>
+            </div>
+        </mat-step>
+    </mat-stepper>
 
 </div>

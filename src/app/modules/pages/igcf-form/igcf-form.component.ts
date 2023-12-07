@@ -16,10 +16,7 @@ import { MatAutocompleteModule } from '@angular/material/autocomplete';
 import { MatInputModule } from '@angular/material/input';
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { FormStepService } from 'src/app/shared/services/form-step.service';
-import {
-  NgSignaturePadOptions,
-  SignaturePadComponent,
-} from '@almothafar/angular-signature-pad';
+
 
 @Component({
   selector: 'app-igcf-form',
@@ -192,36 +189,5 @@ export class IgcfFormComponent implements OnInit {
   //   rating: '',
   // };
 
-  @ViewChild('signature')
-  public signaturePad!: SignaturePadComponent;
-
-  signaturePadOptions: NgSignaturePadOptions = {
-    // passed through to szimek/signature_pad constructor
-    minWidth: 1,
-    canvasWidth: 500,
-    canvasHeight: 100,
-    dotSize: 1,
-    maxWidth: 1,
-  };
-
-  // ngAfterViewInit() {
-  //   // this.signaturePad is now available
-  //   this.signaturePad.set('minWidth', 5); // set szimek/signature_pad options at runtime
-  //   this.signaturePad.clear(); // invoke functions from szimek/signature_pad API
-  // }
-
-  drawComplete(event: MouseEvent | Touch) {
-    // will be notified of szimek/signature_pad's onEnd event
-    console.log('Completed drawing', event);
-    console.log(this.signaturePad.toDataURL());
-  }
-
-  drawStart(event: MouseEvent | Touch) {
-    // will be notified of szimek/signature_pad's onBegin event
-    console.log('Start drawing', event);
-  }
-  clear() {
-    this.signaturePad.clear();
-  }
-  redo() {}
+  
 }

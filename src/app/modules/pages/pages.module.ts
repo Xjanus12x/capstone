@@ -10,11 +10,14 @@ import { IgcfFormComponent } from './igcf-form/igcf-form.component';
 import { MatInputModule } from '@angular/material/input';
 import { MatStepperModule } from '@angular/material/stepper';
 import { MatButtonModule } from '@angular/material/button';
-import { ReactiveFormsModule } from '@angular/forms';
+import { FormsModule, ReactiveFormsModule } from '@angular/forms';
 import { ComponentsModule as SharedeModuleComponents } from 'src/app/shared/components/components.module';
 import { MatAutocompleteModule } from '@angular/material/autocomplete';
 import { AngularSignaturePadModule } from '@almothafar/angular-signature-pad';
 import { ComponentsModule } from '../components/components.module';
+import { MatFormFieldModule } from '@angular/material/form-field';
+import { MatSelectModule } from '@angular/material/select';
+import { HttpClientModule } from '@angular/common/http';
 @NgModule({
   declarations: [
     LoginComponent,
@@ -35,7 +38,15 @@ import { ComponentsModule } from '../components/components.module';
     MatAutocompleteModule,
     ReactiveFormsModule,
     AngularSignaturePadModule,
+    MatButtonModule,
+    MatStepperModule,
+    FormsModule,
+    ReactiveFormsModule,
+    MatFormFieldModule,
+    MatInputModule,
+    MatSelectModule,
     RouterModule,
+    HttpClientModule,
   ],
 })
 export class PagesModule {}

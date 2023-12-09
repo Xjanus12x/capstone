@@ -1,4 +1,9 @@
-import { Component, ElementRef, ViewChild } from '@angular/core';
+import {
+  AfterViewInit,
+  ChangeDetectorRef,
+  Component,
+  ViewChild,
+} from '@angular/core';
 import { ToggleSideNavService } from '../../services/toggle-side-nav.service';
 
 @Component({
@@ -6,18 +11,23 @@ import { ToggleSideNavService } from '../../services/toggle-side-nav.service';
   templateUrl: './sidenav.component.html',
   styleUrls: ['./sidenav.component.css'],
 })
-export class SidenavComponent {
+export class SidenavComponent implements AfterViewInit {
   @ViewChild('drawer') drawer!: any;
 
-  constructor(private sideNav: ToggleSideNavService) {}
+  constructor(
+    private sideNav: ToggleSideNavService,
+    private cdr: ChangeDetectorRef
+  ) {}
+
   ngAfterViewInit() {
     this.sideNav.isOpen$.subscribe((isOpen) => {
       if (isOpen) {
         this.drawer.open();
       } else {
-        this.drawer.close()
-        
+        this.drawer.close();
       }
+      // Manually trigger change detection to prevent expressionChangeAfterItHasBeenCheckError
+      this.cdr.detectChanges();
     });
   }
 }

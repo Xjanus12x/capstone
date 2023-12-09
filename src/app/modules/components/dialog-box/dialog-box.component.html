@@ -1,0 +1,16 @@
+<div class="p-4 ">
+    <h2 class="mb-4 text-xl font-bold text-black">{{ data.title }}</h2>
+    <div class="mb-4 text-lg text-gray-800">{{ data.content }}</div>
+    <div class="flex justify-end gap-4 text-lg ">
+        <ng-container *ngFor="let button of data.buttons">
+            <button [class]="button.tailwindClass" mat-button [mat-dialog-close]="button.matDialogCloseValue"
+                *ngIf="button.isVisible" cdkFocusInitial>
+                {{ button.content }}
+            </button>
+        </ng-container>
+
+
+
+
+    </div>
+</div>

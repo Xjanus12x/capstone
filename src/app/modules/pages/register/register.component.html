@@ -1,56 +1,4 @@
 <div class="register min-h-[100vh] bg-no-repeat bg-cover bg-center grid place-content-center ">
-
-    <!-- <article class="border-1 border-white rounded-xl p-6 min-w-[30rem] bg-slate-100 text-black 
-    
-        bg-clip-padding backdrop-filter backdrop-blur-sm bg-opacity-10 border border-gray-100
-
-    ">
-
-        <h2 class="mb-4 text-5xl font-bold text-center text-white">Create an account</h2>
-        <form #form class="flex overflow-hidden">
-
-            <div class="grid min-w-full gap-6 ">
-                <div class="flex justify-between">
-                    <input class="border-2 border-white bg-transparent placeholder-white py-1 px-2 rounded-[3px]"
-                        type="text" id="firstname" name="firstname" placeholder="First Name" />
-                    <input class="border-2 border-white bg-transparent placeholder-white py-1 px-2 rounded-[3px]" type="
-                                                            password" id="lastname" name="lastname"
-                        placeholder="Last Name" />
-                </div>
-                <input class="border-2 border-white bg-transparent placeholder-white py-1 px-2 rounded-[3px]"
-                    type="text" id="email" name="email" placeholder="Email" />
-                <input class="border-2 border-white bg-transparent placeholder-white py-1 px-2 rounded-[3px]" type="
-                                            password" id="password" name="password" placeholder="Password" />
-                <div class="flex justify-between">
-                    <button type="button" id="previous" class="px-5 py-2 text-black bg-white rounded-lg"
-                        (click)="handleFormEvent($event)">Previous</button>
-                    <button type="button" id="next" class="py-2 text-white bg-black rounded-lg px-9"
-                        (click)="handleFormEvent($event)">Next</button>
-                </div>
-            </div>
-
-            <div class="hidden min-w-full gap-6 bg-red-400">
-                <div class="flex justify-between">
-                    <input class="border-2 border-white bg-transparent placeholder-white py-1 px-2 rounded-[3px]"
-                        type="text" id="firstname" name="firstname" placeholder="First Name" />
-                    <input class="border-2 border-white bg-transparent placeholder-white py-1 px-2 rounded-[3px]" type="
-                                                                        password" id="lastname" name="lastname"
-                        placeholder="Last Name" />
-                </div>
-                <input class="border-2 border-white bg-transparent placeholder-white py-1 px-2 rounded-[3px]"
-                    type="text" id="email" name="email" placeholder="Email" />
-                <input class="border-2 border-white bg-transparent placeholder-white py-1 px-2 rounded-[3px]" type="
-                                                        password" id="password" name="password"
-                    placeholder="Password" />
-                <div class="flex justify-between">
-                    <button type="button" id="previous"
-                        class="px-5 py-2 text-black bg-white rounded-lg">Previous</button>
-                    <button type="button" id="next" class="py-2 text-white bg-black rounded-lg px-9">Next</button>
-                </div>
-            </div>
-        </form>
-    </article> -->
-
     <mat-stepper #stepper [linear]="false" class="border-1  rounded-xl p-6 min-w-[30rem] bg-slate-100 text-black 
     
         bg-clip-padding backdrop-filter backdrop-blur-sm bg-opacity-10 border border-gray-100">
@@ -99,33 +47,11 @@
                     <mat-error class="text-white">Please choose a department.</mat-error>
 
                 </mat-form-field>
-                <div class="bg-white" *ngFor="let t of details">
-
-                    <p>id = {{t.emp_id}}</p>
-                    <p>firstname = {{t.emp_firstname}}</p>
-                    <p>lastname = {{t.emp_lastname}}</p>
-                    <p>emp number = {{t.emp_number}}</p>
-                    <p>position = {{t.emp_position}}</p>
-
-
-
-
-                    <img class="aspect-square" [src]="t.emp_signature" alt="">
-
-
-
-
-
-
-
-
-                </div>
-
-
 
                 <div>
                     <button mat-button matStepperNext>Next</button>
                 </div>
+
             </form>
         </mat-step>
         <mat-step [stepControl]="getFormGroup('userAccountFormGroup')">
@@ -167,6 +93,7 @@
                     <button mat-button matStepperPrevious>Back</button>
                     <button mat-button matStepperNext>Next</button>
                 </div>
+
             </form>
         </mat-step>
         <mat-step>
@@ -188,5 +115,8 @@
             </div>
         </mat-step>
     </mat-stepper>
+    <button routerLink="/dashboard" class="px-4 py-2 mt-3 font-bold text-white bg-black rounded hover:bg-red-600">
+        Exit
+    </button>
 
 </div>

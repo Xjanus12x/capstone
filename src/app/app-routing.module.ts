@@ -5,15 +5,22 @@ import { DashboardComponent } from './modules/pages/dashboard/dashboard.componen
 import { RegisterComponent } from './modules/pages/register/register.component';
 import { IgcfFormComponent } from './modules/pages/igcf-form/igcf-form.component';
 import { SubmittedFormComponent } from './modules/components/submitted-form/submitted-form.component';
+import { canExitRegistrationPage } from './core/guards/canExitRegistration.guard';
+import { canActivate } from './core/guards/checkAccess.guard';
 
 const routes: Routes = [
   { path: '', redirectTo: 'login', pathMatch: 'full' },
   { path: 'login', component: LoginComponent },
-  { path: 'register', component: RegisterComponent },
-  
+  {
+    path: 'register',
+    component: RegisterComponent,
+    canDeactivate: [canExitRegistrationPage],
+  },
+
   {
     path: 'dashboard',
     component: DashboardComponent,
+    // canActivate: [canActivate],
     children: [
       {
         path: '',

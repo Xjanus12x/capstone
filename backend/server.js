@@ -1,3 +1,4 @@
+
 const express = require("express");
 const bodyParser = require("body-parser");
 const mysql = require("mysql");
@@ -30,25 +31,8 @@ server.listen(8085, function check(error) {
 });
 
 // Add new user
-// server.post("/api/user/register", (req, res) => {
-//   let user = {
-//     emp_email: req.body.email,
-//     emp_password: req.body.password,
-//     emp_role: req.body.role,
-//   }
-//   let sql = "INSERT INTO tbl_users SET ?";
-//   db.query(sql, user, (error) => {
-//     if (error) {
-//       res.send({ status: false, message: "User created failed" });
-//     } else {
-//       res.send({ status: true, message: "User created successfully" });
-//     }
-//   });
-// });
-
 server.post("/api/user/register", async (req, res) => {
   try {
-    // You can adjust the number of salt rounds as needed
     const hashedPassword = await bcrypt.hash(req.body.password, saltRounds);
 
     let user = {
@@ -135,11 +119,12 @@ server.get("/api/user", (req, res) => {
 
 // Login endpoint
 server.post("/api/login", (req, res) => {
-  const { email, password } = req.body;
+  const { emp_email, emp_password } = req.body;
 
   // Fetch user data for the provided email
-  let sql = "SELECT emp_id, emp_email, emp_password FROM tbl_users WHERE emp_email = ?";
-  db.query(sql, [email], (error, result) => {
+  let sql =
+    "SELECT emp_id, emp_email, emp_password FROM tbl_users WHERE emp_email = ?";
+  db.query(sql, [emp_email], (error, result) => {
     if (error) {
       console.log("Error Connecting to DB");
       res.status(500).send({ status: false, message: "Internal Server Error" });
@@ -147,50 +132,41 @@ server.post("/api/login", (req, res) => {
       res
         .status(401)
         .send({ status: false, message: "Invalid email or password" });
-    } else {
-      // Hash the provided password for comparison
-      bcrypt.hash(password, saltRounds, (err, hashedProvidedPassword) => {
-        if (err) {
+    }
+
+    // Compare the provided password with the stored hashed password
+    const storedPasswordHash = result[0].emp_password;
+    bcrypt.compare(
+      emp_password,
+      storedPasswordHash,
+      (compareErr, passwordMatch) => {
+        if (compareErr) {
           // Handle the error
           res
             .status(500)
             .send({ status: false, message: "Internal Server Error" });
-        } else {
-          // Compare hashed provided password with stored password hash
-          bcrypt.compare(
-            hashedProvidedPassword,
-            result[0].password,
-            (compareErr, passwordMatch) => {
-              if (compareErr) {
-                // Handle the error
-                res
-                  .status(500)
-                  .send({ status: false, message: "Internal Server Error" });
-              } else if (!passwordMatch) {
-                // Passwords do not match - handle accordingly
-                res.status(401).send({
-                  status: false,
-                  message: "Invalid email or password",
-                });
-              } else {
-                // Passwords match - User is authenticated
-                const userData = {
-                  user_id: result[0].user_id,
-                  email: result[0].email,
-                };
+        } else if (passwordMatch) {
+          // Passwords match - User is authenticated
+          const userData = {
+            emp_id: result[0].emp_id,
+            emp_email: result[0].emp_email,
+          };
 
-                // You can generate a JWT token or use a session mechanism here
-                // and then send it to the client for subsequent authenticated requests.
-                res.send({
-                  status: true,
-                  message: "Login successful",
-                  data: userData,
-                });
-              }
-            }
-          );
+          // You can generate a JWT token or use a session mechanism here
+          // and then send it to the client for subsequent authenticated requests.
+          res.send({
+            status: true,
+            message: "Login successful",
+            data: userData,
+          });
+        } else {
+          // Passwords do not match - handle accordingly
+          res.status(401).send({
+            status: false,
+            message: "Invalid email or password",
+          });
         }
-      });
-    }
+      }
+    );
   });
 });

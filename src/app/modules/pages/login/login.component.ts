@@ -1,7 +1,8 @@
 import { Component } from '@angular/core';
 import { FormBuilder, FormGroup, Validators } from '@angular/forms';
 import { HttpClient, HttpResponse } from '@angular/common/http';
-
+import { AuthService } from 'src/app/core/services/auth.service';
+import { Router } from '@angular/router';
 @Component({
   selector: 'app-login',
   templateUrl: './login.component.html',
@@ -9,26 +10,63 @@ import { HttpClient, HttpResponse } from '@angular/common/http';
 })
 export class LoginComponent {
   loginFormGroup!: FormGroup;
-  constructor(private _formBuilder: FormBuilder, private http: HttpClient) {
+  constructor(
+    private _formBuilder: FormBuilder,
+    private authService: AuthService,
+    private router: Router
+  ) {
     this.loginFormGroup = this._formBuilder.group({
       email: ['', Validators.required],
       password: ['', Validators.required],
     });
   }
-  apiBaseUrl = 'http://localhost:8085/api';
-  test() {
-    console.log(this.loginFormGroup.value);
-    this.http
-      .post(`${this.apiBaseUrl}/login`, this.loginFormGroup.value)
-      .subscribe(
-        (resultData: any) => {
-          console.log(resultData);
-          alert('nice');
-        },
-        (error) => {
-          console.error('Error registering personal:', error);
-          // Handle the error, e.g., show an error message to the user
-        }
-      );
+
+  // test() {
+  //   const email = this.loginFormGroup.value.email;
+  //   const password = this.loginFormGroup.value.password;
+
+  //   if (!email || !password) return;
+
+  //   this.authService.setEmailAddress(email);
+  //   this.authService.setPassword(password);
+  //   this.authService.authenticate();
+
+  //   console.log("comp",this.authService.isLogged);
+
+  //   if (this.authService.getIsUserLogged()) {
+  //     this.router.navigate(['dashboard']);
+  //   }
+  // }
+  // ... (existing code)
+
+  // test() {
+  //   const email = this.loginFormGroup.value.email;
+  //   const password = this.loginFormGroup.value.password;
+
+  //   if (!email || !password) return;
+
+  //   this.authService.setEmailAddress(email);
+  //   this.authService.setPassword(password);
+  //   this.authService.authenticate();
+
+  //   this.authService.authenticationStatus$.subscribe((isUserLogged) => {
+  //     console.log('comp', isUserLogged);
+
+  //     if (isUserLogged) {
+  //       this.router.navigate(['dashboard']);
+  //     }
+  //   });
+  // }
+  login(): void {
+    const { email, password } = this.loginFormGroup.value;
+    if (!email || !password) return;
+    this.authService.setEmailAddress(email);
+    this.authService.setPassword(password);
+    this.authService.isAuthenticated$.subscribe((isAuthenticated) => {
+      if (isAuthenticated) {
+        this.router.navigate(['dashboard']);
+      }
+    });
+    this.authService.authenticate();
   }
 }

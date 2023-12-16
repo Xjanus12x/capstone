@@ -1,6 +1,5 @@
 <div class="register min-h-[100vh] bg-no-repeat bg-cover bg-center grid place-content-center ">
-    <mat-stepper #stepper [linear]="false" class="border-1  rounded-xl p-6 min-w-[30rem] bg-slate-100 text-black 
-    
+    <mat-stepper #stepper [linear]="false" class="border-1  rounded-xl p-6 min-w-[35rem] bg-slate-100 text-black 
         bg-clip-padding backdrop-filter backdrop-blur-sm bg-opacity-10 border border-gray-100">
         <mat-step [stepControl]="getFormGroup('personalInformationFormGroup')">
             <ng-template matStepLabel>
@@ -13,27 +12,27 @@
                         <mat-form-field>
                             <mat-label>First name</mat-label>
                             <input matInput placeholder="First name" formControlName="emp_firstName" required>
-                            <mat-error class="text-white">Firstname is <strong>required</strong></mat-error>
+                            <mat-error class="text-white">Firstname is required</mat-error>
                         </mat-form-field>
                     </div>
                     <div class="grid">
                         <mat-form-field>
                             <mat-label>Last Name</mat-label>
                             <input matInput placeholder="Last name" formControlName="emp_lastName" required>
-                            <mat-error class="text-white">Lastname is <strong>required</strong></mat-error>
+                            <mat-error class="text-white">Lastname is required</mat-error>
                         </mat-form-field>
                     </div>
                 </div>
                 <mat-form-field>
                     <mat-label>Employee number</mat-label>
                     <input matInput type="number" placeholder="Ex. 12345" formControlName="emp_number" required>
-                    <mat-error class="text-white">Employee number is <strong>required</strong></mat-error>
+                    <mat-error class="text-white">Employee number is required</mat-error>
                 </mat-form-field>
 
                 <mat-form-field>
                     <mat-label>Position</mat-label>
                     <input matInput placeholder="Ex. 12345" formControlName="emp_position" required>
-                    <mat-error class="text-white">Employee Position is <strong>required</strong></mat-error>
+                    <mat-error class="text-white">Employee Position is required</mat-error>
                 </mat-form-field>
 
                 <mat-form-field>
@@ -44,8 +43,7 @@
                             {{department}}
                         </mat-option>
                     </mat-select>
-                    <mat-error class="text-white">Please choose a department.</mat-error>
-
+                    <mat-error class="text-white">Department is required</mat-error>
                 </mat-form-field>
 
                 <div>
@@ -61,21 +59,43 @@
             <form class='grid gap-2' [formGroup]="getFormGroup('userAccountFormGroup')">
                 <mat-form-field>
                     <mat-label>Email</mat-label>
-                    <input type="email" matInput formControlName="email" required [errorStateMatcher]="matcher"
-                        placeholder="Ex. pat@example.com">
-                    <mat-error class="text-white">
-                        Email is <strong>required</strong>
+                    <input type="email" matInput formControlName="email" placeholder="Ex. user@hau.edu.ph" type="email"
+                        required>
+                    <mat-error class="text-white " *ngIf="getFormControl('userAccountFormGroup','email').hasError('emailExist') 
+                        && !getFormControl('userAccountFormGroup','email').hasError('required') && 
+                        !getFormControl('userAccountFormGroup','email').hasError('pattern')">
+                        Email already exist
+                    </mat-error>
+                    <mat-error class="text-white" *ngIf="getFormControl('userAccountFormGroup','email').hasError('pattern')
+                         && !getFormControl('userAccountFormGroup','email').hasError('required')
+                         && !getFormControl('userAccountFormGroup','email').hasError('emailExist')">
+                        Please enter a valid email address
                     </mat-error>
                     <mat-error class="text-white"
-                        *ngIf="getFormControl('userAccountFormGroup','email').hasError('email') && !getFormControl('userAccountFormGroup','email').hasError('required')">
-                        Please enter a valid email address
+                        *ngIf="getFormControl('userAccountFormGroup','email').hasError('required')">
+                        Email is required
                     </mat-error>
 
                 </mat-form-field>
 
                 <mat-form-field>
                     <mat-label>Password</mat-label>
-                    <input matInput formControlName="password" placeholder="Ex. 1 Main St, New York, NY" required>
+
+                    <input matInput formControlName="password" placeholder="Ex. example8" type='password' minlength="8"
+                        required>
+                    <mat-error class="text-white"
+                        *ngIf="getFormControl('userAccountFormGroup','password').hasError('pattern') && !getFormControl('userAccountFormGroup','password').hasError('required') && !getFormControl('userAccountFormGroup','password').hasError('minlength')">
+                        Password should include both letters and numbers.
+                    </mat-error>
+
+                    <mat-error class="text-white"
+                        *ngIf="getFormControl('userAccountFormGroup','password').hasError('minlength') && !getFormControl('userAccountFormGroup','password').hasError('required') && !getFormControl('userAccountFormGroup','password').hasError('pattern')">Password
+                        should be at least 8 characters long.</mat-error>
+
+                    <mat-error class="text-white"
+                        *ngIf="getFormControl('userAccountFormGroup','password').hasError('required')">
+                        Password is required
+                    </mat-error>
                 </mat-form-field>
                 <mat-form-field>
                     <mat-label>Role</mat-label>
@@ -86,8 +106,8 @@
                         </mat-option>
                     </mat-select>
                     <mat-error class="text-white"
-                        *ngIf="getFormControl('userAccountFormGroup','role').hasError('required')">Please choose a
-                        department.</mat-error>
+                        *ngIf="getFormControl('userAccountFormGroup','role').hasError('required')">Role is
+                        required.</mat-error>
                 </mat-form-field>
                 <div>
                     <button mat-button matStepperPrevious>Back</button>

@@ -1,4 +1,3 @@
-
 const express = require("express");
 const bodyParser = require("body-parser");
 const mysql = require("mysql");
@@ -169,4 +168,29 @@ server.post("/api/login", (req, res) => {
       }
     );
   });
+});
+
+// End point for checking whether user already exist
+server.post("/api/user/check-existence", (req, res) => {
+  try {
+    const { emp_email } = req.body;
+
+    // Check if the email already exists in the database
+    const checkExistenceQuery =
+      "SELECT emp_email FROM tbl_users WHERE emp_email = ?";
+    db.query(checkExistenceQuery, [emp_email], (error, existingUser) => {
+      if (error) {
+        console.error("Error checking user existence:", error);
+        res
+          .status(500)
+          .send({ status: false, message: "Internal Server Error" });
+      } else {
+        // Respond with a boolean indicating whether the user exists
+        res.send({ exists: existingUser.length > 0 });
+      }
+    });
+  } catch (error) {
+    console.error("Unexpected error:", error);
+    res.status(500).send({ status: false, message: "Internal Server Error" });
+  }
 });

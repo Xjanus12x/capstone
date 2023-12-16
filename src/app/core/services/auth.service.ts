@@ -1,6 +1,6 @@
 import { Injectable } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
-import { BehaviorSubject, Observable, Subject } from 'rxjs';
+import { BehaviorSubject, Observable, Subject, Subscription } from 'rxjs';
 import { map } from 'rxjs/operators';
 import { MatDialog } from '@angular/material/dialog';
 import { DialogBoxComponent } from 'src/app/modules/components/dialog-box/dialog-box.component';
@@ -173,23 +173,17 @@ export class AuthService {
       emp_password: this.password,
     };
   }
-
   authenticate(): void {
-    this.http.post(`${this.apiBaseUrl}/login`, this.getUserInput()).subscribe(
-      (resultData: any) => {
+    this.http.post(`${this.apiBaseUrl}/login`, this.getUserInput()).subscribe({
+      next: (resultData: any) => {
         this.setIsLogged(resultData.status);
       },
-      (error) => {
+
+      error: (error) => {
         const statusCode = error.status;
 
         if (statusCode === 401) {
           // alert('Invalid email or password');
-
-          this.dialog.open(DialogBoxComponent, {
-            width: '300px',
-            enterAnimationDuration: '200ms',
-            exitAnimationDuration: '400ms',
-          });
         } else if (statusCode === 500) {
           this.dialog.open(DialogBoxComponent, {
             width: '300px',
@@ -218,11 +212,53 @@ export class AuthService {
         }
 
         this.setIsLogged(false);
-      }
-    );
+      },
+    });
   }
+  // authenticate(): void {
+  //   this.http.post(`${this.apiBaseUrl}/login`, this.getUserInput()).subscribe(
+  //     (resultData: any) => {
+  //       this.setIsLogged(resultData.status);
+  //     },
+  //     (error) => {
+  //       const statusCode = error.status;
+
+  //       if (statusCode === 401) {
+  //         // alert('Invalid email or password');
+  //       } else if (statusCode === 500) {
+  //         this.dialog.open(DialogBoxComponent, {
+  //           width: '300px',
+  //           enterAnimationDuration: '200ms',
+  //           exitAnimationDuration: '400ms',
+  //           data: {
+  //             title: 'Internal Server Error',
+  //             content:
+  //               'Oops! Something went wrong on the server. Please try again later.',
+  //             buttons: [
+  //               {
+  //                 isVisible: false,
+  //                 matDialogCloseValue: false,
+  //                 content: '',
+  //                 tailwindClass: 'text-gray-600',
+  //               },
+  //               {
+  //                 isVisible: true,
+  //                 matDialogCloseValue: true,
+  //                 content: 'Retry',
+  //                 tailwindClass: 'text-red-500',
+  //               },
+  //             ],
+  //           },
+  //         });
+  //       }
+
+  //       this.setIsLogged(false);
+  //     }
+  //   );
+  // }
 
   getAuthenticationStatus(): Observable<boolean> {
     return this.isAuthenticated$;
   }
+  
 }

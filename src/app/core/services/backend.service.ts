@@ -12,6 +12,7 @@ export class BackendService {
   private apiBaseUrl = 'http://localhost:8085/api';
   private details!: IEmployeeDetails;
   private accountDetails!: IUserAccount;
+  private unconfirmedEmail: string = '';
 
   constructor(private http: HttpClient) {}
 
@@ -69,7 +70,9 @@ export class BackendService {
       .subscribe(
         (resultData: any) => {
           console.log(resultData);
-          alert('Succesffull Personal');
+          if (resultData.status) {
+            alert('Nice');
+          }
         },
         (error) => {
           console.error('Error registering personal:', error);
@@ -77,6 +80,22 @@ export class BackendService {
         }
       );
   }
+  private onRegisterEmail!: string;
+  setUnconfirmedEmail(email: string): void {
+    this.unconfirmedEmail = email;
+  }
+
+  getUnconfirmedEmail(): string {
+    return this.unconfirmedEmail;
+  }
+  
+  checkEmailExistence(): Observable<any> {
+    const email = this.getUnconfirmedEmail();
+    return this.http.post(`${this.apiBaseUrl}/user/check-existence`, {
+      emp_email: email,
+    });
+  }
+
   registerUser() {
     this.addEmployeeDetails();
     this.addUserAccount();

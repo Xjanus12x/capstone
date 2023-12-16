@@ -1,15 +1,18 @@
-import { Component } from '@angular/core';
+import { Component, OnDestroy } from '@angular/core';
 import { FormBuilder, FormGroup, Validators } from '@angular/forms';
 import { HttpClient, HttpResponse } from '@angular/common/http';
 import { AuthService } from 'src/app/core/services/auth.service';
 import { Router } from '@angular/router';
+import { Observable, Subject, takeUntil } from 'rxjs';
 @Component({
   selector: 'app-login',
   templateUrl: './login.component.html',
   styleUrls: ['./login.component.css'],
 })
-export class LoginComponent {
+export class LoginComponent implements OnDestroy {
   loginFormGroup!: FormGroup;
+  private unsubscribe$: Subject<void> = new Subject<void>();
+
   constructor(
     private _formBuilder: FormBuilder,
     private authService: AuthService,
@@ -62,11 +65,20 @@ export class LoginComponent {
     if (!email || !password) return;
     this.authService.setEmailAddress(email);
     this.authService.setPassword(password);
-    this.authService.isAuthenticated$.subscribe((isAuthenticated) => {
-      if (isAuthenticated) {
-        this.router.navigate(['dashboard']);
-      }
-    });
+    this.authService.isAuthenticated$
+      .pipe(takeUntil(this.unsubscribe$))
+      .subscribe({
+        next: (isAuthenticated) => {
+          if (isAuthenticated) {
+            this.router.navigate(['dashboard']);
+          }
+        },
+      });
     this.authService.authenticate();
+  }
+  ngOnDestroy(): void {
+    // Emit a signal to all subscribers to complete
+    this.unsubscribe$.next();
+    this.unsubscribe$.complete();
   }
 }

@@ -1,5 +1,5 @@
 import { IDeactivateComponent } from "../models/DeactivateComponent";
 
-export const canExitRegistrationPage = (component: IDeactivateComponent) => {
+export const canExit = (component: IDeactivateComponent) => {
   return component.canExit();
 };

@@ -1,0 +1,30 @@
+export const departmentNamesMap = new Map<string, string>([
+  ['SCHOOL OF BUSINESS AND ACCOUNTANCY', 'SBA'],
+  ['SCHOOL OF ENGINEERING AND ARCHITECTURE', 'SEA'],
+  ['SCHOOL OF ARTS AND SCIENCES', 'SAS'],
+  ['SCHOOL OF EDUCATION', 'SED'],
+  ['SCHOOL OF HOSPITALITY AND TOURISM MANAGEMENT', 'SHTM'],
+  ['SCHOOL OF NURSING AND ALLIED MEDICAL SCIENCES', 'SNAMS'],
+  ['SCHOOL OF COMPUTING', 'SOC'],
+  ['COLLEGE OF CRIMINAL JUSTICE EDUCATION AND FORENSICS', 'CCJEF'],
+]);
+
+export const departmentColors = new Map<string, string>([
+  ['SBA', '#CC9933'],
+  ['SEA', '#CC3300'],
+  ['SAS', '#663333'],
+  ['SED', '#003366'],
+  ['SHTM', '#CC3366'],
+  ['SNAMS', '#006600'],
+  ['SOC', '#FF9900'],
+  ['CCJEF', '#993399'],
+]);
+
+//   CCJEF PURPLE
+// SEA
+// SBA
+// SOC ORANGE
+// SHTM PINK
+// SNAMS
+// SAS
+// SED

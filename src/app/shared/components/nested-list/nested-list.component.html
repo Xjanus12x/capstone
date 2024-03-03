@@ -1,0 +1,37 @@
+<ul class="grid gap-4 text-white">
+    <ng-container *ngFor="let item of items">
+        <!-- Check if the user's role is included in the canAccess array -->
+        <ng-container *ngIf="!item.canAccess || item.canAccess.includes(role)">
+            <li>
+                <a class="block p-2 rounded-md hover:bg-black" *ngIf="item.link; else nestedNav"
+                    [routerLink]="getRouterLink(item)" routerLinkActive="bg-black"
+                    [routerLinkActiveOptions]="{exact: true}">
+                    {{ item.label }}
+                </a>
+                <ng-template #nestedNav>
+                    <div class="grid gap-2">
+                        <span class="flex items-center p-2 rounded-md cursor-pointer hover:bg-black"
+                            (click)="toggleCollapse(item)" [class.collapsed]="item.collapsed">
+                            <svg class="w-4 h-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"
+                                stroke-width="2.5" stroke="currentColor">
+                                <path stroke-linecap="round" stroke-linejoin="round"
+                                    [attr.d]="item.collapsed ? 'M8.25 4.5l7.5 7.5-7.5 7.5' : 'M19 9l-7 7-7-7'" />
+                            </svg>
+                            <a>
+                                {{ item.label }}
+                            </a>
+                        </span>
+                        <ul class="pl-4" *ngIf="!item.collapsed">
+                            <li *ngFor="let child of item.children">
+                                <!-- Check if the user's role is included in the canAccess array -->
+                                <ng-container *ngIf="!child.canAccess || child.canAccess.includes(role)">
+                                    <app-nested-list [items]="[child]"></app-nested-list>
+                                </ng-container>
+                            </li>
+                        </ul>
+                    </div>
+                </ng-template>
+            </li>
+        </ng-container>
+    </ng-container>
+</ul>

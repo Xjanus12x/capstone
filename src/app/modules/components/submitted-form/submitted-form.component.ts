@@ -1,4 +1,4 @@
-import { Component } from '@angular/core';
+import { Component, Input } from '@angular/core';
 
 @Component({
   selector: 'app-submitted-form',
@@ -6,20 +6,8 @@ import { Component } from '@angular/core';
   styleUrls: ['./submitted-form.component.css'],
 })
 export class SubmittedFormComponent {
-  temp: any[] = [
-    {
-      id: 1,
-      name: 'data1',
-    },
+  @Input() id!: number;
+  @Input() name!: string;
+  @Input() isSigned!: boolean;
 
-    {
-      id: 2,
-      name: 'data2',
-    },
-
-    {
-      id: 3,
-      name: 'data3',
-    },
-  ];
 }

@@ -1,0 +1,82 @@
+<form class="grid gap-2 p-4 mt-4 rounded-md" [formGroup]="setPercentagesFormGroup">
+    <table class="min-w-full border-2 border-collapse border-black">
+        <!-- <tr class="p-4 m-4 border-2 border-black">
+            <td [colSpan]="3">
+                <div class="grid">
+                    <mat-form-field>
+                        <mat-label>Title</mat-label>
+                        <input matInput required [formControl]="titleControl">
+                        <mat-error *ngIf="titleControl.get('percentagesTitleControl')?.hasError('required')">
+                            This field is required.
+                        </mat-error>
+                    </mat-form-field>
+                </div>
+            </td>
+        </tr> -->
+
+        <tr class="p-4 m-4 border-2 border-black">
+            <td [colSpan]="3">
+                <div class="grid">
+                    <mat-form-field>
+                        <mat-label>Title</mat-label>
+                        <input matInput [formControl]="titleControl">
+
+                        <mat-error *ngIf="titleControl.hasError('titleExists') ">
+                            Title already exists. Please choose a different one.
+                        </mat-error>
+                        <mat-error *ngIf="titleControl.hasError('required') ">
+                            This field is required.
+                        </mat-error>
+                    </mat-form-field>
+                </div>
+            </td>
+        </tr>
+
+
+
+        <tr>
+            <th class="border-2 border-black " *ngFor="let tableHeader of  TABLE_HEADERS">
+                {{tableHeader}}
+            </th>
+        </tr>
+        <ng-container *ngFor="let editFormContent of editFormContents">
+            <tr [formGroupName]="editFormContent.groupName">
+                <td class="p-4 border-2 border-black"
+                    *ngFor="let formControlName of editFormContent.controlNames; let i = index">
+                    <div class="grid">
+                        <mat-form-field>
+                            <mat-label>Set {{editFormContent.percentageType[i]}} % For
+                                {{editFormContent.category}}</mat-label>
+                            <input matInput type="number" required [formControlName]="formControlName">
+                            <mat-error
+                                *ngIf="getFormControl(editFormContent.groupName, formControlName)?.hasError('required')">
+                                This field is required.
+                            </mat-error>
+                        </mat-form-field>
+                    </div>
+                </td>
+            </tr>
+        </ng-container>
+
+    </table>
+
+    <div class="grid grid-cols-3 gap-4">
+        <button type="button" class="min-w-full px-4 py-2 text-white duration-500 bg-black rounded-md hover:bg-red-900"
+            (click)="submit()">
+            Submit
+        </button>
+
+        <button type="button" class="px-4 py-2 text-white duration-500 bg-black rounded-md hover:bg-red-900"
+            (click)="previewForm()">
+            Preview
+        </button>
+
+        <button type="button"
+            class="px-4 py-2 text-white transition-colors duration-500 ease-in-out bg-black rounded-md hover:bg-red-900"
+            (click)="exit()">
+            Exit
+        </button>
+
+    </div>
+
+</form>

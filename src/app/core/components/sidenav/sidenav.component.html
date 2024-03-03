@@ -1,31 +1,16 @@
-<mat-drawer-container class="relative flex min-h-full">
+<mat-drawer-container class="min-h-full">
+    <mat-drawer class="p-5 min-w-[15rem]
+    bg-red-900 rounded-md bg-clip-padding backdrop-filter backdrop-blur-3xl bg-opacity-100 border border-gray-100
+" #drawer [opened]="isOpen" mode="side">
 
-    <mat-drawer class="pl-32 pr-20" #drawer mode="push">
+        <div>
+            <app-nested-list [items]="navItems"></app-nested-list>
+        </div>
 
-        <mat-nav-list class="grid gap-4 ">
-            <mat-list-item routerLink="/login" >
-                <button class="text-white" type="button" mat-button>
-                    Create Form
-                </button>
-            </mat-list-item>
 
-            <mat-list-item routerLink="/register">
-                <button class="text-white" mat-button>
-                    Create Account
-                </button>
-            </mat-list-item>
-
-            <mat-list-item>
-                <button class="text-white" mat-button>
-                    Generate Report
-                </button>
-            </mat-list-item>
-        </mat-nav-list>
     </mat-drawer>
 
-    <div class="">
-
+    <div class="p-3">
         <ng-content></ng-content>
-
     </div>
 </mat-drawer-container>

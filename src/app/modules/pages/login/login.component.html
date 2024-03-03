@@ -1,28 +1,28 @@
-<div class="login min-h-[100vh] bg-no-repeat bg-cover bg-center grid place-content-center ">
+<div class="bg-login min-h-[100vh] bg-no-repeat bg-cover bg-center grid place-content-center ">
 
     <article class="border-1 border-white rounded-2xl p-6 min-w-[30rem] bg-slate-100 text-black 
     
-        bg-clip-padding backdrop-filter backdrop-blur-sm bg-opacity-10 border border-gray-100
+        bg-clip-padding backdrop-filter backdrop-blur-sm bg-opacity-10 border 
 
     ">
         <img class="aspect-square max-w-[8rem] mx-auto mb-4" src="../../../../assets/images/logo/hau-logo.png"
             alt="Holy Angelo University Logo">
-        <form class="grid " [formGroup]="loginFormGroup">
+        <form class="grid " [formGroup]="loginFormGroup" (ngSubmit)="login()">
             <div class="grid">
                 <mat-form-field>
                     <mat-label>Email</mat-label>
                     <input matInput placeholder="Email" formControlName="email" required>
                 </mat-form-field>
+
+
                 <mat-form-field>
                     <mat-label>Password</mat-label>
                     <input matInput placeholder="Password" formControlName="password" required>
                 </mat-form-field>
+
             </div>
             <a class="text-white underline">Forgot password</a>
-            <button routerLink="/dashboard" type="button"
-                class="py-2 mt-2 text-white bg-black rounded-lg">Login</button>
-            <button type="button" class="py-2 mt-2 text-white bg-black rounded-lg" (click)="login()">LoginTest</button>
-
+            <button class="py-2 mt-2 text-white bg-black rounded-lg">Login</button>
 
         </form>
 

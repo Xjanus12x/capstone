@@ -1,9 +1,12 @@
-<div class="p-1 text-black cursor-pointer group hover:bg-green-500" [ngClass]="{'bg-red-200 ':t.id % 2 === 1}"
-    [routerLink]="['/dashboard',{ outlets: { dashboardContent: [ 'igcf-form',t.id] }}]" *ngFor="let t of temp">
+<div class="p-1 text-black cursor-pointer group hover:bg-green-500" [ngClass]="{'bg-red-200 ':id % 2 === 1}"
+    [routerLink]="['/dashboard',{ outlets: { dashboardContent: [ 'submitted-form',id] }}]">
     <div class="flex items-center justify-between">
         <div class="flex gap-1">
             <input class="w-4 aspect-square" type="checkbox">
-            <label for="">{{t.name}}</label>
+            <label for="">{{name}}</label>
+            <div [ngClass]="{'bg-green-500':isSigned,'bg-red-500':!isSigned}">
+                Signed
+            </div>
         </div>
 
         <div class="flex items-center gap-3 transition-opacity duration-300 opacity-0 group-hover:opacity-100">

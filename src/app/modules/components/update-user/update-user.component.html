@@ -1,0 +1,96 @@
+<div>
+    <h2 mat-dialog-title>Update User Form</h2>
+    <form mat-dialog-content [formGroup]="updateUser">
+        <div class="grid grid-cols-2 gap-2">
+            <mat-form-field class="example-full-width">
+                <mat-label>First Name:</mat-label>
+                <input matInput placeholder="Ex. 94105" formControlName="firstname" required>
+                <mat-error
+                    *ngIf="getFormControl('firstname')?.hasError('onlySpaces') && !getFormControlError('firstname','required')"
+                    class="px-1 text-white bg-red-900">Please enter valid input.</mat-error>
+                <mat-error *ngIf="getFormControlError('firstname','required') 
+                     " class="px-1 text-white bg-red-900">
+                    Firstname is required
+                </mat-error>
+            </mat-form-field>
+
+            <mat-form-field class="example-full-width">
+                <mat-label>Last Name: </mat-label>
+                <input matInput minlength="5" placeholder="Ex. 94105" formControlName="lastname">
+                <mat-error
+                    *ngIf="getFormControl('lastname')?.hasError('onlySpaces') && !getFormControlError('lastname','required')"
+                    class="px-1 text-white bg-red-900">Please enter valid input.</mat-error>
+                <mat-error *ngIf="getFormControlError('lastname','required') 
+                                                 " class="px-1 text-white bg-red-900">
+                    Lastname is required
+                </mat-error>
+            </mat-form-field>
+
+
+        </div>
+        <div class="grid grid-cols-2 gap-2">
+            <mat-form-field>
+                <mat-label>Employee Number:</mat-label>
+                <input matInput placeholder="Ex. <EMAIL>" formControlName="emp_number">
+                <mat-error
+                    *ngIf="getFormControl('emp_number')?.hasError('onlySpaces') && !getFormControlError('emp_number','required')"
+                    class="px-1 text-white bg-red-900">Please enter valid input.</mat-error>
+                <mat-error *ngIf="getFormControlError('emp_number','required') " class="px-1 text-white bg-red-900">
+                    Employee number is required
+                </mat-error>
+            </mat-form-field>
+            <mat-form-field>
+                <mat-label>Role</mat-label>
+                <mat-select formControlName="role" required>
+                    <mat-option>--None--</mat-option>
+                    <mat-option *ngFor="let role of roles" [value]="role">
+                        {{role}}
+                    </mat-option>
+                </mat-select>
+                <mat-error *ngIf="getFormControlError('role','required')" class="px-1 text-white bg-red-900">
+                    User role is required
+                </mat-error>
+
+            </mat-form-field>
+        </div>
+        <div class="grid">
+            <mat-form-field>
+                <mat-label>Department</mat-label>
+                <mat-select formControlName="dept" required>
+                    <mat-option>--</mat-option>
+                    <mat-option *ngFor="let department of departments" [value]="department">
+                        {{department}}
+                    </mat-option>
+                </mat-select>
+                <mat-error *ngIf="getFormControlError('dept','required') " class="px-1 text-white bg-red-900">
+                    Employee Department is required
+                </mat-error>
+            </mat-form-field>
+
+            <mat-form-field>
+                <mat-label>Employee Position:</mat-label>
+                <input matInput placeholder="Ex. <PASSWORD>" formControlName="position">
+                <mat-error
+                    *ngIf="getFormControl('position')?.hasError('onlySpaces') && !getFormControlError('position','required')"
+                    class="px-1 text-white bg-red-900">Please enter valid input.</mat-error>
+                <mat-error *ngIf="getFormControlError('position','required') " class="px-1 text-white bg-red-900">
+                    Employee Position is required
+                </mat-error>
+            </mat-form-field>
+
+            <div class="grid min-w-full place-content-center" mat-dialog-actions>
+
+                <button class="min-w-full " mat-button type="button" color="warn" mat-raised-button
+                    mat-dialog-close>Cancel</button>
+                <button class="min-w-full" mat-button type="button" color="primary" cdkFocusInitial mat-raised-button
+                    [mat-dialog-close]="updateUser">Update</button>
+
+
+            </div>
+        </div>
+
+
+        
+    </form>
+</div>
+

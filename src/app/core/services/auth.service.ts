@@ -1,160 +1,43 @@
 import { Injectable } from '@angular/core';
-import { HttpClient } from '@angular/common/http';
-import { BehaviorSubject, Observable, Subject, Subscription } from 'rxjs';
-import { map } from 'rxjs/operators';
+import { HttpClient, HttpParams } from '@angular/common/http';
+import { BehaviorSubject, Observable, Subject } from 'rxjs';
 import { MatDialog } from '@angular/material/dialog';
 import { DialogBoxComponent } from 'src/app/modules/components/dialog-box/dialog-box.component';
-
+import {
+  MatSnackBar,
+  MatSnackBarConfig,
+  MatSnackBarVerticalPosition,
+} from '@angular/material/snack-bar';
+import { IUserList } from '../models/UsersList';
 @Injectable({
   providedIn: 'root',
 })
 export class AuthService {
-  // private apiBaseUrl = 'http://localhost:8085/api';
-
-  // constructor(private http: HttpClient) {}
-  // private currentUserSubject: BehaviorSubject<any>;
-  // public currentUser: Observable<any>;
-
-  // // Replace this with your backend API base URL
-  // private apiBaseUrl = 'http://localhost:8085/api/';
-
-  // constructor(private http: HttpClient) {
-  //   this.currentUserSubject = new BehaviorSubject<any>(
-  //     JSON.parse(localStorage.getItem('currentUser') || '{}')
-  //   );
-  //   this.currentUser = this.currentUserSubject.asObservable();
-  // }
-
-  // public get currentUserValue(): any {
-  //   return this.currentUserSubject.value;
-  // }
-
-  // register(user: any): Observable<any> {
-  //   return this.http.post<any>(`${this.apiBaseUrl}/register`, user).pipe(
-  //     map((response) => {
-  //       // store user details and jwt token in local storage
-  //       localStorage.setItem('currentUser', JSON.stringify(response));
-  //       this.currentUserSubject.next(response);
-  //       return response;
-  //     })
-  //   );
-  // }
-
-  // login(email: string, password: string): Observable<any> {
-  //   return this.http
-  //     .post<any>(`${this.apiBaseUrl}/user/login`, { email, password })
-  //     .pipe(
-  //       map((response) => {
-  //         // store user details and jwt token in local storage
-  //         localStorage.setItem('currentUser', JSON.stringify(response));
-  //         this.currentUserSubject.next(response);
-  //         return response;
-  //       })
-  //     );
-  // }
-
-  // logout(): void {
-  //   // remove user from local storage and set current user to null
-  //   localStorage.removeItem('currentUser');
-  //   this.currentUserSubject.next(null);
-  // }
-
-  // private email: string = '';
-  // private password: string = '';
-  // public isLogged: boolean = false;
-
-  // setEmailAddress(email: string): void {
-  //   this.email = email;
-  // }
-  // setPassword(password: string): void {
-  //   this.password = password;
-  // }
-
-  // setIsLogged(isLogged: boolean): void {
-  //   this.isLogged = isLogged;
-  //   console.log('ss', this.getIsUserLogged());
-  // }
-
-  // getEmailAddress(): string {
-  //   return this.email;
-  // }
-  // getPassword(): string {
-  //   return this.password;
-  // }
-
-  // getIsUserLogged(): boolean {
-  //   return this.isLogged;
-  // }
-  // getUserInput() {
-  //   return {
-  //     emp_email: this.getEmailAddress(),
-  //     emp_password: this.getPassword(),
-  //   };
-  // }
-  // // New Subject to notify the component about authentication status
-  // private authenticationStatusSubject = new Subject<boolean>();
-
-  // // Observable to which the component can subscribe
-  // authenticationStatus$ = this.authenticationStatusSubject.asObservable();
-  // authenticate() {
-  //   this.http.post(`${this.apiBaseUrl}/login`, this.getUserInput()).subscribe(
-  //     (resultData: any) => {
-  //       console.log(resultData.status);
-  //       if (resultData.status) {
-  //         this.setIsLogged(resultData.status);
-  //         this.authenticationStatusSubject.next(this.getIsUserLogged());
-  //       }
-  //     },
-  //     (error) => {
-  //       console.error('Error logging in:', error);
-
-  //       // Access the status code
-  //       const statusCode = error.status;
-  //       console.log('Status Code:', statusCode);
-
-  //       if (statusCode === 401) {
-  //         alert('Invalid email or password');
-  //       } else if (statusCode === 500) {
-  //         alert('Internal Server Error');
-  //       }
-
-  //       // Notify the component about the authentication failure
-  //       this.authenticationStatusSubject.next(false);
-  //     }
-  //   );
-  // }
-  // authenticate() {
-  //   this.http.post(`${this.apiBaseUrl}/login`, this.getUserInput()).subscribe(
-  //     (resultData: any) => {
-  //       console.log(resultData.status);
-  //       this.setIsLogged(resultData.status);
-  //     },
-  //     (error) => {
-  //       console.error('Error logging in:', error);
-
-  //       // Access the status code
-  //       const statusCode = error.status;
-  //       console.log('Status Code:', statusCode);
-
-  //       if (statusCode === 401) {
-  //         alert('Invalid email or password');
-  //       } else if (statusCode === 500) {
-  //         alert('Internal Server Error');
-  //       }
-  //     }
-  //   );
-  // }
-
   private apiBaseUrl = 'http://localhost:8085/api';
-
   private email: string = '';
   private password: string = '';
+  private empDeptSubject = new BehaviorSubject<string>('');
   private isAuthenticatedSubject = new BehaviorSubject<boolean>(false);
-
+  private empNumberSubject = new BehaviorSubject<string>('');
+  private userRoleSubject = new BehaviorSubject<string>('');
+  private updateStatusSubject = new BehaviorSubject<boolean>(false);
   isAuthenticated$ = this.isAuthenticatedSubject.asObservable();
+  userRole$: Observable<string> = this.userRoleSubject.asObservable();
+  empDept$: Observable<string> = this.empDeptSubject.asObservable();
+  empNumber$: Observable<string> = this.empNumberSubject.asObservable();
+  updateStatus$: Observable<boolean> = this.updateStatusSubject.asObservable();
+  constructor(
+    private http: HttpClient,
+    public dialog: MatDialog,
+    private snackBar: MatSnackBar
+  ) {}
 
-  constructor(private http: HttpClient, public dialog: MatDialog) {}
-
+  private setUpdateStatus(status: boolean): void {
+    this.updateStatusSubject.next(status);
+  }
+  getUpdateStatus(): Observable<boolean> {
+    return this.updateStatus$;
+  }
   setEmailAddress(email: string): void {
     this.email = email;
   }
@@ -173,17 +56,52 @@ export class AuthService {
       emp_password: this.password,
     };
   }
+
+  private setUserRole(role: string): void {
+    this.userRoleSubject.next(role);
+  }
+
+  private setEmployeeDepartment(empDept: string): void {
+    this.empDeptSubject.next(empDept);
+  }
+  private setEmployeeNumber(empNumber: string): void {
+    this.empNumberSubject.next(empNumber);
+  }
+
+  getAuthenticationStatus(): Observable<boolean> {
+    return this.isAuthenticated$;
+  }
+
+  getUserRole(): Observable<string> {
+    return this.userRole$;
+  }
+
+  getEmployeeDepartment(): Observable<string> {
+    return this.empDept$;
+  }
+
+  getEmployeeNumber(): Observable<string> {
+    return this.empNumber$;
+  }
+
+  getEmployeeDetails(emp_number: string): Observable<any> {
+    const params = new HttpParams().set('emp_number', emp_number);
+    return this.http.get(`${this.apiBaseUrl}/get/employee-details`, { params });
+  }
+
   authenticate(): void {
     this.http.post(`${this.apiBaseUrl}/login`, this.getUserInput()).subscribe({
-      next: (resultData: any) => {
-        this.setIsLogged(resultData.status);
+      next: (response: any) => {
+        this.setIsLogged(response.status);
+        this.setUserRole(response.data.emp_role);
+        this.setEmployeeDepartment(response.data.emp_dept);
+        this.setEmployeeNumber(response.data.emp_number);
       },
 
       error: (error) => {
         const statusCode = error.status;
-
         if (statusCode === 401) {
-          // alert('Invalid email or password');
+          this.openSnackBar('Invalid Email or Password', 'Close');
         } else if (statusCode === 500) {
           this.dialog.open(DialogBoxComponent, {
             width: '300px',
@@ -195,16 +113,14 @@ export class AuthService {
                 'Oops! Something went wrong on the server. Please try again later.',
               buttons: [
                 {
-                  isVisible: false,
+                  isVisible: true,
                   matDialogCloseValue: false,
-                  content: '',
-                  tailwindClass: 'text-gray-600',
+                  content: 'Retry',
                 },
                 {
-                  isVisible: true,
+                  isVisible: false,
                   matDialogCloseValue: true,
-                  content: 'Retry',
-                  tailwindClass: 'text-red-500',
+                  content: '',
                 },
               ],
             },
@@ -215,50 +131,28 @@ export class AuthService {
       },
     });
   }
-  // authenticate(): void {
-  //   this.http.post(`${this.apiBaseUrl}/login`, this.getUserInput()).subscribe(
-  //     (resultData: any) => {
-  //       this.setIsLogged(resultData.status);
-  //     },
-  //     (error) => {
-  //       const statusCode = error.status;
 
-  //       if (statusCode === 401) {
-  //         // alert('Invalid email or password');
-  //       } else if (statusCode === 500) {
-  //         this.dialog.open(DialogBoxComponent, {
-  //           width: '300px',
-  //           enterAnimationDuration: '200ms',
-  //           exitAnimationDuration: '400ms',
-  //           data: {
-  //             title: 'Internal Server Error',
-  //             content:
-  //               'Oops! Something went wrong on the server. Please try again later.',
-  //             buttons: [
-  //               {
-  //                 isVisible: false,
-  //                 matDialogCloseValue: false,
-  //                 content: '',
-  //                 tailwindClass: 'text-gray-600',
-  //               },
-  //               {
-  //                 isVisible: true,
-  //                 matDialogCloseValue: true,
-  //                 content: 'Retry',
-  //                 tailwindClass: 'text-red-500',
-  //               },
-  //             ],
-  //           },
-  //         });
-  //       }
-
-  //       this.setIsLogged(false);
-  //     }
-  //   );
-  // }
-
-  getAuthenticationStatus(): Observable<boolean> {
-    return this.isAuthenticated$;
+  updateUserInformation(info: IUserList): void {
+    this.http.post(`${this.apiBaseUrl}/update/user`, info).subscribe({
+      next: (response) => {
+        const status = Object.values(response);
+        this.setUpdateStatus(status[0]);
+      },
+      error: (error) => {
+        this.openSnackBar(`User update failed`, 'close', 'bottom');
+      },
+    });
   }
-  
+  openSnackBar(
+    message: string,
+    action: string,
+    position: MatSnackBarVerticalPosition = 'top'
+  ): void {
+    const config: MatSnackBarConfig = {
+      duration: 10000,
+      verticalPosition: position,
+    };
+
+    this.snackBar.open(message, action, config);
+  }
 }

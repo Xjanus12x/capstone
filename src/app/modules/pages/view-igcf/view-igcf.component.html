@@ -1,0 +1,174 @@
+<div class="relative p-4 text-black">
+    <ng-container *ngIf="isLoadingResults; else table">
+        <div class="grid min-h-[40rem] place-content-center">
+            <mat-spinner></mat-spinner>
+        </div>
+    </ng-container>
+    <ng-template #table>
+        <div class="flex items-center justify-center gap-8 p-4">
+            <img class="aspect-square max-w-[8rem]" src="../../../../assets/images/logo/hau-logo.png" alt="HAU logo">
+            <div class="font-bold text-center">
+                <p>HOLY ANGEL UNIVERSITY</p>
+                <p>Human Resource Management Office</p>
+                <p>Human Resource Development</p>
+            </div>
+            <div class="p-1 border border-black">
+                <p>FM-HRD-6020</p>
+                <p>Revisions:0</p>
+                <p>Effective Date: {{ deadline ? (deadline | date) : 'No deadline set' }}</p>
+            </div>
+        </div>
+
+        <div class="text-center">
+            <h2 class="text-2xl font-bold">Individual Goal Commitment Form</h2>
+            <p class="font-semibold">(Outcome-based Performance Evaluation)</p>
+        </div>
+
+        <div class="flex justify-center p-4">
+            <div class="grid gap-2">
+                <p class="max-w-[60ch] font-bold">Immediate Supervisor rates accomplishment of corresponding
+                    employee
+                    using the following
+                    Evaluation
+                    Rating
+                    Equivalents:</p>
+                <ul class="grid gap-2">
+                    <li class="flex gap-8">
+                        <span>1.00 – 1.50</span>
+                        <p>Failed to deliver agreed individual goal commitment</p>
+                    </li>
+                    <li class="flex gap-8">
+                        <span>1.51 – 2.50</span>
+                        <p>Partially delivered agreed individual goal commitment</p>
+                    </li>
+                    <li class="flex gap-8">
+                        <span>2.51 – 3.50</span>
+                        <p>Delivered agreed individual goal commitment</p>
+                    </li>
+                    <li class="flex gap-8">
+                        <span>3.51 – 4.00</span>
+                        <p>Exceeded or Delivered beyond individual goal commitment</p>
+                    </li>
+                </ul>
+            </div>
+
+        </div>
+
+        <div class="flex p-4 justify-evenly">
+            <div>
+                <p class="font-bold">
+                    Employee Name: <span class="font-semibold underline">{{fullName}}</span>
+                </p>
+                <p class="font-bold">Position: <span class="font-semibold underline">{{empPosition
+                        }}</span></p>
+                <p class="font-bold">Overall Weighted Average Rating: <span
+                        class="font-semibold underline">{{overallWeightedAverageRating}}</span></p>
+            </div>
+            <div>
+                <p class="font-bold">Employee No. <span class="font-semibold underline">{{empNumber}}</span></p>
+                <p class="font-bold">Dept./Unit: <Span class="font-semibold underline">{{empDept}}</Span>
+                </p>
+                <p class="font-bold ">Equivalent Description: <Span
+                        class="font-semibold underline">{{equivalentDescription}}</Span>
+                </p>
+            </div>
+
+        </div>
+
+
+        <table class="mx-auto border border-collapse border-black table-auto">
+            <thead>
+                <tr>
+                    <th class="px-4 py-2 border border-black " *ngFor="let tableHeader of tableHeaders">
+                        {{tableHeader}}</th>
+                </tr>
+            </thead>
+            <tbody>
+                <ng-container *ngFor="let igcfValue of partOneIgcfValues;let i = index">
+                    <tr>
+                        <td colspan="5" class='px-4 py-2 font-bold tracking-widest text-white border border-black'
+                            [ngClass]="{'bg-blue-500':i===0,'bg-yellow-500':i===1,'bg-green-500':i===2,'bg-orange-500':i===3,'bg-violet-500':i===4}">
+                            {{ igcfValue.category }}
+                        </td>
+                    </tr>
+                    <tr>
+                        <td class="px-4 py-2 border border-black">Key Performance Indicators (KPIs)</td>
+                        <td class="px-4 py-2 border border-black">{{igcfValue.selectedWeightPercentage}}%</td>
+                        <td class="px-4 py-2 border border-black">{{igcfValue.selectedIgcPercentage}}%</td>
+                        <td class="px-4 py-2 border border-black">{{igcfValue.selectedCommitmentPercentage}}%
+                        </td>
+                        <td class="px-4 py-2 border border-black"></td>
+                    </tr>
+                    <tr *ngFor="let igcfValue2 of igcfValue[arrayNames[i]]; let j = index">
+                        <td class="px-4 py-2 border border-black divide-x divide-black">
+                            {{j+1}}. {{igcfValue2.commitment}}
+                        </td>
+                        <td class="px-4 py-2 border border-black">{{igcfValue2.weight}}%</td>
+                        <td class="px-4 py-2 border border-black">{{igcfValue2.individualGoalCommitment}}%</td>
+                        <td class="px-4 py-2 border border-black">{{igcfValue2.accomplishment}}%</td>
+                        <td class="px-4 py-2 border border-black">{{igcfValue2.rating}}</td>
+                    </tr>
+                </ng-container>
+            </tbody>
+        </table>
+
+        <div class="grid gap-8 p-4 place-content-center">
+
+
+            <div *ngFor="let question of partTwoQuestions; let i = index">
+                <h2 class="font-bold">{{question}}</h2>
+                <ul class="pl-8 list-disc" *ngFor="let value of partTwoIgcfValues[i]">
+                    <li>{{value}}</li>
+                </ul>
+            </div>
+
+            <h2 class="italic font-semibold max-w-[60ch] text-center">This is to certify that above ratings and
+                comments were
+                explained thoroughly by the rater.
+                This further certifies that
+                the ratee understands and agrees with the above ratings and comments.</h2>
+
+            <div class="flex gap-8 justify-normal">
+                <div class="text-center">
+                    <p>Rater’s Signature over Printed Name</p>
+                    <h2 class="font-bold underline">{{fullName | uppercase}}</h2>
+                    <img class="max-h-[6rem] mx-auto" [src]="raterSignature" alt="">
+                    <h3 class="font-bold underline">{{raterDateSigned}}</h3>
+                </div>
+                <div class="text-center">
+                    <ng-container *ngIf="!rateeSignInfo; else signed">
+                        <h2 class="font-bold underline">Name:</h2>
+                        <h3 class="font-bold underline">Signature:
+                        </h3>
+                        <h3 class="font-bold underline">Date:</h3>
+                    </ng-container>
+
+                    <ng-template #signed>
+                        <p>Ratee’s Signature over Printed Name</p>
+                        <h2 class="font-bold underline">{{(rateeSignInfo?.rateeFullName | uppercase) }}
+                        </h2>
+                        <img class="max-h-[6rem] mx-auto " [src]="rateeSignInfo?.rateeSignature" alt="">
+                        <h3 class="font-bold underline">{{rateeSignInfo?.rateeDateSigned }}</h3>
+                    </ng-template>
+                </div>
+            </div>
+        </div>
+        <ng-container *ngIf="(userRole$ | async) as role">
+            <div class="sticky inset-0 flex items-center justify-between"
+                *ngIf="role === 'Admin' || role === 'Viewer' || isRouteActive()">
+
+                <button
+                    class="grid p-4 text-white transition duration-300 ease-in-out bg-red-800 rounded-full place-content-center hover:bg-red-600 "
+                    matTooltip="Previous IGCF" matTooltipPosition="above">
+                    <mat-icon>keyboard_arrow_left</mat-icon>
+                </button>
+                <button
+                    class="grid p-4 text-white transition duration-300 ease-in-out bg-red-800 rounded-full place-content-center hover:bg-red-600"
+                    matTooltip="Next IGCF" matTooltipPosition="above">
+                    <mat-icon>keyboard_arrow_right</mat-icon>
+                </button>
+            </div>
+        </ng-container>
+
+    </ng-template>
+</div>

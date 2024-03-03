@@ -1,15 +1,122 @@
-<app-header></app-header>
-<div class="relative grid min-h-full bg-orange-500 ">
-    <div class="absolute left-0 z-50 w-20 min-h-full p-2 bg-red-800">
-        <app-side-toolbar></app-side-toolbar>
-    </div>
+<div class="grid min-h-full ">
     <app-sidenav>
-        <div class="min-h-full mx-auto max-w-7xl">
-            <app-dashboard-header></app-dashboard-header>
-            <div class="grid gap-3">
-                <router-outlet name="dashboardContent"></router-outlet>
-            </div>
+        <app-header></app-header>
+        <div class="container mt-4 bg-white rounded-md shadow-xl max-h-[45rem] overflow-auto">
+            <ng-container *ngIf="!isRouteActive(); else outlet">
+                <ng-container *ngIf="isLoadingResults; else table">
+                    <div class="grid min-h-[40rem] place-content-center">
+                        <mat-spinner></mat-spinner>
+                    </div>
+                </ng-container>
+
+                <ng-template #table>
+                    <div class="pt-8 space-y-4">
+                        <div class="grid grid-cols-6 bg-white">
+                            <div class="grid col-span-5">
+                                <mat-form-field>
+                                    <mat-label>Filter</mat-label>
+                                    <input matInput (input)="applyFilter($event)" placeholder="Ex. Hello" #input>
+                                </mat-form-field>
+                            </div>
+
+                            <div class="grid">
+                                <mat-form-field class="mx-auto">
+                                    <mat-label>Select Date Of IGCF's</mat-label>
+                                    <mat-select (valueChange)="filterSubmittedIgcf($event)">
+                                        <mat-option *ngFor="let year of deadlineYears" [value]="year">
+                                            {{ year }} - IGCF'S
+                                        </mat-option>
+                                    </mat-select>
+                                </mat-form-field>
+                            </div>
+                        </div>
+                        <div class="bg-white">
+                            <table mat-table [dataSource]="dataSource" matSort id="temp">
+                                <!-- Manually define column headers -->
+                                <ng-container *ngFor="let column of displayedColumns; let i = index"
+                                    [matColumnDef]="column">
+                                    <mat-header-cell mat-header-cell *matHeaderCellDef mat-sort-header>{{
+                                        displayedHeader[i]
+                                        }}</mat-header-cell>
+                                    <mat-cell mat-cell *matCellDef="let element">
+                                        {{ column === 'fullname'?
+                                        element[column].toUpperCase() : element[column] }}
+                                    </mat-cell>
+                                </ng-container>
+
+                                <ng-container matColumnDef="isSigned">
+                                    <mat-header-cell mat-header-cell *matHeaderCellDef mat-sort-header> Status
+                                    </mat-header-cell>
+                                    <mat-cell mat-cell *matCellDef="let element">
+                                        <span
+                                            [ngClass]="{'bg-green-200': element.isSigned,'bg-red-200':!element.isSigned}"
+                                            class="p-1 font-extrabold rounded-md">
+                                            {{element.isSigned? 'Signed': 'Not sign'}}
+                                        </span>
+                                    </mat-cell>
+                                </ng-container>
+
+                                <!-- Manually define the "actions" column -->
+                                <ng-container matColumnDef="actions" *ngIf="userRole$ | async as role">
+                                    <mat-header-cell mat-header-cell *matHeaderCellDef> Actions </mat-header-cell>
+                                    <mat-cell class="flex flex-wrap" mat-cell *matCellDef="let element">
+                                        <ng-container *ngIf="role === 'Admin'">
+                                            <button mat-icon-button matTooltip="Rate IGCF"
+                                                [routerLink]="['/dashboard', { outlets: { dashboardContent: ['submitted-form', element.id, element.ratee_signature.length !== 0 ]} }]">
+                                                <mat-icon>star</mat-icon>
+                                            </button>
+                                        </ng-container>
+                                        <button mat-icon-button color="primary" matTooltip="View IGCF"
+                                            [routerLink]="['/dashboard', { outlets: { dashboardContent: ['view-igcf',  element.id]} }]">
+                                            <mat-icon>visibility</mat-icon>
+                                        </button>
+                                        <ng-container *ngIf="role === 'Admin' || role === 'Regular'">
+                                            <button mat-icon-button color="warn" matTooltip="Delete row"
+                                                (click)="deleteSubmittedIgcf(element.id)">
+                                                <mat-icon>delete</mat-icon>
+                                            </button>
+                                        </ng-container>
+                                    </mat-cell>
+                                </ng-container>
+
+
+                                <mat-header-row *matHeaderRowDef="concatColumns('isSigned','actions')"></mat-header-row>
+                                <mat-row matRipple
+                                    *matRowDef=" let row; columns: concatColumns('isSigned','actions')"></mat-row>
+
+                                <!-- Row shown when there is no matching data. -->
+                                <tr class="text-lg text-center" *matNoDataRow>
+                                    <ng-container *ngIf="input.value === '';else noSubmitted ">
+                                        <td class="p-4" colspan="4">
+                                            No one has submitted IGCF yet.
+                                        </td>
+                                    </ng-container>
+                                    <ng-template #noSubmitted>
+                                        <td class="p-4" colspan="4">
+                                            No data matching the filter
+                                            "<span class="font-bold text-red-600">{{input.value}}</span>"
+                                        </td>
+                                    </ng-template>
+                                </tr>
+
+                            </table>
+
+                            <!-- Add paginator if needed -->
+                            <mat-paginator [pageSizeOptions]="[5, 10, 25]" showFirstLastButtons></mat-paginator>
+                        </div>
+                    </div>
+                </ng-template>
+
+            </ng-container>
+
+            <ng-template #outlet>
+                <div class="mt-4">
+                    <router-outlet name="dashboardContent"></router-outlet>
+                </div>
+            </ng-template>
+
+
+
         </div>
     </app-sidenav>
 </div>
-<app-footer></app-footer>

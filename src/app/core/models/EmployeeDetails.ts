@@ -4,6 +4,7 @@ export interface IEmployeeDetails {
   emp_lastname: string;
   emp_number: string;
   emp_department: string;
+  emp_dept?: string;
   emp_position: string;
   emp_signature: string;
 }

@@ -5,16 +5,18 @@ import { BehaviorSubject } from 'rxjs/internal/BehaviorSubject';
 })
 export class ToggleSideNavService {
   constructor() {}
-  private isOpenSubject = new BehaviorSubject<boolean>(false);
-
+  private isOpenSubject = new BehaviorSubject<boolean>(true);
   isOpen$ = this.isOpenSubject.asObservable();
 
-  openDrawer() {
-    this.isOpenSubject.next(true);
+  toggleDrawer(isOpen: boolean): void {
+    this.isOpenSubject.next(isOpen);
   }
 
-  closeDrawer() {
-    this.isOpenSubject.next(false);
-   
-  }
+  // openDrawer() {
+  //   this.isOpenSubject.next(true);
+  // }
+
+  // closeDrawer() {
+  //   this.isOpenSubject.next(false);
+  // }
 }

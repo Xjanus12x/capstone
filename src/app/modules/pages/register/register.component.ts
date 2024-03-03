@@ -8,8 +8,6 @@ import {
   FormBuilder,
   FormControl,
   FormGroup,
-  FormGroupDirective,
-  NgForm,
   Validators,
 } from '@angular/forms';
 import {
@@ -23,10 +21,11 @@ import { MatDialog } from '@angular/material/dialog';
 import { DialogBoxComponent } from '../../components/dialog-box/dialog-box.component';
 import { IDeactivateComponent } from 'src/app/core/models/DeactivateComponent';
 import { Observable, map } from 'rxjs';
-import { createExitConfirmationDialogConfig } from 'src/app/shared/utils/confirmation-dialog-config';
 import { removeLeadingAndTrailingSpaces } from 'src/app/shared/utils/removeLeadingAndTrailingSpaces';
 import { Router } from '@angular/router';
 import { emailExistenceValidator } from 'src/app/core/Validators/emailExistenceValidator';
+import { IDialogBox } from 'src/app/core/models/DialogBox';
+import { departmentNamesMap } from 'src/app/core/constants/DepartmentData';
 
 @Component({
   selector: 'app-register',
@@ -37,19 +36,25 @@ import { emailExistenceValidator } from 'src/app/core/Validators/emailExistenceV
 export class RegisterComponent implements AfterViewInit, IDeactivateComponent {
   registrationFormGroup!: FormGroup;
   roles: string[] = ['Admin', 'Regular', 'Viewer Only'];
-  departments: string[] = ['dept1', 'dept2', 'dept3', 'dept4'];
+
+  departments: string[] = Array.from(departmentNamesMap.keys());
 
   signature: string = '';
-
   @ViewChild('signature')
   public signaturePad!: SignaturePadComponent;
+  dialogBoxConfig = {
+    width: '300px',
+    enterAnimationDuration: '200ms',
+    exitAnimationDuration: '400ms',
+  };
+
   constructor(
     private _formBuilder: FormBuilder,
     private backendService: BackendService,
     public dialog: MatDialog,
     private router: Router
   ) {
-    const emailPattern = /^.*[a-zA-Z]@hau\.edu\.ph[^0-9]$/;
+    // const emailPattern = /^.*[a-zA-Z]@hau\.edu\.ph[^0-9]$/;
     const passwordPattern = /^(?=.*[a-zA-Z])(?=.*\d)/;
 
     this.registrationFormGroup = this._formBuilder.group({
@@ -64,19 +69,16 @@ export class RegisterComponent implements AfterViewInit, IDeactivateComponent {
         email: [
           '',
           {
-            validators: [
-              Validators.required,
-              Validators.pattern(passwordPattern),
-            ],
+            validators: [Validators.required, Validators.email],
             asyncValidators: [emailExistenceValidator(this.backendService)],
-            // updateOn: 'blur', // or 'change' based on your preference
+            updateOn: 'blur',
           },
         ],
         password: [
           '',
           [
             Validators.required,
-            Validators.minLength(8),
+            Validators.minLength(1),
             Validators.pattern(passwordPattern),
           ],
         ],
@@ -127,7 +129,13 @@ export class RegisterComponent implements AfterViewInit, IDeactivateComponent {
   }
 
   getUserAccountData(): IUserAccount {
-    return this.registrationFormGroup.get('userAccountFormGroup')?.value;
+    const emp_number = this.registrationFormGroup
+      .get('personalInformationFormGroup')
+      ?.get('emp_number')?.value;
+    return {
+      ...this.registrationFormGroup.get('userAccountFormGroup')?.value,
+      emp_number,
+    };
   }
 
   register(): void {
@@ -148,76 +156,58 @@ export class RegisterComponent implements AfterViewInit, IDeactivateComponent {
       return;
     }
 
-    const dialogConfig = createExitConfirmationDialogConfig(
-      'Incomplete Registration',
-      'Please fill in all the required information before registering.',
-      [
-        {
-          isVisible: false,
-          matDialogCloseValue: false,
-          content: '',
-          tailwindClass: '',
-        },
+    const dialogBoxData = {
+      title: 'Incomplete Registration',
+      content:
+        'Please fill in all the required information before registering.',
+      buttons: [
         {
           isVisible: true,
-          matDialogCloseValue: true,
+          matDialogCloseValue: false,
           content: 'Ok',
-          tailwindClass: 'text-red-500',
         },
-      ]
-    );
+        {
+          isVisible: false,
+          matDialogCloseValue: true,
+          content: '',
+        },
+      ],
+    };
 
-    this.dialog.open(DialogBoxComponent, dialogConfig);
+    this.dialog.open(DialogBoxComponent, {
+      ...this.dialogBoxConfig,
+      data: dialogBoxData,
+    });
   }
 
-  // Helper function to check if all form controls have a value
-  areAllControlsFilled(formGroup: FormGroup): boolean {
-    for (const controlName in formGroup.controls) {
-      const control = formGroup.controls[controlName];
-
-      // If it's a nested FormGroup, recursively check its controls
-      if (control instanceof FormGroup) {
-        if (!this.areAllControlsFilled(control)) {
-          return false;
-        }
-      } else {
-        // Check if the control has a value
-        if (control.value === '' || control.value === null) {
-          return false;
-        }
-      }
-    }
-
-    return true;
-  }
   isAllInputFilled(): boolean {
-    return (
-      this.areAllControlsFilled(this.registrationFormGroup) && !!this.signature
-    );
+    return this.registrationFormGroup.valid && !!this.signature;
   }
 
   canExit(): boolean | Promise<boolean> | Observable<boolean> {
     if (this.isAllInputFilled()) return true; // Allow navigation
-
-    const dialogConfig = createExitConfirmationDialogConfig(
-      'Confirm Exit',
-      'Are you sure you want to exit? Your registration information is incomplete.',
-      [
+    const dialogBoxData: IDialogBox = {
+      title: 'Confirm Exit',
+      content:
+        'Are you sure you want to exit? Your registration information is incomplete.',
+      buttons: [
         {
           isVisible: true,
           matDialogCloseValue: false,
           content: 'No',
-          tailwindClass: 'text-red-500',
         },
         {
           isVisible: true,
           matDialogCloseValue: true,
           content: 'Yes',
-          tailwindClass: 'text-red-500',
         },
-      ]
-    );
-    const dialogRef = this.dialog.open(DialogBoxComponent, dialogConfig);
+      ],
+    };
+
+    const dialogRef = this.dialog.open(DialogBoxComponent, {
+      ...this.dialogBoxConfig,
+      data: dialogBoxData,
+    });
 
     return dialogRef.afterClosed().pipe(
       map((result) => {

@@ -1,0 +1,53 @@
+<div class="grid gap-8 p-8 text-black">
+    <!-- <ng-container *ngIf="isLoadingResults; else done">
+        <div class="grid min-h-[40rem] place-content-center">
+            <mat-spinner></mat-spinner>
+        </div>
+    </ng-container> -->
+    <!-- <ng-template #done>
+        <button (click)="generatePDF()">Click</button>
+    </ng-template> -->
+    <div class="flex justify-center">
+
+        <button mat-icon-button (click)="generatePDF()" matTooltip="Generate IGCF PDF">
+            <mat-icon>picture_as_pdf</mat-icon>
+        </button>
+
+
+
+        <div class="grid">
+            <mat-form-field class="mx-auto">
+                <mat-label>Select Date Of Statistics</mat-label>
+                <mat-select (valueChange)="filterSubmittedIgcf($event)">
+                    <mat-option>--None--</mat-option>
+                    <mat-option *ngFor="let year of deadlineYears" [value]="year">
+                        {{ year }} - Statistics
+                    </mat-option>
+                </mat-select>
+            </mat-form-field>
+        </div>
+    </div>
+
+
+
+    <div class="flex justify-center">
+        <div class=" aspect-square">
+            <h2 class="font-bold text-center">Signature Status</h2>
+            <canvas id='signedAndNotSignedChart' width="500" height="500"></canvas>
+        </div>
+        <ng-container>
+            <div class=" aspect-square">
+                <h2 class="font-bold text-center">Employee's Overall Weighted Ratings Distribution:</h2>
+                <canvas id="empEquivalentRatings" width="500" height="500"></canvas>
+            </div>
+        </ng-container>
+    </div>
+    <div class="flex justify-center">
+        <ng-container *ngIf="role === 'Viewer Only'">
+            <div class="aspect-square">
+                <h2 class="font-bold text-center">Total Equivalent Ratings Per Department:</h2>
+                <canvas id="totalEquivalentRatings" width="500" height="500"></canvas>
+            </div>
+        </ng-container>
+    </div>
+</div>

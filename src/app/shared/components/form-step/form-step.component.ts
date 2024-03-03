@@ -1,4 +1,4 @@
-import { AfterViewInit, Component, Input, OnInit } from '@angular/core';
+import { AfterViewInit, Component, Input } from '@angular/core';
 import {
   FormBuilder,
   Validators,
@@ -6,7 +6,7 @@ import {
   FormGroup,
   FormArray,
 } from '@angular/forms';
-import { FormStepService } from '../../services/form-step.service';
+
 
 @Component({
   selector: 'app-form-step',
@@ -20,7 +20,7 @@ export class FormStepComponent {
   @Input() labels: string[] = [];
   @Input() index: number = 0;
 
-  constructor(private fb: FormBuilder, private FormStep: FormStepService) {
+  constructor(private fb: FormBuilder, ) {
     this.igfFormGroup = this.fb.group({});
     this.arr = this.fb.array([]);
   }

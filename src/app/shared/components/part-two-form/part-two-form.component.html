@@ -1,0 +1,36 @@
+<mat-stepper orientation="vertical" [formGroup]="formGroup">
+    <div *ngFor="let formControlName of formArrayNames; let i = index">
+
+        <mat-step [stepControl]="getStepControl(formControlName)">
+            <ng-template matStepLabel>{{ stepLabel[i] }}</ng-template>
+            <div class="py-8">
+                <table [formArrayName]="formControlName">
+                    <tr class="flex" *ngFor="let control of getFormControls(formGroup,formControlName); let j = index">
+                        <td>
+
+                            <mat-form-field>
+                                <mat-label>{{ j + 1 }}</mat-label>
+                                <input matInput [formControlName]="j"
+                                    [class.disabled:text-red-500]="isControlDisabled(formGroup,formControlName)"
+                                    required>
+                                <mat-error
+                                    *ngIf="getFormControl(formGroup, formControlName, j)?.hasError('required') && !getFormControl(formGroup, formControlName, j)?.hasError('minlength')">
+                                    This field is required.
+                                </mat-error>
+                                <mat-error
+                                    *ngIf="!getFormControl(formGroup, formControlName, j)?.hasError('required') && getFormControl(formGroup, formControlName, j)?.hasError('minlength')">
+                                    Minimum length is 5.
+                                </mat-error>
+                            </mat-form-field>
+
+                        </td>
+                    </tr>
+                </table>
+            </div>
+            <div>
+                <button *ngIf=" i !==0" mat-button matStepperPrevious>Back</button>
+                <button mat-button matStepperNext *ngIf="formGroupLength !== i">Next</button>
+            </div>
+        </mat-step>
+    </div>
+</mat-stepper>

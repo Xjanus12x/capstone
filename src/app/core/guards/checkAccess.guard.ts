@@ -7,6 +7,10 @@ import {
   UrlTree,
 } from '@angular/router';
 import { Observable, map } from 'rxjs';
+import { IDialogBox } from '../models/DialogBox';
+import { DialogBoxComponent } from 'src/app/modules/components/dialog-box/dialog-box.component';
+import { MatDialog } from '@angular/material/dialog';
+import { dialogBoxConfig } from '../constants/DialogBoxConfig';
 
 export const checkAccess = (): Observable<boolean | UrlTree> | boolean => {
   const authService = inject(AuthService);
@@ -23,6 +27,7 @@ export const checkAccess = (): Observable<boolean | UrlTree> | boolean => {
     })
   );
 };
+
 export const canActivate = (
   route: ActivatedRouteSnapshot,
   state: RouterStateSnapshot
@@ -43,4 +48,41 @@ export const canActivateChild = (
   | boolean
   | UrlTree => {
   return checkAccess();
+};
+
+export const canActivateAdminRoutes = (
+  route: ActivatedRouteSnapshot,
+  state: RouterStateSnapshot
+):
+  | Observable<boolean | UrlTree>
+  | Promise<boolean | UrlTree>
+  | boolean
+  | UrlTree => {
+  const authService = inject(AuthService);
+  const dialog = inject(MatDialog);
+
+  return authService.getUserRole().pipe(
+    map((role) => {
+      if (role === 'Admin') {
+        return true;
+      } else {
+        const dialogBoxData: IDialogBox = {
+          title: 'Unauthorized Access',
+          content: 'You do not have permission to access this page.',
+          buttons: [
+            {
+              isVisible: true,
+              matDialogCloseValue: false,
+              content: 'Ok',
+            },
+          ],
+        };
+        dialog.open(DialogBoxComponent, {
+          ...dialogBoxConfig,
+          data: dialogBoxData,
+        });
+        return false;
+      }
+    })
+  );
 };

@@ -1,0 +1,78 @@
+<div class="pt-8 space-y-4">
+    <div class="grid bg-white">
+        <mat-form-field>
+            <mat-label>Filter</mat-label>
+            <input matInput (input)="applyFilter($event)" placeholder="Ex. Hello" #input>
+        </mat-form-field>
+    </div>
+    <div class="bg-white">
+        <table mat-table [dataSource]="dataSource" matSort id="temp">
+            <!-- Manually define column headers -->
+            <ng-container *ngFor="let column of displayedColumns; let i = index" [matColumnDef]="column">
+
+                <mat-header-cell mat-header-cell *matHeaderCellDef mat-sort-header>
+                    {{
+                    displayedHeader[i]
+                    }}
+                </mat-header-cell>
+
+                <mat-cell mat-cell *matCellDef="let element">
+                    {{ column === 'fullname'?
+                    element[column].toUpperCase() : element[column] }}
+                </mat-cell>
+            </ng-container>
+
+            <ng-container matColumnDef="isSigned">
+                <mat-header-cell mat-header-cell *matHeaderCellDef mat-sort-header> Status
+                </mat-header-cell>
+                <mat-cell mat-cell *matCellDef="let element">
+                    <span [ngClass]="{'bg-green-200': element.isSigned,'bg-red-200':!element.isSigned}"
+                        class="p-1 font-extrabold rounded-md">
+                        {{element.isSigned? 'Signed': 'Not sign'}}
+                    </span>
+                </mat-cell>
+            </ng-container>
+
+
+            <!-- Manually define the "actions" column -->
+            <ng-container matColumnDef="actions" *ngIf="userRole$ | async as role">
+                <mat-header-cell mat-header-cell *matHeaderCellDef> Actions </mat-header-cell>
+                <mat-cell class="flex flex-wrap" mat-cell *matCellDef="let element">
+
+                    <!-- Add update button here -->
+                    <button mat-icon-button color="accent" matTooltip="Update row" (click)="updateUser(element)">
+                        <mat-icon>edit</mat-icon>
+                    </button>
+                    <!-- Add delete button here -->
+                    <ng-container *ngIf="role === 'Admin'">
+                        <button mat-icon-button color="warn" matTooltip="Delete row" (click)="deleteUser(element.id)">
+                            <mat-icon>delete</mat-icon>
+                        </button>
+                    </ng-container>
+                </mat-cell>
+            </ng-container>
+
+
+            <mat-header-row *matHeaderRowDef="concatColumns('actions')"></mat-header-row>
+            <mat-row matRipple *matRowDef=" let row; columns: concatColumns('actions')"></mat-row>
+            <!-- Row shown when there is no matching data. -->
+            <tr class="text-lg text-center" *matNoDataRow>
+                <ng-container *ngIf="input.value === '';else noSubmitted ">
+                    <td class="p-4" colspan="4">
+                        No one has submitted IGCF yet.
+                    </td>
+                </ng-container>
+                <ng-template #noSubmitted>
+                    <td class="p-4" colspan="4">
+                        No data matching the filter
+                        "<span class="font-bold text-red-600">{{input.value}}</span>"
+                    </td>
+                </ng-template>
+            </tr>
+
+        </table>
+
+        <!-- Add paginator if needed -->
+        <mat-paginator [pageSizeOptions]="[5, 10, 25]" showFirstLastButtons></mat-paginator>
+    </div>
+</div>

@@ -15,6 +15,9 @@ import { ViewIgcfComponent } from './modules/pages/view-igcf/view-igcf.component
 import { UserListComponent } from './modules/pages/user-list/user-list.component';
 import { ReportsComponent } from './modules/pages/reports/reports.component';
 import { PercentagesListComponent } from './modules/pages/percentages-list/percentages-list.component';
+import { PendingUserListComponent } from './modules/pages/pending-user-list/pending-user-list.component';
+import { InputAllKpisComponent } from './modules/pages/input-all-kpis/input-all-kpis.component';
+import { ActionPlansComponent } from './modules/pages/action-plans/action-plans.component';
 
 const routes: Routes = [
   { path: '', redirectTo: 'login', pathMatch: 'full' },
@@ -23,7 +26,6 @@ const routes: Routes = [
     path: 'register',
     component: RegisterComponent,
     canDeactivate: [canExit],
-    canActivate: [canActivate, canActivateAdminRoutes],
   },
 
   {
@@ -34,6 +36,12 @@ const routes: Routes = [
       {
         path: 'user-list',
         component: UserListComponent,
+        outlet: 'dashboardContent',
+        canActivate: [canActivateAdminRoutes],
+      },
+      {
+        path: 'pending-user-list',
+        component: PendingUserListComponent,
         outlet: 'dashboardContent',
         canActivate: [canActivateAdminRoutes],
       },
@@ -67,17 +75,23 @@ const routes: Routes = [
         outlet: 'dashboardContent',
       },
       {
+        path: 'input-kpis',
+        component: InputAllKpisComponent,
+        outlet: 'dashboardContent',
+      },
+      {
+        path: 'action-plans',
+        component: ActionPlansComponent,
+        outlet: 'dashboardContent',
+      },
+      {
         path: 'reports',
         component: ReportsComponent,
         outlet: 'dashboardContent',
       },
     ],
   },
-  {
-    path: 'reports',
-    component: ReportsComponent,
-    // outlet: 'dashboardContent',
-  },
+
   { path: '**', component: LoginComponent },
 ];
 

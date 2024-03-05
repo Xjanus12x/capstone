@@ -21,7 +21,7 @@
 
                             <div class="grid">
                                 <mat-form-field class="mx-auto">
-                                    <mat-label>Select Date Of IGCF's</mat-label>
+                                    <mat-label>Select Year Of IGCF's</mat-label>
                                     <mat-select (valueChange)="filterSubmittedIgcf($event)">
                                         <mat-option *ngFor="let year of deadlineYears" [value]="year">
                                             {{ year }} - IGCF'S

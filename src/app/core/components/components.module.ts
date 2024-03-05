@@ -18,20 +18,19 @@ import { CalendarComponent } from './calendar/calendar.component';
 import { MatDialogModule } from '@angular/material/dialog';
 import { MatButtonModule } from '@angular/material/button';
 import { FormsModule } from '@angular/forms';
-
+import { MatMenuModule } from '@angular/material/menu';
+import { MatCardModule } from '@angular/material/card';
+import { ProfilePageComponent } from './profile-page/profile-page.component';
 @NgModule({
   declarations: [
     HeaderComponent,
     SidenavComponent,
     FooterComponent,
-    
+
     CalendarComponent,
+    ProfilePageComponent,
   ],
-  exports: [
-    HeaderComponent,
-    SidenavComponent,
-    FooterComponent,
-  ],
+  exports: [HeaderComponent, SidenavComponent, FooterComponent],
   imports: [
     CommonModule,
     MatIconModule,
@@ -47,6 +46,8 @@ import { FormsModule } from '@angular/forms';
     MatDialogModule,
     MatButtonModule,
     FormsModule,
+    MatMenuModule,
+    MatCardModule,
   ],
 })
 export class ComponentsModule {}

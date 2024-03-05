@@ -1,0 +1,88 @@
+<!-- 
+<div class="flex items-center justify-center h-screen">
+    <div class="w-full max-w-md">
+        <mat-card class="profile-card">
+            <mat-card-header>
+                <mat-card-title>User Profile</mat-card-title>
+            </mat-card-header>
+            <mat-card-content>
+                <mat-form-field class="example-full-width">
+                    <input matInput placeholder="Username" value="JohnDoe" disabled>
+                </mat-form-field>
+
+                <mat-form-field class="example-full-width">
+                    <input matInput placeholder="Email" value="johndoe@example.com" disabled>
+                </mat-form-field>
+
+                <mat-form-field class="example-full-width">
+                    <input matInput placeholder="Phone" value="123-456-7890" disabled>
+                </mat-form-field>
+
+                <mat-form-field class="example-full-width">
+                    <input matInput placeholder="Address" value="123 Street, City, Country" disabled>
+                </mat-form-field>
+            </mat-card-content>
+            <mat-card-actions>
+                <button mat-raised-button color="primary"
+                    class="px-4 py-2 font-bold text-white bg-blue-500 rounded hover:bg-blue-700 focus:outline-none focus:shadow-outline"
+                >Edit Profile</button>
+            </mat-card-actions>
+        </mat-card>
+    </div>
+</div> -->
+
+<!-- component -->
+
+<div mat-dialog-content>
+    <div class="overflow-hidden bg-white border rounded-lg shadow">
+        <div class="px-4 py-5 sm:px-6">
+            <h3 class="text-lg font-medium leading-6 text-gray-900">
+                User Profile
+            </h3>
+            <p class="max-w-2xl mt-1 text-sm text-gray-500">
+                This is some information about the user.
+            </p>
+        </div>
+        <div class="px-4 py-5 border-t border-gray-200 sm:p-0">
+            <dl class="sm:divide-y sm:divide-gray-200">
+                <div class="py-3 sm:py-5 sm:grid sm:grid-cols-3 sm:gap-4 sm:px-6">
+                    <dt class="text-sm font-medium text-gray-500">
+                        Full name
+                    </dt>
+                    <dd class="mt-1 text-sm text-gray-900 sm:mt-0 sm:col-span-2">
+                        John Doe
+                    </dd>
+                </div>
+                <div class="py-3 sm:py-5 sm:grid sm:grid-cols-3 sm:gap-4 sm:px-6">
+                    <dt class="text-sm font-medium text-gray-500">
+                        Email address
+                    </dt>
+                    <dd class="mt-1 text-sm text-gray-900 sm:mt-0 sm:col-span-2">
+                        johndoe@example.com
+                    </dd>
+                </div>
+                <div class="py-3 sm:py-5 sm:grid sm:grid-cols-3 sm:gap-4 sm:px-6">
+                    <dt class="text-sm font-medium text-gray-500">
+                        Phone number
+                    </dt>
+                    <dd class="mt-1 text-sm text-gray-900 sm:mt-0 sm:col-span-2">
+                        (123) 456-7890
+                    </dd>
+                </div>
+                <div class="py-3 sm:py-5 sm:grid sm:grid-cols-3 sm:gap-4 sm:px-6">
+                    <dt class="text-sm font-medium text-gray-500">
+                        Address
+                    </dt>
+                    <dd class="mt-1 text-sm text-gray-900 sm:mt-0 sm:col-span-2">
+                        123 Main St<br>
+                        Anytown, USA 12345
+                    </dd>
+                </div>
+            </dl>
+        </div>
+    </div>
+</div>
+<div mat-dialog-actions>
+    <button mat-button mat-dialog-close>No</button>
+    <button mat-button mat-dialog-close cdkFocusInitial>Ok</button>
+</div>

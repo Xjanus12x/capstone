@@ -38,12 +38,9 @@
             <ng-container matColumnDef="actions" *ngIf="userRole$ | async as role">
                 <mat-header-cell mat-header-cell *matHeaderCellDef> Actions </mat-header-cell>
                 <mat-cell class="flex flex-wrap" mat-cell *matCellDef="let element">
-
-                    <!-- Add update button here -->
-                    <button mat-icon-button color="accent" matTooltip="Update row" (click)="updateUser(element)">
-                        <mat-icon>edit</mat-icon>
+                    <button mat-icon-button color="primary" matTooltip="Preview Percentages" (click)="previewForm(element)">
+                        <mat-icon>visibility</mat-icon>
                     </button>
-                    <!-- Add delete button here -->
                     <ng-container *ngIf="role === 'Admin'">
                         <button mat-icon-button color="warn" matTooltip="Delete row" (click)="deleteUser(element.id)">
                             <mat-icon>delete</mat-icon>

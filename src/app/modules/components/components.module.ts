@@ -14,6 +14,7 @@ import { ReactiveFormsModule } from '@angular/forms';
 import { AngularSignaturePadModule } from '@almothafar/angular-signature-pad';
 import { MatSelectModule } from '@angular/material/select';
 import {MatButtonModule} from '@angular/material/button';
+import { UpdatePendingUserComponent } from './update-pending-user/update-pending-user.component';
 
 @NgModule({
   declarations: [
@@ -21,6 +22,7 @@ import {MatButtonModule} from '@angular/material/button';
     SubmittedFormComponent,
     DialogBoxComponent,
     UpdateUserComponent,
+    UpdatePendingUserComponent,
   ],
   exports: [DashboardHeaderComponent, SubmittedFormComponent],
   imports: [

@@ -9,6 +9,9 @@ import { AuthService } from 'src/app/core/services/auth.service';
 import { BackendService } from 'src/app/core/services/backend.service';
 import { UpdateUserComponent } from '../../components/update-user/update-user.component';
 import { IPercentagesList } from 'src/app/core/models/PercentagesList';
+import { PartOneFormComponent } from 'src/app/shared/components/part-one-form/part-one-form.component';
+import { FormContentService } from 'src/app/shared/services/form-content.service';
+import { formData } from 'src/app/core/constants/formData';
 
 @Component({
   selector: 'app-percentages-list',
@@ -19,7 +22,8 @@ export class PercentagesListComponent {
   constructor(
     private backendService: BackendService,
     private authService: AuthService,
-    public dialog: MatDialog
+    public dialog: MatDialog,
+    private formContentService: FormContentService
   ) {}
   percentagesList$!: Observable<IPercentagesList[]>;
   dataToDisplay: IPercentagesList[] = [];
@@ -31,32 +35,7 @@ export class PercentagesListComponent {
     'Individual Goal Commitment %',
     'Set Weight %',
   ];
-  //   dept_name
-  // :
-  // "SCHOOL OF COMPUTING"
-  // id
-  // :
-  // 27
-  // set_accomplishment_%
-  // :
-  // "324234,423243,342234,243234,432"
-  // set_individual_goal_commitment_%
-  // :
-  // "2424,432423,342432,324423,423234"
-  // set_weight_%
-  // :
-  // "234,432,243432,234234,2344"
-  // title
-  // :
-  // "helloworld"
-  //   interface DepartmentInfo {
-  //     id: number;
-  //     dept_name: string;
-  //     title: string;
-  //     set_accomplishment_?: string;
-  //     set_individual_goal_commitment_?: string;
-  //     set_weight_?: string;
-  // }
+
   displayedColumns: string[] = [
     'title',
     'set_accomplishment_%',
@@ -88,17 +67,7 @@ export class PercentagesListComponent {
   handleDataSubscription() {
     this.percentagesList$.subscribe({
       next: (data: IPercentagesList[]) => {
-        this.dataToDisplay = data.map((percentage: any) => {
-          console.log(percentage['set_weight_%']); // Accessing property using bracket notation
-          const weights: any = percentage['set_weight_%']
-          
-
-          // Creating a new object with a computed property name
-          return {
-            ...percentage,
-            'set_weight_%': weights, // Copying the property with a computed property name
-          };
-        });
+        this.dataToDisplay = data;
         this.updateDataSource();
       },
       error: (error) => {
@@ -119,37 +88,6 @@ export class PercentagesListComponent {
     // Handle error here (e.g., display error message)
   }
 
-  // deleteSubmittedIgcf(id: number) {
-  //   const indexToRemove = this.dataToDisplay.findIndex(
-  //     (item) => item.id === id
-  //   );
-
-  //   // // If the item is found, remove it from the array
-  //   if (indexToRemove === -1) return;
-
-  //   this.backendService.deleteSubmittedIgcf(id).subscribe({
-  //     next: () => {
-  //       this.dataToDisplay.splice(indexToRemove, 1);
-  //       this.dataSource.data = this.dataToDisplay;
-  //       this.authService.openSnackBar(
-  //         'Row deleted successfully',
-  //         'Close',
-  //         'bottom'
-  //       );
-  //       // Optionally, update your component state or UI after deletion
-  //     },
-  //     error: (error) => {
-  //       this.authService.openSnackBar(
-  //         'Error deleting row: ' + error.message,
-  //         'Close',
-  //         'bottom'
-  //       );
-
-  //       // Optionally, handle the error or display an error message to the user
-  //     },
-  //   });
-  // }
-
   applyFilter(event: Event) {
     const filterValue = (event.target as HTMLInputElement).value;
     this.dataSource.filter = filterValue.trim().toLowerCase();
@@ -161,91 +99,77 @@ export class PercentagesListComponent {
   concatColumns(...additionalColumns: string[]) {
     return this.displayedColumns.concat(additionalColumns);
   }
-  updateUser(user: IPercentagesList) {
-    const dialogRef = this.dialog.open(UpdateUserComponent, {
-      data: user,
-    });
-
-    // dialogRef.afterClosed().subscribe((result) => {
-    //   if (!result) return;
-    //   if (result.invalid) {
-    //     this.authService.openSnackBar('Invalid inputs', 'Close', 'bottom');
-    //     return;
-    //   }
-    //   const {
-    //     emp_firstname,
-    //     emp_lastname,
-    //     emp_number,
-    //     emp_role,
-    //     emp_dept,
-    //     emp_position,
-    //   } = user;
-    //   const orginalData = [
-    //     emp_firstname,
-    //     emp_lastname,
-    //     emp_number,
-    //     emp_role,
-    //     emp_dept,
-    //     emp_position,
-    //   ];
-
-    //   const updateData = [
-    //     result.value.firstname,
-    //     result.value.lastname,
-    //     result.value.emp_number,
-    //     result.value.role,
-    //     result.value.dept,
-    //     result.value.position,
-    //   ];
-
-    //   if (orginalData.join(',') === updateData.join(',')) {
-    //     this.authService.openSnackBar('No changes made', 'Close', 'bottom');
-    //     return;
-    //   }
-    //   this.authService.updateUserInformation({
-    //     old_emp_number: emp_number,
-    //     ...result.value,
-    //   });
-    //   this.authService.getUpdateStatus().subscribe({
-    //     next: (status) => {
-    //       if (status) {
-    //         this.authService.openSnackBar(
-    //           `User successfully updated`,
-    //           'close',
-    //           'bottom'
-    //         );
-    //         // this.handleDataSubscription();
-    //       }
-    //     },
-    //   });
-    // });
-  }
 
   deleteUser(id: number) {
-    // const indexToRemove = this.dataToDisplay.findIndex(
-    //   (item) => item.id === id
-    // );
-    // // // If the item is found, remove it from the array
-    // if (indexToRemove === -1) return;
-    // this.backendService.deleteSubmittedIgcf(id).subscribe({
-    //   next: () => {
-    //     this.dataToDisplay.splice(indexToRemove, 1);
-    //     this.dataSource.data = this.dataToDisplay;
-    //     this.authService.openSnackBar(
-    //       'Row deleted successfully',
-    //       'Close',
-    //       'bottom'
-    //     );
-    //     // Optionally, update your component state or UI after deletion
-    //   },
-    //   error: (error) => {
-    //     this.authService.openSnackBar(
-    //       'Error deleting row: ' + error.message,
-    //       'Close',
-    //       'bottom'
-    //     );
-    //     // Optionally, handle the error or display an error message to the user
-    //   },
-    // });
+    const indexToRemove = this.dataToDisplay.findIndex(
+      (item) => item.id === id
+    );
+    // // If the item is found, remove it from the array
+    if (indexToRemove === -1) return;
+    console.log(indexToRemove);
+
+    this.backendService.deleteIgcfInformation(id).subscribe({
+      next: () => {
+        this.dataToDisplay.splice(indexToRemove, 1);
+        this.dataSource.data = this.dataToDisplay;
+        this.authService.openSnackBar(
+          'Row deleted successfully',
+          'Close',
+          'bottom'
+        );
+        // Optionally, update your component state or UI after deletion
+      },
+      error: (error) => {
+        this.authService.openSnackBar(
+          'Error deleting row: ' + error.message,
+          'Close',
+          'bottom'
+        );
+        // Optionally, handle the error or display an error message to the user
+      },
+    });
+  }
+
+  previewForm(element: IPercentagesList) {
+    this.formContentService.setIgcfInformation({
+      weightPercentages: element['set_weight_%'],
+      individualGoalCommitmentPercentages:
+        element['set_individual_goal_commitment_%'],
+      accomplishmentPercentages: element['set_accomplishment_%'],
+    });
+    const setWeightPercentages: string[] = this.formContentService
+      .getIgcfInformation()
+      ['weightPercentages'].split(',');
+    const setIgcPercentages: string[] = this.formContentService
+      .getIgcfInformation()
+      ['individualGoalCommitmentPercentages'].split(',');
+    const setAccomplishmentPercentages: string[] = this.formContentService
+      .getIgcfInformation()
+      ['accomplishmentPercentages'].split(',');
+    const percentages: string[][] =
+      this.formContentService.mapSelectedPercentages(
+        setWeightPercentages,
+        setIgcPercentages,
+        setAccomplishmentPercentages
+      );
+
+    const {
+      controlNames,
+      tableHeaders,
+      tableRows,
+      stepLabel,
+      groupCounts,
+      formArrayNames,
+    } = formData.partOneForm;
+    this.formContentService.setIgcfContent({
+      controlNames: controlNames,
+      headers: tableHeaders,
+      tableRows: tableRows,
+      stepLabel: stepLabel,
+      groupCounts: groupCounts,
+      formArrayNames: formArrayNames,
+      percentages: percentages,
+    });
+    this.dialog.open(PartOneFormComponent);
   }
 }

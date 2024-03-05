@@ -5,6 +5,8 @@ import { CalendarComponent } from '../calendar/calendar.component';
 import { AuthService } from '../../services/auth.service';
 import { BackendService } from '../../services/backend.service';
 import { DatePipe } from '@angular/common';
+import { ProfilePageComponent } from '../profile-page/profile-page.component';
+import { RouterService } from 'src/app/modules/services/router-service.service';
 
 @Component({
   selector: 'app-header',
@@ -18,7 +20,8 @@ export class HeaderComponent implements OnInit {
     public dialog: MatDialog,
     private authService: AuthService,
     private backendService: BackendService,
-    private datePipe: DatePipe
+    private datePipe: DatePipe,
+    private routerService: RouterService
   ) {}
   isClick: boolean = true;
   isNotified: boolean = false;
@@ -29,9 +32,7 @@ export class HeaderComponent implements OnInit {
     this.isClick = !this.isClick;
     this.sideNav.toggleDrawer(this.isClick);
   }
-  toggleNotification() {
-    this.isNotified = !this.isNotified;
-  }
+
   ngOnInit(): void {
     this.authService.getUserRole().subscribe({
       next: (role: string) => {
@@ -57,7 +58,6 @@ export class HeaderComponent implements OnInit {
     if (this.role === 'Admin') {
       dialogRef.afterClosed().subscribe((selectedDate: Date | undefined) => {
         if (selectedDate) {
-       
           const deadline = this.datePipe.transform(selectedDate, 'yyyy-MM-dd');
 
           // Do something with the selectedDate
@@ -65,12 +65,25 @@ export class HeaderComponent implements OnInit {
             dept: this.dept,
             date: deadline!,
           });
-          
         } else {
           // User closed the dialog without selecting a date
           console.log('Dialog closed without selecting a date');
         }
       });
     }
+  }
+  openProfile(): void {
+    const dialogRef = this.dialog.open(ProfilePageComponent, {
+      width: '1200px', // Set the desired width here
+    });
+
+    // You can optionally subscribe to the afterClosed() event to perform actions after the dialog is closed
+    dialogRef.afterClosed().subscribe((result) => {
+      // Handle the result if needed
+    });
+  }
+  logout(): void {
+    this.authService.logoutUser();
+    this.routerService.routeTo('login');
   }
 }

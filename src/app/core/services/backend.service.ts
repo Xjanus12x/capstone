@@ -8,6 +8,7 @@ import { RouterService } from 'src/app/modules/services/router-service.service';
 import { ISubmittedIGCF } from '../models/SubmittedIgcf';
 import { ISignedIgcf } from '../models/SignedIGCF';
 import { IUserList } from '../models/UsersList';
+import { IPendingUser } from '../models/PendingUser';
 
 @Injectable({
   providedIn: 'root',
@@ -29,7 +30,11 @@ export class BackendService {
   deleteSubmittedIgcf(id: number): Observable<any> {
     return this.http.delete<any>(`${this.apiBaseUrl}/del/submitted-igcf/${id}`);
   }
-
+  deleteIgcfInformation(id: number): Observable<any> {
+    return this.http.delete<any>(
+      `${this.apiBaseUrl}/del/igcf-informations/${id}`
+    );
+  }
   getIgcfInformations(deptName: string): Observable<any> {
     const params = new HttpParams().set('dept_name', deptName);
     return this.http.get(`${this.apiBaseUrl}/igcf-information`, { params });
@@ -48,6 +53,31 @@ export class BackendService {
   }
   setCurrentIgcfId(id: number) {
     this.currentIgcfId = id;
+  }
+
+  submitKpis(kpis: any[]) {
+    // /submit-kpis
+    this.http.post<any>(`${this.apiBaseUrl}/submit-kpis`, kpis).subscribe({
+      next: () => {
+        // Handle success
+        this.authService.openSnackBar(
+          'KPIs submitted successfully',
+          'Close',
+          'bottom'
+        );
+        this.routerService.routeTo('dashboard');
+      },
+      error: (error) => {
+        // Handle error
+        console.error('Error submitting KPIs:', error);
+        this.authService.openSnackBar(
+          'Failed to submit KPIs',
+          'Close',
+          'bottom'
+        );
+        this.routerService.routeTo('dashboard');
+      },
+    });
   }
 
   setIgcfDeadline(deadlineInfo: { dept: string; date: string }) {
@@ -83,6 +113,16 @@ export class BackendService {
     return this.http.get<any[]>(`${this.apiBaseUrl}/get/igcf-informations`, {
       params,
     });
+  }
+
+  deletePendingUser(id: number) {
+    return this.http.delete<any>(`${this.apiBaseUrl}/del/pending-user/${id}`);
+  }
+  updatePendingUser(data: any) {
+    return this.http.post(`${this.apiBaseUrl}/update/pending-user`, data);
+  }
+  acceptPendingUser(data: any): Observable<any> {
+    return this.http.post(`${this.apiBaseUrl}/add/accept-pending-user`, data);
   }
 
   getCurrentIgcfId() {
@@ -231,6 +271,39 @@ export class BackendService {
           // Handle the error, e.g., show an error message to the user
         }
       );
+  }
+
+  addPendingRegistration(userCredentials: IPendingUser) {
+    this.http
+      .post(`${this.apiBaseUrl}/add/pending-registration`, userCredentials)
+      .subscribe(
+        () => {
+          this.authService.openSnackBar(
+            'Pending user account created successfully. It needs to be approved before login.',
+            'Close',
+            'bottom'
+          );
+          this.routerService.routeTo('login');
+        },
+        (error) => {
+          console.error('Failed to create pending user account:', error);
+          this.authService.openSnackBar(
+            'Failed to create pending user account.',
+            'Close',
+            'bottom'
+          );
+          this.routerService.routeTo('login');
+
+          // Handle the error, e.g., show an error message to the user
+        }
+      );
+  }
+
+  getPendingUsers(dept: string): Observable<any> {
+    const params = new HttpParams().set('dept', dept);
+    return this.http.get(`${this.apiBaseUrl}/get/pending-users`, {
+      params,
+    }) as Observable<IPendingUser[]>;
   }
 
   setUnconfirmedEmail(email: string): void {

@@ -1,0 +1,68 @@
+<form [formGroup]="formGroup">
+    <table class="min-w-full border-2 border-collapse border-black">
+        <thead>
+            <tr>
+                <th>Department Objective</th>
+                <th>Weight %</th>
+                <th>Action</th>
+            </tr>
+        </thead>
+        <tbody formArrayName="obj">
+            <tr *ngFor="let objControl of getFormArrayControls(); let i = index" [formGroupName]="i">
+                <td class="border-2 border-black">
+                    <div class="grid p-2">
+                        <mat-form-field>
+                            <input matInput formControlName="deptObjTitle" placeholder="Objective Title" required
+                                minlength="5">
+                            <mat-error class="font-extrabold" *ngIf="getFormControl('obj', 'deptObjTitle', i)?.hasError('minlength') && getFormControl('obj', 'deptObjTitle', i)?.touched 
+                                && !getFormControl('obj', 'deptObjTitle', i)?.hasError('required')">
+                                KPI Title must be at least 5 characters long.
+                            </mat-error>
+                            <mat-error class="font-extrabold" *ngIf="getFormControl('obj', 'deptObjTitle', i)?.hasError('required') && getFormControl('obj', 'deptObjTitle', i)?.touched 
+                                && !getFormControl('obj', 'deptObjTitle', i)?.hasError('minlength')">
+                                KPI Title is required.
+                            </mat-error>
+                        </mat-form-field>
+
+                    </div>
+                </td>
+                <td class="border-2 border-black">
+                    <div class="grid p-2">
+                        <mat-form-field>
+
+                            <input matInput formControlName="weight" type="number" placeholder="Weight" required min="1"
+                                max="100">
+                            <mat-error class="font-extrabold" *ngIf="getFormControl('obj', 'weight', i)?.hasError('min') && getFormControl('obj', 'weight', i)?.invalid 
+                          && getFormControl('obj', 'weight', i)?.touched && !getFormControl('obj', 'weight', i)?.hasError('max') &&
+                          !getFormControl('obj', 'weight', i)?.hasError('required')">
+                                Weight must be at least 1.
+                            </mat-error>
+                            <mat-error class="font-extrabold" *ngIf="getFormControl('obj', 'weight', i)?.hasError('max') && getFormControl('obj', 'weight', i)?.invalid 
+                          && getFormControl('obj', 'weight', i)?.touched && !getFormControl('obj', 'weight', i)?.hasError('min') 
+                          && !getFormControl('obj', 'weight', i)?.hasError('required')">
+                                Weight must be at most 100.
+                            </mat-error>
+                            <mat-error class="font-extrabold"
+                                *ngIf="getFormControl('obj', 'weight', i)?.hasError('required') && getFormControl('obj', 'weight', i)?.touched">
+                                Weight is required.
+                            </mat-error>
+                        </mat-form-field>
+
+                    </div>
+                </td>
+                <td class="border-2 border-black">
+                    <div class="grid place-content-center">
+                        <button type="button" mat-icon-button color="warn" matTooltip="Remove KPI"
+                            (click)="removeKPIControl(i)">
+                            <mat-icon>cancel</mat-icon>
+                        </button>
+                    </div>
+                </td>
+            </tr>
+        </tbody>
+    </table>
+    <div class="p-4 space-x-4">
+        <button type="button" mat-raised-button (click)="addKPIControl()">Add Obj</button>
+        <button type="button" mat-raised-button color="primary" (click)="submit()">Submit</button>
+    </div>
+</form>

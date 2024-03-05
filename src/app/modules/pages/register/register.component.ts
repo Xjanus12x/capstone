@@ -1,9 +1,4 @@
-import {
-  AfterViewInit,
-  ChangeDetectionStrategy,
-  Component,
-  ViewChild,
-} from '@angular/core';
+import { ChangeDetectionStrategy, Component } from '@angular/core';
 import {
   FormBuilder,
   FormControl,
@@ -14,7 +9,6 @@ import {
   NgSignaturePadOptions,
   SignaturePadComponent,
 } from '@almothafar/angular-signature-pad';
-import { IEmployeeDetails } from '../../../core/models/EmployeeDetails';
 import { IUserAccount } from '../../../core/models/UserAccount';
 import { BackendService } from 'src/app/core/services/backend.service';
 import { MatDialog } from '@angular/material/dialog';
@@ -26,6 +20,7 @@ import { Router } from '@angular/router';
 import { emailExistenceValidator } from 'src/app/core/Validators/emailExistenceValidator';
 import { IDialogBox } from 'src/app/core/models/DialogBox';
 import { departmentNamesMap } from 'src/app/core/constants/DepartmentData';
+import { IPendingUser } from 'src/app/core/models/PendingUser';
 
 @Component({
   selector: 'app-register',
@@ -33,15 +28,40 @@ import { departmentNamesMap } from 'src/app/core/constants/DepartmentData';
   styleUrls: ['./register.component.css'],
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
-export class RegisterComponent implements AfterViewInit, IDeactivateComponent {
+export class RegisterComponent implements IDeactivateComponent {
+  // To be use somewhere
+  //   signature: string = '';
+  // @ViewChild('signature')
+  // public signaturePad!: SignaturePadComponent;
+  // ngAfterViewInit() {
+  //   // this.signaturePad is now available
+  //   this.signaturePad.set('minWidth', 5); // set szimek/signature_pad options at runtime
+  //   this.signaturePad.clear(); // invoke functions from szimek/signature_pad API
+  // }
+  // drawStart(event: MouseEvent | Touch) {
+  //   // will be notified of szimek/signature_pad's onBegin event
+  //   console.log('Start drawing', event);
+  // }
+  // drawComplete(event: MouseEvent | Touch) {
+  //   this.signature = this.signaturePad.toDataURL();
+  // }
+  // clear() {
+  //   this.signaturePad.clear();
+  //   this.signature = '';
+  // }
+  // signaturePadOptions: NgSignaturePadOptions = {
+  //   // passed through to szimek/signature_pad constructor
+  //   minWidth: 1,
+  //   canvasWidth: 450,
+  //   canvasHeight: 200,
+  //   backgroundColor: 'white',
+  //   dotSize: 1,
+  //   maxWidth: 2,
+  // };
+
   registrationFormGroup!: FormGroup;
-  roles: string[] = ['Admin', 'Regular', 'Viewer Only'];
-
+  roles: string[] = ['Admin', 'Faculty', 'HRD', 'College Secretary'];
   departments: string[] = Array.from(departmentNamesMap.keys());
-
-  signature: string = '';
-  @ViewChild('signature')
-  public signaturePad!: SignaturePadComponent;
   dialogBoxConfig = {
     width: '300px',
     enterAnimationDuration: '200ms',
@@ -62,7 +82,7 @@ export class RegisterComponent implements AfterViewInit, IDeactivateComponent {
         emp_firstName: ['', Validators.required],
         emp_lastName: ['', Validators.required],
         emp_number: ['', Validators.required],
-        emp_department: ['', Validators.required],
+        emp_dept: ['', Validators.required],
         emp_position: ['', Validators.required],
       }),
       userAccountFormGroup: this._formBuilder.group({
@@ -85,34 +105,6 @@ export class RegisterComponent implements AfterViewInit, IDeactivateComponent {
         role: ['', Validators.required],
       }),
     });
-  }
-
-  signaturePadOptions: NgSignaturePadOptions = {
-    // passed through to szimek/signature_pad constructor
-    minWidth: 1,
-    canvasWidth: 450,
-    canvasHeight: 200,
-    backgroundColor: 'white',
-    dotSize: 1,
-    maxWidth: 2,
-  };
-
-  ngAfterViewInit() {
-    // this.signaturePad is now available
-    this.signaturePad.set('minWidth', 5); // set szimek/signature_pad options at runtime
-    this.signaturePad.clear(); // invoke functions from szimek/signature_pad API
-  }
-
-  drawStart(event: MouseEvent | Touch) {
-    // will be notified of szimek/signature_pad's onBegin event
-    console.log('Start drawing', event);
-  }
-  drawComplete(event: MouseEvent | Touch) {
-    this.signature = this.signaturePad.toDataURL();
-  }
-  clear() {
-    this.signaturePad.clear();
-    this.signature = '';
   }
 
   getFormGroup(formGroup: string) {
@@ -139,23 +131,15 @@ export class RegisterComponent implements AfterViewInit, IDeactivateComponent {
   }
 
   register(): void {
-    const personalInformationData: IEmployeeDetails = {
-      ...this.getPersonalInformationData(),
-      emp_signature: this.signature, // Use the updated signature value
+    const pendingUser: IPendingUser = {
+      ...this.registrationFormGroup.get('userAccountFormGroup')?.value,
+      ...this.registrationFormGroup.get('personalInformationFormGroup')?.value,
     };
-    const userAccountData: IUserAccount = this.getUserAccountData();
-
-    removeLeadingAndTrailingSpaces(personalInformationData);
-    removeLeadingAndTrailingSpaces(userAccountData);
-
+    removeLeadingAndTrailingSpaces(pendingUser);
     if (this.isAllInputFilled()) {
-      this.backendService.setEmployeeDetails(personalInformationData);
-      this.backendService.setUserAccountDetails(userAccountData);
-      this.backendService.registerUser();
-      this.router.navigateByUrl('/dashboard');
+      this.backendService.addPendingRegistration(pendingUser);
       return;
     }
-
     const dialogBoxData = {
       title: 'Incomplete Registration',
       content:
@@ -181,7 +165,7 @@ export class RegisterComponent implements AfterViewInit, IDeactivateComponent {
   }
 
   isAllInputFilled(): boolean {
-    return this.registrationFormGroup.valid && !!this.signature;
+    return this.registrationFormGroup.valid;
   }
 
   canExit(): boolean | Promise<boolean> | Observable<boolean> {

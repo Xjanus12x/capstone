@@ -9,7 +9,8 @@ import { catchError, debounceTime, map, switchMap } from 'rxjs/operators';
 import { Observable, of } from 'rxjs';
 
 export function emailExistenceValidator(
-  backendService: BackendService
+  backendService: BackendService,
+  originalEmail?: string
 ): AsyncValidatorFn {
   return (control: AbstractControl): Observable<ValidationErrors | null> => {
     const value: string = control.value || '';

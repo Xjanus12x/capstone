@@ -251,25 +251,68 @@ server.post("/api/login", (req, res) => {
   });
 });
 
-// End point for checking whether user already exist
+// // original email exisitence
+// server.post("/api/user/check-existence", (req, res) => {
+//   try {
+//     const { emp_email } = req.body;
+
+//     // Check if the email already exists in the database
+//     const checkExistenceQuery =
+//       "SELECT email FROM tbl_pending_registration WHERE email = ?";
+//     db.query(checkExistenceQuery, [emp_email], (error, existingUser) => {
+//       if (error) {
+//         console.error("Error checking user existence:", error);
+//         res
+//           .status(500)
+//           .send({ status: false, message: "Internal Server Error" });
+//       } else {
+//         // Respond with a boolean indicating whether the user exists
+//         res.send({ exists: existingUser.length > 0 });
+//       }
+//     });
+//   } catch (error) {
+//     console.error("Unexpected error:", error);
+//     res.status(500).send({ status: false, message: "Internal Server Error" });
+//   }
+// });
+
 server.post("/api/user/check-existence", (req, res) => {
   try {
     const { emp_email } = req.body;
 
-    // Check if the email already exists in the database
-    const checkExistenceQuery =
-      "SELECT emp_email FROM tbl_users WHERE emp_email = ?";
-    db.query(checkExistenceQuery, [emp_email], (error, existingUser) => {
-      if (error) {
-        console.error("Error checking user existence:", error);
-        res
-          .status(500)
-          .send({ status: false, message: "Internal Server Error" });
-      } else {
-        // Respond with a boolean indicating whether the user exists
-        res.send({ exists: existingUser.length > 0 });
+    // Check if the email already exists in tbl_pending_registration
+    const checkPendingRegistrationQuery =
+      "SELECT email FROM tbl_pending_registration WHERE email = ?";
+    db.query(
+      checkPendingRegistrationQuery,
+      [emp_email],
+      (error1, pendingUser) => {
+        if (error1) {
+          console.error("Error checking pending user existence:", error1);
+          res
+            .status(500)
+            .send({ status: false, message: "Internal Server Error" });
+          return;
+        }
+
+        // Check if the email already exists in tbl_users
+        const checkUsersQuery =
+          "SELECT emp_email FROM tbl_users WHERE emp_email = ?";
+        db.query(checkUsersQuery, [emp_email], (error2, existingUser) => {
+          if (error2) {
+            console.error("Error checking user existence:", error2);
+            res
+              .status(500)
+              .send({ status: false, message: "Internal Server Error" });
+            return;
+          }
+
+          // Respond with a boolean indicating whether the user exists in either table
+          const exists = pendingUser.length > 0 || existingUser.length > 0;
+          res.send({ exists });
+        });
       }
-    });
+    );
   } catch (error) {
     console.error("Unexpected error:", error);
     res.status(500).send({ status: false, message: "Internal Server Error" });
@@ -499,7 +542,7 @@ server.get("/api/get/users", (req, res) => {
 
   // Construct the SQL query with a WHERE clause to filter by department name
   let sql = `
-    SELECT u.emp_email, u.emp_role, u.emp_number, d.emp_firstname, d.emp_lastname, d.emp_position, d.emp_dept, d.emp_signature 
+    SELECT u.emp_email, u.emp_role, u.emp_number, d.emp_firstname, d.emp_lastname, d.emp_position, d.emp_dept 
     FROM tbl_users AS u 
     JOIN tbl_emp_details AS d ON u.emp_number = d.emp_number
     WHERE d.emp_dept = ?
@@ -623,6 +666,48 @@ server.post("/api/update/user", (req, res) => {
   });
 });
 
+// Delete user information
+server.delete("/api/delete/user/:emp_number", (req, res) => {
+  const { emp_number } = req.params;
+
+  let tblUsersSqlDelete = `DELETE FROM tbl_users WHERE emp_number = ?`;
+  let tblEmpDetailsSqlDelete = `DELETE FROM tbl_emp_details WHERE emp_number = ?`;
+  let tblEmpSubmittedIgcfSqlDelete = `DELETE FROM tbl_emp_submitted_igcf WHERE emp_number = ?`;
+
+  db.query(tblUsersSqlDelete, [emp_number], (err, resultUsers) => {
+    if (err) {
+      console.error("Error deleting from tbl_users:", err);
+      res.status(500).json({ error: "Error deleting from tbl_users" });
+      return;
+    }
+
+    db.query(tblEmpDetailsSqlDelete, [emp_number], (err, resultEmpDetails) => {
+      if (err) {
+        console.error("Error deleting from tbl_emp_details:", err);
+        res.status(500).json({ error: "Error deleting from tbl_emp_details" });
+        return;
+      }
+
+      db.query(
+        tblEmpSubmittedIgcfSqlDelete,
+        [emp_number],
+        (err, resultEmpSubmittedIgcf) => {
+          if (err) {
+            console.error("Error deleting from tbl_emp_submitted_igcf:", err);
+            res
+              .status(500)
+              .json({ error: "Error deleting from tbl_emp_submitted_igcf" });
+            return;
+          }
+
+          console.log("User information deleted successfully.");
+          res.status(200).send({ success: true });
+        }
+      );
+    });
+  });
+});
+
 server.post("/api/set/igcf-deadline", (req, res) => {
   const { date, dept } = req.body; // Use req.body instead of req.params to get the data from the request body
 
@@ -706,6 +791,248 @@ server.get("/api/get/igcf-informations", (req, res) => {
     } else {
       // Successfully fetched IGCF information, send it to the client
       res.status(200).json(result);
+    }
+  });
+});
+
+server.delete("/api/del/igcf-informations/:id", (req, res) => {
+  const { id } = req.params;
+  let sql = "DELETE FROM tbl_igcf_information WHERE id = ?";
+
+  db.query(sql, [id], (err, result) => {
+    if (err) {
+      console.error("Error deleting IGCF information:", err);
+      res
+        .status(500)
+        .json({ error: "An error occurred while deleting IGCF information" });
+      return;
+    }
+
+    if (result.affectedRows === 0) {
+      // If no rows were affected, it means the record with the provided ID was not found
+      res
+        .status(404)
+        .json({ error: "IGCF information with the provided ID was not found" });
+      return;
+    }
+
+    // Record successfully deleted
+    res.status(200).json({ message: "IGCF information deleted successfully" });
+  });
+});
+
+server.post("/api/add/pending-registration", async (req, res) => {
+  const {
+    email,
+    password,
+    role,
+    emp_firstName,
+    emp_lastName,
+    emp_number,
+    emp_dept,
+    emp_position,
+  } = req.body;
+
+  try {
+    const hashedPassword = await bcrypt.hash(password, saltRounds);
+
+    let pendingUser = {
+      email: email,
+      password: hashedPassword, // Store the hashed password
+      role: role,
+      emp_firstname: emp_firstName,
+      emp_lastname: emp_lastName,
+      emp_number: emp_number,
+      emp_dept: emp_dept,
+      emp_position: emp_position,
+    };
+
+    let sql = "INSERT INTO tbl_pending_registration SET ?";
+    db.query(sql, pendingUser, (err, result) => {
+      if (err) {
+        console.error("Error inserting pending registration:", err);
+        res.status(500).json({ error: "Error inserting pending registration" });
+        return;
+      }
+
+      console.log("Pending registration inserted successfully.");
+      res.status(200).json({ success: true });
+    });
+  } catch (error) {
+    console.error("Error processing pending registration:", error);
+    res.status(500).json({ error: "Error processing pending registration" });
+  }
+});
+
+server.get("/api/get/pending-users", (req, res) => {
+  try {
+    const { dept } = req.query;
+
+    let sql =
+      "SELECT id, email, role, emp_firstname, emp_lastname, emp_number, emp_dept, emp_position FROM tbl_pending_registration WHERE emp_dept = ?";
+
+    db.query(sql, [dept], (error, results) => {
+      if (error) {
+        console.error("Error retrieving pending users:", error);
+        res.status(500).json({ error: "Error retrieving pending users" });
+      } else {
+        res.status(200).json(results);
+      }
+    });
+  } catch (error) {
+    console.error("Unexpected error:", error);
+    res.status(500).json({ error: "Internal Server Error" });
+  }
+});
+
+server.delete("/api/del/pending-user/:id", (req, res) => {
+  const { id } = req.params;
+  let sql = "DELETE FROM tbl_pending_registration WHERE id = ?";
+  db.query(sql, [id], (err, result) => {
+    if (err) {
+      console.error("Error deleting pending user:", err);
+      res.status(500).json({ error: "Error deleting pending user" });
+      return;
+    }
+    console.log("Pending user deleted successfully.");
+    res.status(200).json({ success: true });
+  });
+});
+
+server.post("/api/add/accept-pending-user", (req, res) => {
+  const {
+    email,
+    emp_dept,
+    emp_firstname,
+    emp_lastname,
+    emp_number,
+    emp_position,
+    role,
+  } = req.body;
+
+  // Retrieve the password from tbl_pending_registration using email and employee number
+  let sql2 =
+    "SELECT password FROM tbl_pending_registration WHERE email = ? AND emp_number = ?";
+  db.query(sql2, [email, emp_number], (error2, result2) => {
+    if (error2) {
+      console.error("Error retrieving password:", error2);
+      res.status(500).json({ error: "Error retrieving password" });
+      return;
+    }
+
+    if (result2.length === 0) {
+      console.error(
+        "No pending registration found for the provided email and employee number."
+      );
+      res.status(404).json({
+        error:
+          "No pending registration found for the provided email and employee number.",
+      });
+      return;
+    }
+
+    const password = result2[0].password; // Retrieve the password from the result
+
+    // Insert the employee details into tbl_emp_details
+    let empDetails = {
+      emp_firstname: emp_firstname,
+      emp_lastname: emp_lastname,
+      emp_number: emp_number,
+      emp_dept: emp_dept,
+      emp_position: emp_position,
+    };
+
+    let sql1 = "INSERT INTO tbl_emp_details SET ?";
+    db.query(sql1, empDetails, (error1, result1) => {
+      if (error1) {
+        console.error("Error inserting employee details:", error1);
+        res.status(500).json({ error: "Error inserting employee details" });
+        return;
+      }
+
+      // Finally, insert the user into tbl_users
+      let newUser = {
+        emp_email: email,
+        emp_password: password, // Use the retrieved password
+        emp_role: role,
+        emp_number: emp_number,
+      };
+
+      let sql3 = "INSERT INTO tbl_users SET ?";
+      db.query(sql3, newUser, (error3, result3) => {
+        if (error3) {
+          console.error("Error inserting user:", error3);
+          res.status(500).json({ error: "Error inserting user" });
+          return;
+        }
+
+        console.log("User added successfully.");
+        res.status(200).json({ success: true });
+      });
+    });
+  });
+});
+
+server.post("/api/update/pending-user", (req, res) => {
+  const { id, firstname, lastname, role, emp_number, dept, position } =
+    req.body;
+
+  try {
+    let sql = `
+      UPDATE tbl_pending_registration 
+      SET emp_firstname = ?,
+          emp_lastname = ?,
+          role = ?,
+          emp_number = ?,
+          emp_dept = ?,
+          emp_position = ?
+      WHERE id = ?`;
+
+    db.query(
+      sql,
+      [firstname, lastname, role, emp_number, dept, position, id],
+      (err, result) => {
+        if (err) {
+          console.error("Error updating pending user:", err);
+          res.status(500).json({ error: "Error updating pending user" });
+          return;
+        }
+
+        console.log("Pending user updated successfully.");
+        res.status(200).json({ success: true });
+      }
+    );
+  } catch (error) {
+    console.error("Error processing pending user update:", error);
+    res.status(500).json({ error: "Error processing pending user update" });
+  }
+});
+
+server.post("/api/submit-kpis", (req, res) => {
+  const formData = req.body;
+
+  // Extract the array of KPIs from the form data
+
+  // Initialize an array to store the SQL values for bulk insertion
+  const sqlValues = [];
+
+  // Iterate over each KPI object and push its values to the SQL values array
+  formData.forEach((kpi) => {
+    sqlValues.push([kpi.kpititle, kpi.weight, kpi.dept]);
+  });
+
+  // SQL query to insert the KPIs into tbl_kpis
+  const sql =
+    "INSERT INTO tbl_kpis (kpi_title, weight_percentage, dept) VALUES ?";
+
+  // Execute the SQL query with the SQL values array for bulk insertion
+  db.query(sql, [sqlValues], (error, result) => {
+    if (error) {
+      console.error("Error inserting KPIs:", error);
+      res.status(500).json({ error: "Error inserting KPIs" });
+    } else {
+      console.log("KPIs inserted successfully.");
+      res.status(200).json({ message: "KPIs inserted successfully" });
     }
   });
 });

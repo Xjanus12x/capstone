@@ -1,6 +1,6 @@
 import { Injectable } from '@angular/core';
 import { HttpClient, HttpParams } from '@angular/common/http';
-import { BehaviorSubject, Observable, Subject } from 'rxjs';
+import { BehaviorSubject, Observable } from 'rxjs';
 import { MatDialog } from '@angular/material/dialog';
 import { DialogBoxComponent } from 'src/app/modules/components/dialog-box/dialog-box.component';
 import {
@@ -79,7 +79,9 @@ export class AuthService {
   getEmployeeDepartment(): Observable<string> {
     return this.empDept$;
   }
-
+  logoutUser() {
+    this.setIsLogged(false);
+  }
   getEmployeeNumber(): Observable<string> {
     return this.empNumber$;
   }
@@ -143,6 +145,7 @@ export class AuthService {
       },
     });
   }
+
   openSnackBar(
     message: string,
     action: string,

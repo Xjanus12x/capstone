@@ -34,6 +34,10 @@ import { UserListComponent } from './user-list/user-list.component';
 import { ReportsComponent } from './reports/reports.component';
 import { MatDialogModule } from '@angular/material/dialog';
 import { PercentagesListComponent } from './percentages-list/percentages-list.component';
+import { InputAllKpisComponent } from './input-all-kpis/input-all-kpis.component';
+import { PendingUserListComponent } from './pending-user-list/pending-user-list.component';
+import { KpiListComponent } from './kpi-list/kpi-list.component';
+import { ActionPlansComponent } from './action-plans/action-plans.component';
 
 @NgModule({
   declarations: [
@@ -46,6 +50,10 @@ import { PercentagesListComponent } from './percentages-list/percentages-list.co
     UserListComponent,
     ReportsComponent,
     PercentagesListComponent,
+    InputAllKpisComponent,
+    PendingUserListComponent,
+    KpiListComponent,
+    ActionPlansComponent,
   ],
   exports: [LoginComponent, RegisterComponent, DashboardComponent],
   imports: [

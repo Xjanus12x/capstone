@@ -8,7 +8,7 @@ import { Observable } from 'rxjs';
 import { IUserList } from 'src/app/core/models/UsersList';
 import { AuthService } from 'src/app/core/services/auth.service';
 import { BackendService } from 'src/app/core/services/backend.service';
-import { UpdateUserComponent } from '../../components/update-user/update-user.component';
+
 
 @Component({
   selector: 'app-user-list',
@@ -27,12 +27,12 @@ export class UserListComponent {
   dataSource = new MatTableDataSource<any>();
   displayedHeader: string[] = [
     'Employee Number',
-    'Employee Firstname',
-    'Employee Lastname',
-    'Employee Email',
+    'Firstname',
+    'Lastname',
+    'Email',
     'User Role',
-    'Employee Position',
-    'Employee Department',
+    'Position',
+    'Department',
   ];
   displayedColumns: string[] = [
     'emp_number',
@@ -45,7 +45,7 @@ export class UserListComponent {
   ];
   userRole$!: Observable<string>;
   isLoadingResults = true;
-
+  currentUserEmpNumber: string = '';
   @ViewChild(MatPaginator) paginator!: MatPaginator;
   @ViewChild(MatSort) sort!: MatSort;
 
@@ -56,10 +56,16 @@ export class UserListComponent {
 
   loadData() {
     this.isLoadingResults = true;
-    this.authService.getEmployeeDepartment().subscribe({
-      next: (deptName) => {
-        this.userList$ = this.backendService.getAllUsers(deptName);
-        this.handleDataSubscription();
+    this.authService.getEmployeeNumber().subscribe({
+      next: (empNumber: string) => {
+        this.authService.getEmployeeDetails(empNumber).subscribe({
+          next: (result) => {
+            const { data } = result;
+            this.currentUserEmpNumber = data.emp_number;
+            this.userList$ = this.backendService.getAllUsers(data.emp_dept);
+            this.handleDataSubscription();
+          },
+        });
       },
     });
   }
@@ -67,7 +73,9 @@ export class UserListComponent {
   handleDataSubscription() {
     this.userList$.subscribe({
       next: (data: IUserList[]) => {
-        this.dataToDisplay = data;
+        this.dataToDisplay = data.filter(
+          (users) => users.emp_number !== this.currentUserEmpNumber
+        );
         this.updateDataSource();
       },
       error: (error) => {
@@ -130,66 +138,8 @@ export class UserListComponent {
   concatColumns(...additionalColumns: string[]) {
     return this.displayedColumns.concat(additionalColumns);
   }
-  updateUser(user: IUserList) {
-    const dialogRef = this.dialog.open(UpdateUserComponent, {
-      data: user,
-    });
 
-    dialogRef.afterClosed().subscribe((result) => {
-      if (!result) return;
-      if (result.invalid) {
-        this.authService.openSnackBar('Invalid inputs', 'Close', 'bottom');
-        return;
-      }
-      const {
-        emp_firstname,
-        emp_lastname,
-        emp_number,
-        emp_role,
-        emp_dept,
-        emp_position,
-      } = user;
-      const orginalData = [
-        emp_firstname,
-        emp_lastname,
-        emp_number,
-        emp_role,
-        emp_dept,
-        emp_position,
-      ];
-
-      const updateData = [
-        result.value.firstname,
-        result.value.lastname,
-        result.value.emp_number,
-        result.value.role,
-        result.value.dept,
-        result.value.position,
-      ];
-
-      if (orginalData.join(',') === updateData.join(',')) {
-        this.authService.openSnackBar('No changes made', 'Close', 'bottom');
-        return;
-      }
-      this.authService.updateUserInformation({
-        old_emp_number: emp_number,
-        ...result.value,
-      });
-      this.authService.getUpdateStatus().subscribe({
-        next: (status) => {
-          if (status) {
-            this.authService.openSnackBar(
-              `User successfully updated`,
-              'close',
-              'bottom'
-            );
-            this.handleDataSubscription();
-          }
-        },
-      });
-    });
-  }
-
+ 
   deleteUser(id: number) {
     // const indexToRemove = this.dataToDisplay.findIndex(
     //   (item) => item.id === id

@@ -33,8 +33,10 @@ export class SidenavComponent {
       label: 'User',
       children: [
         {
-          label: 'Register User',
-          link: '/register',
+          label: 'Pending Users',
+          link: 'pending-user-list',
+          outlet: 'dashboardContent',
+          canAccess: ['Admin', 'College Secretary'],
         },
         {
           label: 'User List',
@@ -69,6 +71,26 @@ export class SidenavComponent {
       ],
       collapsed: true, // Set collapsed to true by default
       canAccess: ['Admin', 'Regular'],
+    },
+
+    {
+      label: 'Manage',
+      children: [
+        {
+          label: "Input KPI's",
+          link: 'input-kpis',
+          outlet: 'dashboardContent',
+          canAccess: ['Admin', 'College Secretary'],
+        },
+        {
+          label: 'Action Plans',
+          link: 'action-plans',
+          outlet: 'dashboardContent',
+          canAccess: ['Admin'],
+        },
+      ],
+      collapsed: true, // Set collapsed to true by default
+      canAccess: ['Admin', 'College Secretary'],
     },
     {
       label: 'Reports',

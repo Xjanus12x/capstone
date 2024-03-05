@@ -9,17 +9,12 @@
         <table mat-table [dataSource]="dataSource" matSort id="temp">
             <!-- Manually define column headers -->
             <ng-container *ngFor="let column of displayedColumns; let i = index" [matColumnDef]="column">
-
                 <mat-header-cell mat-header-cell *matHeaderCellDef mat-sort-header>
-                    {{
-                    displayedHeader[i]
-                    }}
+                    {{ displayedHeader[i] }}
                 </mat-header-cell>
-
                 <mat-cell mat-cell *matCellDef="let element">
-                    {{ column === 'fullname'?
-                    element[column].toUpperCase() : element[column] }}
-                </mat-cell>
+                    {{ element[column] }}
+                </mat-cell>    
             </ng-container>
 
             <ng-container matColumnDef="isSigned">
@@ -34,16 +29,25 @@
             </ng-container>
 
 
-
             <!-- Manually define the "actions" column -->
             <ng-container matColumnDef="actions">
                 <mat-header-cell mat-header-cell *matHeaderCellDef> Actions </mat-header-cell>
                 <mat-cell class="flex flex-wrap" mat-cell *matCellDef="let element">
-
-                    <button mat-icon-button color="warn" matTooltip="Delete row" (click)="deleteUser(element.id)">
-                        <mat-icon>delete</mat-icon>
-                    </button>
-
+                        <!-- Add accept button here -->
+                        <button mat-icon-button color="primary" matTooltip="Accept Pending User"
+                            (click)="acceptUser(element)">
+                            <mat-icon>done</mat-icon>
+                        </button>
+                        <!-- Add reject button here -->
+                        <button mat-icon-button color="warn" matTooltip="Reject Pending User"
+                            (click)="rejectUser(element.id)">
+                            <mat-icon>close</mat-icon>
+                        </button>
+                        <!-- Add update button here -->
+                        <button mat-icon-button color="accent" matTooltip="Update Pending User"
+                            (click)="updateUser(element)">
+                            <mat-icon>edit</mat-icon>
+                        </button>
                 </mat-cell>
             </ng-container>
 
@@ -54,7 +58,7 @@
             <tr class="text-lg text-center" *matNoDataRow>
                 <ng-container *ngIf="input.value === ''; else noSubmitted">
                     <td class="p-4" colspan="4">
-                        No Users yet.
+                        No Pending Users yet.
                     </td>
                 </ng-container>
                 <ng-template #noSubmitted>

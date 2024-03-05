@@ -88,7 +88,10 @@ export class DashboardComponent implements OnInit {
       this.routerService.isRouteActive('view-igcf/:id') ||
       this.routerService.isRouteActive('user-list') ||
       this.routerService.isRouteActive('reports') ||
-      this.routerService.isRouteActive('percentages-list')
+      this.routerService.isRouteActive('percentages-list') ||
+      this.routerService.isRouteActive('pending-user-list') ||
+      this.routerService.isRouteActive('input-kpis') ||
+      this.routerService.isRouteActive('action-plans')
     );
   }
 

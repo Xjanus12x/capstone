@@ -38,7 +38,7 @@
 
                 <mat-form-field>
                     <mat-label>Department</mat-label>
-                    <mat-select formControlName="emp_department" required>
+                    <mat-select formControlName="emp_dept" required>
                         <mat-option>--</mat-option>
                         <mat-option *ngFor="let department of departments" [value]="department">
                             {{department}}
@@ -120,24 +120,26 @@
                 </mat-form-field>
                 <div>
                     <button mat-button matStepperPrevious>Back</button>
-                    <button mat-button matStepperNext>Next</button>
+                    <button mat-button (click)="register()">Register</button>
                 </div>
                 <button routerLink="/dashboard"
-                    class="px-4 py-2 mt-3 font-bold text-white bg-black rounded hover:bg-red-600">
+                    class="min-w-full px-4 py-2 mt-3 font-bold text-white bg-black rounded hover:bg-red-600">
                     Exit
                 </button>
             </form>
         </mat-step>
-        <mat-step>
+        <!-- <mat-step>
             <ng-template matStepLabel>
                 <h2 class="text-white">Done</h2>
             </ng-template>
+
             <div class="grid gap-3">
                 <h2 class="text-white">Draw User's signature</h2>
                 <signature-pad #signature [options]="signaturePadOptions" (drawStart)="drawStart($event)"
                     (drawEnd)="drawComplete($event)"></signature-pad>
                 <button class="text-white " (click)="clear()">Clear</button>
             </div>
+
             <div>
                 <button mat-button matStepperPrevious>Back</button>
                 <button mat-button (click)="register()">Register</button>
@@ -146,7 +148,7 @@
                 class="min-w-full px-4 py-2 mt-3 font-bold text-white bg-black rounded hover:bg-red-600">
                 Exit
             </button>
-        </mat-step>
+        </mat-step> -->
     </mat-stepper>
 
 

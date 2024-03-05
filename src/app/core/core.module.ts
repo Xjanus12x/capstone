@@ -5,6 +5,6 @@ import { MatSnackBarModule } from '@angular/material/snack-bar';
 @NgModule({
   declarations: [],
   exports: [ComponentsModule],
-  imports: [CommonModule, ComponentsModule, MatSnackBarModule],
+  imports: [CommonModule, ComponentsModule, MatSnackBarModule, ],
 })
 export class CoreModule {}

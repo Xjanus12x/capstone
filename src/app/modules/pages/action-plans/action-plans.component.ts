@@ -79,7 +79,7 @@ export class ActionPlansComponent implements OnInit {
   }
 
   submit() {
-    const kpisArray = this.formGroup.get('kpis') as FormArray;
+    const objArray = this.formGroup.get('obj') as FormArray;
 
     // Check if the form group is invalid
     if (this.formGroup.invalid) {
@@ -92,7 +92,7 @@ export class ActionPlansComponent implements OnInit {
     }
 
     // Check if the FormArray is empty after removing a control
-    if (kpisArray.length === 0) {
+    if (objArray.length === 0) {
       this.authService.openSnackBar(
         'Form cannot be submitted as there are no KPIs added.',
         'Close',
@@ -101,15 +101,13 @@ export class ActionPlansComponent implements OnInit {
       return; // Exit the function to prevent further execution
     }
 
-    const values = kpisArray.value.map((kpis: any) => {
+    const values = objArray.value.map((obj: any) => {
       return {
-        ...kpis,
+        ...obj,
         dept: this.currentUserDept,
       };
     });
-    console.log(values);
-
     // Further logic for form submission
-    // this.backendService.submitKpis(kpisArray.value);
+    this.backendService.submitActionPlans(values);
   }
 }

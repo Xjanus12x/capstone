@@ -18,6 +18,7 @@ import { PercentagesListComponent } from './modules/pages/percentages-list/perce
 import { PendingUserListComponent } from './modules/pages/pending-user-list/pending-user-list.component';
 import { InputAllKpisComponent } from './modules/pages/input-all-kpis/input-all-kpis.component';
 import { ActionPlansComponent } from './modules/pages/action-plans/action-plans.component';
+import { ObjAndActionPlansListComponent } from './modules/pages/obj-and-action-plans-list/obj-and-action-plans-list.component';
 
 const routes: Routes = [
   { path: '', redirectTo: 'login', pathMatch: 'full' },
@@ -82,6 +83,11 @@ const routes: Routes = [
       {
         path: 'action-plans',
         component: ActionPlansComponent,
+        outlet: 'dashboardContent',
+      },
+      {
+        path: 'obj-and-action-plan-list',
+        component: ObjAndActionPlansListComponent,
         outlet: 'dashboardContent',
       },
       {

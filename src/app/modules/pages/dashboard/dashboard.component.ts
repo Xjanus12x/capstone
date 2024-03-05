@@ -91,7 +91,8 @@ export class DashboardComponent implements OnInit {
       this.routerService.isRouteActive('percentages-list') ||
       this.routerService.isRouteActive('pending-user-list') ||
       this.routerService.isRouteActive('input-kpis') ||
-      this.routerService.isRouteActive('action-plans')
+      this.routerService.isRouteActive('action-plans') ||
+      this.routerService.isRouteActive('obj-and-action-plan-list')
     );
   }
 

@@ -56,7 +56,6 @@ export class BackendService {
   }
 
   submitKpis(kpis: any[]) {
-    // /submit-kpis
     this.http.post<any>(`${this.apiBaseUrl}/submit-kpis`, kpis).subscribe({
       next: () => {
         // Handle success
@@ -78,6 +77,40 @@ export class BackendService {
         this.routerService.routeTo('dashboard');
       },
     });
+  }
+
+  getObjAndActionPlans(dept: string): Observable<any> {
+    // /api/get/obj-and-action-plans
+    const params = new HttpParams().set('dept', dept);
+    return this.http.get<any[]>(`${this.apiBaseUrl}/get/obj-and-action-plans`, {
+      params,
+    });
+  }
+
+  submitActionPlans(actionPlans: any[]) {
+    this.http
+      .post<any>(`${this.apiBaseUrl}/submit-action-plans`, actionPlans)
+      .subscribe({
+        next: () => {
+          // Handle success
+          this.authService.openSnackBar(
+            'Action Plans submitted successfully',
+            'Close',
+            'bottom'
+          );
+          this.routerService.routeTo('dashboard');
+        },
+        error: (error) => {
+          // Handle error
+          console.error('Error submitting KPIs:', error);
+          this.authService.openSnackBar(
+            'Failed to submit Action Plans',
+            'Close',
+            'bottom'
+          );
+          this.routerService.routeTo('dashboard');
+        },
+      });
   }
 
   setIgcfDeadline(deadlineInfo: { dept: string; date: string }) {

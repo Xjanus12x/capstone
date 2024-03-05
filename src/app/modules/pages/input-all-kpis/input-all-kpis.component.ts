@@ -106,8 +106,6 @@ export class InputAllKpisComponent implements OnInit {
         dept: this.currentUserDept,
       };
     });
-    console.log(values);
-
     // Further logic for form submission
     this.backendService.submitKpis(values);
   }

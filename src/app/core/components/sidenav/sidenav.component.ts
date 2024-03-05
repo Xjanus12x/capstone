@@ -54,23 +54,11 @@ export class SidenavComponent {
           label: 'Fill Up',
           link: 'fill-up',
           outlet: 'dashboardContent',
-          canAccess: ['Regular'],
-        },
-        {
-          label: 'Set Percentages',
-          link: 'set-percentages',
-          outlet: 'dashboardContent',
-          canAccess: ['Admin'],
-        },
-        {
-          label: 'Percentages List',
-          link: 'percentages-list',
-          outlet: 'dashboardContent',
-          canAccess: ['Admin'],
+          canAccess: ['Faculty'],
         },
       ],
       collapsed: true, // Set collapsed to true by default
-      canAccess: ['Admin', 'Regular'],
+      canAccess: ['Faculty'],
     },
 
     {
@@ -86,17 +74,23 @@ export class SidenavComponent {
           label: 'Action Plans',
           link: 'action-plans',
           outlet: 'dashboardContent',
-          canAccess: ['Admin'],
+          canAccess: ['Admin', 'College Secretary'],
+        },
+        {
+          label: 'List',
+          link: 'obj-and-action-plan-list',
+          outlet: 'dashboardContent',
+          canAccess: ['Admin', 'College Secretary'],
         },
       ],
-      collapsed: true, // Set collapsed to true by default
+      collapsed: true,
       canAccess: ['Admin', 'College Secretary'],
     },
     {
       label: 'Reports',
       outlet: 'dashboardContent',
       link: 'reports',
-      canAccess: ['Admin', 'Viewer Only'],
+      canAccess: ['Admin', 'HRD'],
     },
   ];
 }

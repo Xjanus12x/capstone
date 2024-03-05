@@ -1036,3 +1036,75 @@ server.post("/api/submit-kpis", (req, res) => {
     }
   });
 });
+
+server.post("/api/submit-action-plans", (req, res) => {
+  const formData = req.body;
+
+  // Extract the array of KPIs from the form data
+
+  // Initialize an array to store the SQL values for bulk insertion
+  const sqlValues = [];
+
+  // Iterate over each KPI object and push its values to the SQL values array
+  formData.forEach((actionPlan) => {
+    sqlValues.push([
+      actionPlan.deptObjTitle,
+      actionPlan.weight,
+      actionPlan.dept,
+    ]);
+  });
+
+  // SQL query to insert the KPIs into tbl_kpis
+  const sql =
+    "INSERT INTO tbl_action_plans (dept_obj_title, weight_percentage, dept) VALUES ?";
+
+  // Execute the SQL query with the SQL values array for bulk insertion
+  db.query(sql, [sqlValues], (error, result) => {
+    if (error) {
+      console.error("Error inserting KPIs:", error);
+      res.status(500).json({ error: "Error inserting KPIs" });
+    } else {
+      console.log("KPIs inserted successfully.");
+      res.status(200).json({ message: "Action Plans inserted successfully" });
+    }
+  });
+});
+
+
+server.get("/api/get/obj-and-action-plans", (req, res) => {
+  const {dept} = req.query; // Assuming department is passed as a query parameter
+
+  // Execute the SQL query to retrieve data from both tables based on department
+  const sqlQuery = `
+        SELECT 
+            kp.id AS kpi_id, 
+            kp.kpi_title, 
+            kp.weight_percentage AS kpi_weight_percentage, 
+            ap.id AS action_plan_id, 
+            ap.dept_obj_title, 
+            ap.weight_percentage AS action_plan_weight_percentage, 
+            ap.dept
+        FROM 
+            tbl_kpis kp
+        JOIN 
+            tbl_action_plans ap ON kp.dept = ap.dept
+        WHERE
+            kp.dept = ?;
+    `;
+
+  // Execute the query with department as a parameter
+  db.query(sqlQuery, [dept], (err, result) => {
+    if (err) {
+      console.error("Error executing SQL query:", err);
+      res
+        .status(500)
+        .json({ error: "An error occurred while retrieving data" });
+    } else {
+      // Send the result as JSON response
+      res.status(200).json(result);
+    }
+  });
+});
+
+
+

@@ -38,6 +38,7 @@ import { InputAllKpisComponent } from './input-all-kpis/input-all-kpis.component
 import { PendingUserListComponent } from './pending-user-list/pending-user-list.component';
 import { KpiListComponent } from './kpi-list/kpi-list.component';
 import { ActionPlansComponent } from './action-plans/action-plans.component';
+import { ObjAndActionPlansListComponent } from './obj-and-action-plans-list/obj-and-action-plans-list.component';
 
 @NgModule({
   declarations: [
@@ -54,6 +55,7 @@ import { ActionPlansComponent } from './action-plans/action-plans.component';
     PendingUserListComponent,
     KpiListComponent,
     ActionPlansComponent,
+    ObjAndActionPlansListComponent,
   ],
   exports: [LoginComponent, RegisterComponent, DashboardComponent],
   imports: [

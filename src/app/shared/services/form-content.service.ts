@@ -142,7 +142,13 @@ export class FormContentService {
       if (control) {
         control.disable(); // Disable the control
       }
-      
     });
+  }
+  stepLabels: string[] = [];
+  setStepLabels(labels: string[]) {
+    this.stepLabels = labels;
+  }
+  getStepLabels():string[]{
+    return this.stepLabels
   }
 }

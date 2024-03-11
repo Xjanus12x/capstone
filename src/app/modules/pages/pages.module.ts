@@ -20,7 +20,6 @@ import { MatSelectModule } from '@angular/material/select';
 import { HttpClientModule } from '@angular/common/http';
 import { UiModule } from 'src/app/shared/ui/ui.module';
 import { MatTabsModule } from '@angular/material/tabs';
-import { SetPercentagesFormComponent } from './set-percentages-form/set-percentages-form.component';
 import { MatPaginatorModule } from '@angular/material/paginator';
 import { MatTableModule } from '@angular/material/table';
 import { MatSlideToggleModule } from '@angular/material/slide-toggle';
@@ -33,7 +32,6 @@ import { ViewIgcfComponent } from './view-igcf/view-igcf.component';
 import { UserListComponent } from './user-list/user-list.component';
 import { ReportsComponent } from './reports/reports.component';
 import { MatDialogModule } from '@angular/material/dialog';
-import { PercentagesListComponent } from './percentages-list/percentages-list.component';
 import { InputAllKpisComponent } from './input-all-kpis/input-all-kpis.component';
 import { PendingUserListComponent } from './pending-user-list/pending-user-list.component';
 import { KpiListComponent } from './kpi-list/kpi-list.component';
@@ -46,11 +44,9 @@ import { ObjAndActionPlansListComponent } from './obj-and-action-plans-list/obj-
     RegisterComponent,
     DashboardComponent,
     IgcfFormComponent,
-    SetPercentagesFormComponent,
     ViewIgcfComponent,
     UserListComponent,
     ReportsComponent,
-    PercentagesListComponent,
     InputAllKpisComponent,
     PendingUserListComponent,
     KpiListComponent,
@@ -89,7 +85,7 @@ import { ObjAndActionPlansListComponent } from './obj-and-action-plans-list/obj-
     MatSortModule,
     MatProgressSpinnerModule,
     MatDialogModule,
-    
+
   ],
   providers: [],
 })

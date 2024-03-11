@@ -1,0 +1,45 @@
+<div>
+    <button mat-button (click)="accordion.openAll()">Expand All</button>
+    <button mat-button (click)="accordion.closeAll()">Collapse All</button>
+</div>
+
+<mat-accordion multi>
+    <mat-expansion-panel *ngFor="let kpi of data; let i = index">
+        <mat-expansion-panel-header>
+            <mat-panel-title>
+                KPI Title {{i+1}}
+            </mat-panel-title>
+            <mat-panel-description>
+                {{kpi.kpititle}}
+            </mat-panel-description>
+        </mat-expansion-panel-header>
+
+        <!-- Display action plans for this KPI -->
+        <table mat-table [dataSource]="kpi.actionPlans">
+            <!-- Define table columns -->
+            <ng-container matColumnDef="plan">
+                <th mat-header-cell *matHeaderCellDef>Plan</th>
+                <td mat-cell *matCellDef="let actionPlan">{{ actionPlan.plan }}</td>
+            </ng-container>
+
+            <ng-container matColumnDef="weight">
+                <th mat-header-cell *matHeaderCellDef>Weight</th>
+                <td mat-cell *matCellDef="let actionPlan">{{ actionPlan.weight }}</td>
+            </ng-container>
+
+            <ng-container matColumnDef="responsible">
+                <th mat-header-cell *matHeaderCellDef>Responsible</th>
+                <td mat-cell *matCellDef="let actionPlan">{{ actionPlan.responsible }}</td>
+            </ng-container>
+
+            <!-- Set table rows -->
+            <tr mat-header-row *matHeaderRowDef="displayedColumns"></tr>
+            <tr mat-row *matRowDef="let row; columns: displayedColumns;"></tr>
+        </table>
+    </mat-expansion-panel>
+</mat-accordion>
+
+<div mat-dialog-actions>
+    <button mat-button mat-raised-button color="primary" [mat-dialog-close]="false">Cancel</button>
+    <button mat-button mat-raised-button color="accent" [mat-dialog-close]="true" cdkFocusInitial>Confirm</button>
+</div>

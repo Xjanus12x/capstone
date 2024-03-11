@@ -1,10 +1,22 @@
-<mat-stepper #stepper>
+<!-- <mat-stepper #stepper orientation="vertical">
     <ng-container *ngFor="let formArrayName of formArrayNames;let i = index;">
         <mat-step [stepControl]="formGroup">
 
-            <ng-template matStepLabel>{{stepLabel[i]}}</ng-template>
+            <ng-template matStepLabel>
+                <div class="p-4 font-extrabold bg-yellow-300 rounded-sm">
+                    {{stepLabel[i]}}
+                </div>
+            </ng-template>
             <form [formGroup]="formGroup">
                 <table class="min-w-full mb-2 border-2 border-black" [formArrayName]="formArrayName">
+                    <tr>
+                        <th class="text-black border-2 border-black">
+                            Individual Commitment
+                        </th>
+                        <th></th>
+                        <th class="text-black border-2 border-black">Assessment</th>
+
+                    </tr>
                     <tr>
                         <th class="text-black border-2 border-black" *ngFor="let header of headers">{{ header
                             }}
@@ -17,9 +29,9 @@
                                 *ngFor="let percentage of percentages[i]; let j = index">
                                 {{ percentage }}{{j === 0? '':'%'}}
                             </td>
-                        </ng-container>
+                        </ng-container> 
 
-                        <ng-template #noSelectedPercentages>
+                <ng-template #noSelectedPercentages>
                             <td class="text-center text-black border-2 border-black" *ngFor="let row of tableRows">
                                 {{ row }}
                             </td>
@@ -60,4 +72,170 @@
         </mat-step>
     </ng-container>
 
-</mat-stepper>
+</mat-stepper> -->
+
+
+<mat-tab-group>
+    <mat-tab *ngFor="let label of stepLabels; let i = index; trackBy: trackByIndex" [label]="'KPI ' + (i+1) ">
+        <mat-accordion>
+            <mat-expansion-panel hideToggle>
+                <mat-expansion-panel-header>
+                    <mat-panel-title class="p-4 font-extrabold bg-yellow-500 rounded-sm">
+                        Department Objective: {{label | uppercase}}
+                    </mat-panel-title>
+                </mat-expansion-panel-header>
+
+                <form [formGroup]="formGroup">
+                    <div [formArrayName]="getLabel(label)">
+                        <div *ngFor="let group of getFormArrayControls(getLabel(label)).controls; let j = index"
+                            [formGroupName]="j">
+                            <h2 class="mt-4 font-extrabold">KPI {{j+1}}. {{getLabel(label)}}</h2>
+                            <table class="grid min-w-full gap-2" style="border-collapse: collapse;">
+                                <tr class='grid grid-cols-4 gap-2'>
+                                    <td class="border border-black">
+
+                                        <div class="grid">
+                                            <ng-container *ngIf="isAdmin; else dropDown">
+
+                                                <mat-form-field>
+                                                    <mat-label
+                                                        [ngClass]='{"font-extranbold text-red-500 text-xl":isAdmin}'>Personal
+                                                        Objective</mat-label>
+                                                    <textarea
+                                                        class="disabled:font-extrabold disabled:text-red-500 min-h-[8rem]"
+                                                        matInput formControlName="personalObject"></textarea>
+                                                </mat-form-field>
+
+
+                                            </ng-container>
+                                            <ng-template #dropDown>
+                                                <mat-form-field>
+                                                    <mat-label>Select Action Plan</mat-label>
+                                                    <mat-select class="disabled:font-extrabold disabled:text-red-500"
+                                                        formControlName="personalObject"
+                                                        (selectionChange)="onActionPlanSelectionChange($event.value,getLabel(label),j)">
+                                                        <mat-option *ngFor="let obj of getActionPlans(getLabel(label))"
+                                                            [value]="obj">{{ obj
+                                                            }}</mat-option>
+                                                    </mat-select>
+                                                </mat-form-field>
+                                            </ng-template>
+
+
+                                        </div>
+
+                                    </td>
+
+                                    <td class="border border-black">
+                                        <div class="grid">
+                                            <mat-form-field>
+                                                <mat-label
+                                                    [ngClass]='{"font-extranbold text-red-500 text-xl":isAdmin}'>Target</mat-label>
+                                                <input class="disabled:font-extrabold disabled:text-red-500" matInput
+                                                    formControlName="target">
+                                            </mat-form-field>
+                                        </div>
+                                    </td>
+
+                                    <td class="border border-black">
+                                        <div class="grid">
+                                            <mat-form-field>
+                                                <mat-label
+                                                    [ngClass]='{"font-extranbold text-red-500 text-xl":isAdmin}'>Initiatives</mat-label>
+                                                <textarea
+                                                    class="disabled:font-extrabold disabled:text-red-500 min-h-[8rem]"
+                                                    matInput formControlName="initiatives"></textarea>
+                                            </mat-form-field>
+                                        </div>
+                                    </td>
+
+
+
+                                    <td class="border border-black">
+
+                                        <div class="grid">
+                                            <mat-form-field>
+                                                <mat-label
+                                                    [ngClass]='{"font-extranbold text-red-500 text-xl":isAdmin}'>Personal
+                                                    Measures (KPI)</mat-label>
+                                                <textarea
+                                                    class="disabled:font-extrabold disabled:text-red-500 min-h-[8rem]"
+                                                    matInput formControlName="personalMeasures"></textarea>
+                                            </mat-form-field>
+                                        </div>
+
+                                    </td>
+                                </tr>
+                                <tr class="grid grid-cols-4 gap-2">
+                                    <td class="border border-black">
+                                        <div class="grid">
+                                            <mat-form-field>
+                                                <mat-label
+                                                    [ngClass]='{"font-extranbold text-red-500 text-xl":isAdmin}'>Weight</mat-label>
+                                                <input class="disabled:font-extrabold disabled:text-red-500" matInput
+                                                    formControlName="weight">
+                                            </mat-form-field>
+                                        </div>
+
+                                    </td>
+
+                                    <td class="border border-black">
+                                        <div class="grid">
+                                            <mat-form-field>
+                                                <mat-label
+                                                    [ngClass]='{"font-extranbold text-red-500 text-xl":isFaculty}'>Achieved</mat-label>
+                                                <input class="disabled:font-extrabold disabled:text-red-500" matInput
+                                                    formControlName="achieved">
+                                            </mat-form-field>
+                                        </div>
+                                    </td>
+
+                                    <td class="border border-black">
+                                        <div class="grid">
+                                            <mat-form-field>
+                                                <mat-label
+                                                    [ngClass]='{"font-extranbold text-red-500 text-xl":isFaculty}'>Rating
+                                                    ( 1 - 4 )</mat-label>
+                                                <mat-select formControlName="rating">
+                                                    <mat-option>
+                                                        --None--
+                                                    </mat-option>
+                                                    <mat-option value="1">
+                                                        1
+                                                    </mat-option>
+                                                    <mat-option value="2">
+                                                        2
+                                                    </mat-option>
+                                                    <mat-option value="3">
+                                                        3
+                                                    </mat-option>
+                                                    <mat-option value="4">
+                                                        4
+                                                    </mat-option>
+                                                </mat-select>
+                                            </mat-form-field>
+                                        </div>
+                                    </td>
+
+                                    <div class="grid items-center justify-start">
+                                        <button mat-icon-button color="warn" matTooltip="Remove"
+                                            (click)="removeIGCControl(getLabel(label),i)"
+                                            [disabled]="getFormArrayLength(getLabel(label)) === 1 || currentUserRole === 'Admin' ">
+                                            <mat-icon>cancel</mat-icon>
+                                        </button>
+                                    </div>
+
+                                </tr>
+                            </table>
+                        </div>
+                    </div>
+                    <button class="mt-4" type="button" mat-raised-button color="primary"
+                        (click)="addFormGroup(getLabel(label))" [disabled]="currentUserRole === 'Admin'">Add
+                        another</button>
+
+                </form>
+            </mat-expansion-panel>
+        </mat-accordion>
+
+    </mat-tab>
+</mat-tab-group>

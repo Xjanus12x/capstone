@@ -28,18 +28,16 @@ export class ObjAndActionPlansListComponent {
   selection = new SelectionModel<any>(true, []);
   dataSource = new MatTableDataSource<any>();
   displayedHeader: string[] = [
-    'Department Objective',
-    'Weight %',
-    'KPI',
-    'Weight %',
-    'Department',
+    'KPI Title',
+    'Action PLan',
+    'Weight',
+    'Responsible',
   ];
   displayedColumns: string[] = [
-    'dept_obj_title',
-    'action_plan_weight_percentage',
     'kpi_title',
-    'kpi_weight_percentage',
-    'dept',
+    'action_plan',
+    'weight',
+    'responsible',
   ];
   isLoadingResults = true;
   currentUserEmpNumber: string = '';
@@ -59,14 +57,8 @@ export class ObjAndActionPlansListComponent {
 
   loadData() {
     this.isLoadingResults = true;
-    this.authService.getEmployeeDepartment().subscribe({
-      next: (dept: string) => {
-        this.objAndActionPlans$ =
-          this.backendService.getObjAndActionPlans(dept);
-        this.handleDataSubscription();
-      },
-      error: (error) => this.handleError(error),
-    });
+    this.objAndActionPlans$ = this.backendService.getKpisAndActionPlans();
+    this.handleDataSubscription();
   }
 
   handleDataSubscription() {
@@ -107,17 +99,23 @@ export class ObjAndActionPlansListComponent {
     return this.displayedColumns.concat(additionalColumns);
   }
 
-  // action_plan_id: 4;
-  // action_plan_weight_percentage: '32';
-  // dept: 'SCHOOL OF COMPUTING';
-  // dept_obj_title: 'alberto3';
-  // kpi_id: 12;
-  // kpi_title: 'alberto';
-  // kpi_weight_percentage: 2;
-  deleteObjAndActionPlan(element: any) {
-    console.log(element);
-    console.log(element.action_plan_id);
-    console.log(element.kpi_id);
+  deleteKPIAndActionPlan(id: number) {
+    const indexToRemove = this.dataToDisplay.findIndex(
+      (item: any) => item.id === id
+    );
+    if (indexToRemove === -1) return;
+    // If the item is found, remove
+    this.dataToDisplay.splice(indexToRemove, 1);
+    this.dataSource.data = this.dataToDisplay;
+    this.backendService.deleteKPIAndActionPlan(id).subscribe({
+      next: () => {
+        this.authService.openSnackBar(
+          'KPI deleted successfully',
+          'Close',
+          'bottom'
+        );
+      },
+    });
   }
 
   // rejectUser(id: number) {

@@ -9,12 +9,9 @@ import {
   canActivate,
   canActivateAdminRoutes,
 } from './core/guards/checkAccess.guard';
-import { SetPercentagesFormComponent } from './modules/pages/set-percentages-form/set-percentages-form.component';
-import { canAccessSettingPercentages } from './core/guards/canAccessSettingPercentages.guard';
 import { ViewIgcfComponent } from './modules/pages/view-igcf/view-igcf.component';
 import { UserListComponent } from './modules/pages/user-list/user-list.component';
 import { ReportsComponent } from './modules/pages/reports/reports.component';
-import { PercentagesListComponent } from './modules/pages/percentages-list/percentages-list.component';
 import { PendingUserListComponent } from './modules/pages/pending-user-list/pending-user-list.component';
 import { InputAllKpisComponent } from './modules/pages/input-all-kpis/input-all-kpis.component';
 import { ActionPlansComponent } from './modules/pages/action-plans/action-plans.component';
@@ -50,11 +47,10 @@ const routes: Routes = [
         path: 'fill-up',
         component: IgcfFormComponent,
         outlet: 'dashboardContent',
-        canActivate: [canAccessSettingPercentages],
         canDeactivate: [canExit],
       },
       {
-        path: 'submitted-form/:id/:isSigned',
+        path: 'submitted-form/:id',
         component: IgcfFormComponent,
         outlet: 'dashboardContent',
         canDeactivate: [canExit],
@@ -62,17 +58,6 @@ const routes: Routes = [
       {
         path: 'view-igcf/:id',
         component: ViewIgcfComponent,
-        outlet: 'dashboardContent',
-      },
-      {
-        path: 'set-percentages',
-        component: SetPercentagesFormComponent,
-        outlet: 'dashboardContent',
-        canDeactivate: [canExit],
-      },
-      {
-        path: 'percentages-list',
-        component: PercentagesListComponent,
         outlet: 'dashboardContent',
       },
       {

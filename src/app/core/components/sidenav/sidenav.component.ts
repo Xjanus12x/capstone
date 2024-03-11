@@ -44,7 +44,7 @@ export class SidenavComponent {
           outlet: 'dashboardContent',
         },
       ],
-      collapsed: true, // Set collapsed to true by default
+      collapsed: true, 
       canAccess: ['Admin'],
     },
     {
@@ -54,11 +54,11 @@ export class SidenavComponent {
           label: 'Fill Up',
           link: 'fill-up',
           outlet: 'dashboardContent',
-          canAccess: ['Faculty'],
+          canAccess: ['Faculty', 'Admin'],
         },
       ],
-      collapsed: true, // Set collapsed to true by default
-      canAccess: ['Faculty'],
+      collapsed: true, 
+      canAccess: ['Faculty', 'Admin'],
     },
 
     {
@@ -71,13 +71,7 @@ export class SidenavComponent {
           canAccess: ['Admin', 'College Secretary'],
         },
         {
-          label: 'Action Plans',
-          link: 'action-plans',
-          outlet: 'dashboardContent',
-          canAccess: ['Admin', 'College Secretary'],
-        },
-        {
-          label: 'List',
+          label: 'KPI List',
           link: 'obj-and-action-plan-list',
           outlet: 'dashboardContent',
           canAccess: ['Admin', 'College Secretary'],

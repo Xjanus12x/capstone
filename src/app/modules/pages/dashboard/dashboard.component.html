@@ -3,9 +3,11 @@
         <app-header></app-header>
         <div class="container mt-4 bg-white rounded-md shadow-xl max-h-[45rem] overflow-auto">
             <ng-container *ngIf="!isRouteActive(); else outlet">
+
                 <ng-container *ngIf="isLoadingResults; else table">
-                    <div class="grid min-h-[40rem] place-content-center">
-                        <mat-spinner></mat-spinner>
+                    <div class="flex items-center justify-center min-h-[45rem]">
+                        <mat-spinner diameter="42"></mat-spinner>
+                        <span class="ml-2 text-sm font-semibold text-gray-700">Loading...</span>
                     </div>
                 </ng-container>
 
@@ -31,7 +33,7 @@
                             </div>
                         </div>
                         <div class="bg-white">
-                            <table mat-table [dataSource]="dataSource" matSort id="temp">
+                            <table mat-table [dataSource]="dataSource" matSort>
                                 <!-- Manually define column headers -->
                                 <ng-container *ngFor="let column of displayedColumns; let i = index"
                                     [matColumnDef]="column">
@@ -44,7 +46,7 @@
                                     </mat-cell>
                                 </ng-container>
 
-                                <ng-container matColumnDef="isSigned">
+                                <!-- <ng-container matColumnDef="isSigned">
                                     <mat-header-cell mat-header-cell *matHeaderCellDef mat-sort-header> Status
                                     </mat-header-cell>
                                     <mat-cell mat-cell *matCellDef="let element">
@@ -54,7 +56,7 @@
                                             {{element.isSigned? 'Signed': 'Not sign'}}
                                         </span>
                                     </mat-cell>
-                                </ng-container>
+                                </ng-container> -->
 
                                 <!-- Manually define the "actions" column -->
                                 <ng-container matColumnDef="actions" *ngIf="userRole$ | async as role">
@@ -62,7 +64,7 @@
                                     <mat-cell class="flex flex-wrap" mat-cell *matCellDef="let element">
                                         <ng-container *ngIf="role === 'Admin'">
                                             <button mat-icon-button matTooltip="Rate IGCF"
-                                                [routerLink]="['/dashboard', { outlets: { dashboardContent: ['submitted-form', element.id, element.ratee_signature.length !== 0 ]} }]">
+                                                [routerLink]="['/dashboard', { outlets: { dashboardContent: ['submitted-form', element.id ]} }]">
                                                 <mat-icon>star</mat-icon>
                                             </button>
                                         </ng-container>
@@ -70,7 +72,7 @@
                                             [routerLink]="['/dashboard', { outlets: { dashboardContent: ['view-igcf',  element.id]} }]">
                                             <mat-icon>visibility</mat-icon>
                                         </button>
-                                        <ng-container *ngIf="role === 'Admin' || role === 'Regular'">
+                                        <ng-container *ngIf="role === 'Admin' || role === 'Faculty'">
                                             <button mat-icon-button color="warn" matTooltip="Delete row"
                                                 (click)="deleteSubmittedIgcf(element.id)">
                                                 <mat-icon>delete</mat-icon>
@@ -80,9 +82,8 @@
                                 </ng-container>
 
 
-                                <mat-header-row *matHeaderRowDef="concatColumns('isSigned','actions')"></mat-header-row>
-                                <mat-row matRipple
-                                    *matRowDef=" let row; columns: concatColumns('isSigned','actions')"></mat-row>
+                                <mat-header-row *matHeaderRowDef="concatColumns('actions')"></mat-header-row>
+                                <mat-row matRipple *matRowDef=" let row; columns: concatColumns('actions')"></mat-row>
 
                                 <!-- Row shown when there is no matching data. -->
                                 <tr class="text-lg text-center" *matNoDataRow>

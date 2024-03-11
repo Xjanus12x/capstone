@@ -59,7 +59,6 @@ export class HeaderComponent implements OnInit {
       dialogRef.afterClosed().subscribe((selectedDate: Date | undefined) => {
         if (selectedDate) {
           const deadline = this.datePipe.transform(selectedDate, 'yyyy-MM-dd');
-
           // Do something with the selectedDate
           this.backendService.setIgcfDeadline({
             dept: this.dept,

@@ -1,6 +1,60 @@
 <div class="mt-4 bg-white">
-    <mat-tab-group dynamicHeight>
-        <mat-tab label="I. BALANCED SCORECARD PERSPECTIVES AND KEY PERFORMANCE INDICATORS">
+    <mat-tab-group (selectedTabChange)="onTabChange($event)" dynamicHeight #tabGroup>
+        <mat-tab label="CHOOSE KPI" *ngIf="!isAdminRating()">
+            <div class="grid p-4">
+                <mat-form-field>
+                    <mat-label>Select KPI's</mat-label>
+                    <mat-select [formControl]="kpiTitlesDropdown" multiple>
+                        <mat-select-trigger>
+                            {{kpiTitlesDropdown.value?.[0] || ''}}
+                            <span *ngIf="(kpiTitlesDropdown.value?.length || 0) > 1">
+                                (+{{(kpiTitlesDropdown.value?.length || 0) - 1}} {{kpiTitlesDropdown.value?.length === 2
+                                ?
+                                'other' : 'others'}})
+                            </span>
+                        </mat-select-trigger>
+                        <mat-option *ngFor="let kpiTitle of kpiTitleList" [value]="kpiTitle">{{kpiTitle}}</mat-option>
+                    </mat-select>
+                </mat-form-field>
+
+                <ng-container *ngIf="getKpiDropdownLength() > 0">
+                    <ul>
+                        <li class="grid" *ngFor="let kpiTitle of kpiTitlesDropdown?.value; let i = index">
+                            <mat-form-field>
+                                <mat-label>{{kpiTitle}} Weight %</mat-label>
+                                <input matInput type="number" [formControl]="getWeightFormControl(kpiTitle)">
+                                <mat-error class="font-extrabold" *ngIf="getWeightFormControl(kpiTitle).hasError('min')
+                                            && getWeightFormControl(kpiTitle).invalid 
+                                            && getWeightFormControl(kpiTitle).touched 
+                                            && !getWeightFormControl(kpiTitle).hasError('required')
+                                            && !getWeightFormControl(kpiTitle).hasError('max')">
+                                    Minimum value is 1.
+                                </mat-error>
+                                <mat-error class="font-extrabold" *ngIf="getWeightFormControl(kpiTitle).hasError('max')
+                                            && getWeightFormControl(kpiTitle).invalid 
+                                            && getWeightFormControl(kpiTitle).touched 
+                                            && !getWeightFormControl(kpiTitle).hasError('required')
+                                            && !getWeightFormControl(kpiTitle).hasError('min')">
+                                    Maximum value is 100.
+                                </mat-error>
+                                <mat-error class="font-extrabold" *ngIf="getWeightFormControl(kpiTitle).hasError('required')
+                                            && getWeightFormControl(kpiTitle).invalid 
+                                            && getWeightFormControl(kpiTitle).touched 
+                                            && !getWeightFormControl(kpiTitle).hasError('min')
+                                            && !getWeightFormControl(kpiTitle).hasError('max')">
+                                    Weight is required.
+                                </mat-error>
+                            </mat-form-field>
+
+                        </li>
+                    </ul>
+                </ng-container>
+                <button (click)="confirm()">Confirm</button>
+            </div>
+        </mat-tab>
+
+        <mat-tab *ngIf="isValid || isAdminRating()"
+            label="I. BALANCED SCORECARD PERSPECTIVES AND KEY PERFORMANCE INDICATORS">
             <div class="p-4">
                 <div class="px-8">
                     <header class="font-bold">
@@ -29,37 +83,24 @@
                         </li>
                     </ol>
                 </div>
+                <app-part-one-form [kpis]="kpis">
+                </app-part-one-form>
 
-                <ng-container ainer *ngIf=" ((userRole$ | async)  === 'Regular')">
-                    <div class="mt-4 ml-4 ">
-                        <mat-form-field>
-                            <mat-label>Select %</mat-label>
-                            <mat-select [formControl]="percentagesCtrl" (selectionChange)="updateIgcfPercentages()">
-                                <mat-option>--None--</mat-option>
-                                <mat-option *ngFor="let unfilteredIgcfPercentage of unfilteredIgcfPercentages"
-                                    [value]="unfilteredIgcfPercentage.id">{{unfilteredIgcfPercentage.title}}</mat-option>
-                            </mat-select>
-                            <mat-hint align="start">Choose a percentage set</mat-hint>
-                        </mat-form-field>
-                    </div>
-                </ng-container>
-
-
-                <app-part-one-form [controlNames]="controlNames" [headers]="tableHeaders" [tableRows]="tableRows"
-                    [stepLabel]="partOneStepLabel" [groupCounts]="groupCounts" [formArrayNames]="partOneFormArrayNames"
-                    [percentages]="igcfPercentages"></app-part-one-form>
             </div>
         </mat-tab>
-        <mat-tab label="II. OBSERVATION AND RECOMMENDATIONS. PLEASE ACCOMPLISH ALL ITEMS BELOW.">
+
+        <mat-tab *ngIf="isAdminRating()"
+            label="II. OBSERVATION AND RECOMMENDATIONS. PLEASE ACCOMPLISH ALL ITEMS BELOW.">
             <app-part-two-form [stepLabel]="partTwoStepLabel"></app-part-two-form>
         </mat-tab>
 
     </mat-tab-group>
+
     <div class="grid gap-4 p-4" [ngClass]="{'grid-cols-2':!isSigned,'grid-cols-1':isSigned}">
         <ng-container *ngIf="!isSigned">
             <button
                 class="px-4 py-2 text-white transition-colors duration-500 ease-in-out bg-black rounded-md hover:bg-green-700"
-                (click)="submit()">{{( userRole$ | async) === "Regular"? 'Submit':'Signed'}}</button>
+                (click)="submit()">{{currentUserRole === "Faculty"? 'Submit':'Rate'}}</button>
         </ng-container>
         <button
             class="px-4 py-2 text-white transition-colors duration-500 ease-in-out bg-black rounded-md hover:bg-red-500"

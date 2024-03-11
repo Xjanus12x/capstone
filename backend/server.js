@@ -14,7 +14,7 @@ const db = mysql.createConnection({
   host: "localhost",
   user: "root",
   password: "",
-  database: "db_icommit",
+  database: "tbl_hau_commit",
 });
 
 db.connect(function (error) {
@@ -91,32 +91,7 @@ server.post("/api/employee-details/add", (req, res) => {
   });
 });
 
-// add set percentages
-server.post("/api/percentages/add", (req, res) => {
-  let igcfInformation = {
-    dept_name: req.body.dept_name,
-    title: req.body.title,
-    "set_weight_%": req.body.weightPercentages,
-    "set_individual_goal_commitment_%":
-      req.body.individualGoalCommitmentPercentages,
-    "set_accomplishment_%": req.body.accomplishmentPercentages,
-  };
-  let sql = "INSERT INTO tbl_igcf_information SET ?";
-  db.query(sql, igcfInformation, (error, result) => {
-    if (error) {
-      res.send({
-        status: false,
-        message: "IGCF Information  created failed",
-      });
-    } else {
-      res.send({
-        status: true,
-        message: "IGCF Information created successfully",
-        data: result[0],
-      });
-    }
-  });
-});
+
 
 // // fetch users
 // server.get("/api/users", (req, res) => {
@@ -251,30 +226,6 @@ server.post("/api/login", (req, res) => {
   });
 });
 
-// // original email exisitence
-// server.post("/api/user/check-existence", (req, res) => {
-//   try {
-//     const { emp_email } = req.body;
-
-//     // Check if the email already exists in the database
-//     const checkExistenceQuery =
-//       "SELECT email FROM tbl_pending_registration WHERE email = ?";
-//     db.query(checkExistenceQuery, [emp_email], (error, existingUser) => {
-//       if (error) {
-//         console.error("Error checking user existence:", error);
-//         res
-//           .status(500)
-//           .send({ status: false, message: "Internal Server Error" });
-//       } else {
-//         // Respond with a boolean indicating whether the user exists
-//         res.send({ exists: existingUser.length > 0 });
-//       }
-//     });
-//   } catch (error) {
-//     console.error("Unexpected error:", error);
-//     res.status(500).send({ status: false, message: "Internal Server Error" });
-//   }
-// });
 
 server.post("/api/user/check-existence", (req, res) => {
   try {
@@ -360,66 +311,7 @@ server.get("/api/get/employee-details", (req, res) => {
   });
 });
 
-// add submitted form data to database
-server.post("/api/submit-form", (req, res) => {
-  // Destructure the properties from req.body for clarity and easier access
-  const {
-    emp_fullname,
-    emp_number,
-    emp_position,
-    emp_dept,
-    selectedWeightPercentages,
-    selectedIndividualGoalCommitmentPercentages,
-    selectedCommitmentPercentages,
-    emp_set_commitments,
-    emp_set_weight_percentage,
-    emp_set_igc_percentage,
-    emp_set_accomplishment_percentage,
-    emp_top_three_least_agc,
-    emp_top_three_highly_agc,
-    emp_top_three_competencies_improvement,
-    emp_top_three_competency_strenghts,
-    emp_top_three_training_development_suggestion,
-    emp_signature,
-  } = req.body;
 
-  // Create the submittedForm object with the extracted properties
-  const submittedForm = {
-    fullname: emp_fullname,
-    emp_number: emp_number,
-    emp_position: emp_position,
-    emp_dept: emp_dept,
-    selected_weight_percentages: selectedWeightPercentages,
-    selected_igc_percentages: selectedIndividualGoalCommitmentPercentages,
-    selected_commitment_percentages: selectedCommitmentPercentages,
-    commitments: emp_set_commitments,
-    weight_percentages: emp_set_weight_percentage,
-    igc_percentages: emp_set_igc_percentage,
-    accomplishment_percentages: emp_set_accomplishment_percentage,
-    top_three_least_agc: emp_top_three_least_agc,
-    top_three_highly_agc: emp_top_three_highly_agc,
-    top_three_competencies_improvement: emp_top_three_competencies_improvement,
-    top_three_competency_strenghts: emp_top_three_competency_strenghts,
-    top_three_training_development_suggestions:
-      emp_top_three_training_development_suggestion,
-    rater_signature: emp_signature,
-  };
-
-  // Insert submittedForm into the database
-  db.query(
-    "INSERT INTO tbl_emp_submitted_igcf SET ?",
-    submittedForm,
-    (err, result) => {
-      if (err) {
-        console.error("Error inserting form data:", err);
-        res.status(500).json({ error: "Error submitting form data" });
-      } else {
-        console.log("Form data submitted successfully");
-        res.status(200).json({ message: "Form data submitted successfully" });
-      }
-    }
-  );
-});
 
 // signed the submitted igcf
 server.post("/api/signed-igcf", (req, res) => {
@@ -513,26 +405,6 @@ server.get("/api/get/all-emp-submitted-igcf", (req, res) => {
       res.status(200).json(result);
     }
   });
-});
-
-server.delete("/api/del/submitted-igcf/:id", (req, res) => {
-  const id = req.params.id;
-
-  // Perform the DELETE operation in your database
-  db.query(
-    "DELETE FROM tbl_emp_submitted_igcf WHERE id = ?",
-    [id],
-    (err, result) => {
-      if (err) {
-        console.error("Error deleting row:", err);
-        res.status(500).json({ error: "Internal server error" });
-        return;
-      }
-
-      console.log("Row deleted successfully");
-      res.status(200).json({ message: "Row deleted successfully" });
-    }
-  );
 });
 
 //get all users
@@ -1037,26 +909,28 @@ server.post("/api/submit-kpis", (req, res) => {
   });
 });
 
-server.post("/api/submit-action-plans", (req, res) => {
-  const formData = req.body;
+// {title: '11111', plan: '22222', weight: 3, responsible: 'Faculty,Organizations'}
 
+// {title: '11111', plan: '44444', weight: 5, responsible: 'Faculty,CEB'}
+
+// {title: '77777', plan: '88888', weight: 9, responsible: 'CEB,Organizations,Lab'}
+
+server.post("/api/add/kpi-and-action-plans", (req, res) => {
+  const formData = req.body;
+  console.log(formData);
   // Extract the array of KPIs from the form data
 
   // Initialize an array to store the SQL values for bulk insertion
   const sqlValues = [];
 
   // Iterate over each KPI object and push its values to the SQL values array
-  formData.forEach((actionPlan) => {
-    sqlValues.push([
-      actionPlan.deptObjTitle,
-      actionPlan.weight,
-      actionPlan.dept,
-    ]);
+  formData.forEach((kpi) => {
+    sqlValues.push([kpi.title, kpi.plan, kpi.weight, kpi.responsible]);
   });
 
   // SQL query to insert the KPIs into tbl_kpis
   const sql =
-    "INSERT INTO tbl_action_plans (dept_obj_title, weight_percentage, dept) VALUES ?";
+    "INSERT INTO tbl_kpi_and_action_plans (kpi_title, action_plan, weight, responsible) VALUES ?";
 
   // Execute the SQL query with the SQL values array for bulk insertion
   db.query(sql, [sqlValues], (error, result) => {
@@ -1065,35 +939,21 @@ server.post("/api/submit-action-plans", (req, res) => {
       res.status(500).json({ error: "Error inserting KPIs" });
     } else {
       console.log("KPIs inserted successfully.");
-      res.status(200).json({ message: "Action Plans inserted successfully" });
+      res.status(200).json({ message: "KPIs inserted successfully." });
     }
   });
 });
 
-
-server.get("/api/get/obj-and-action-plans", (req, res) => {
-  const {dept} = req.query; // Assuming department is passed as a query parameter
-
+server.get("/api/get/kpi-and-action-plans", (req, res) => {
+  // const { dept } = req.query; // Assuming department is passed as a query parameter
   // Execute the SQL query to retrieve data from both tables based on department
   const sqlQuery = `
-        SELECT 
-            kp.id AS kpi_id, 
-            kp.kpi_title, 
-            kp.weight_percentage AS kpi_weight_percentage, 
-            ap.id AS action_plan_id, 
-            ap.dept_obj_title, 
-            ap.weight_percentage AS action_plan_weight_percentage, 
-            ap.dept
-        FROM 
-            tbl_kpis kp
-        JOIN 
-            tbl_action_plans ap ON kp.dept = ap.dept
-        WHERE
-            kp.dept = ?;
+        SELECT  *
+        FROM tbl_kpi_and_action_plans
     `;
 
   // Execute the query with department as a parameter
-  db.query(sqlQuery, [dept], (err, result) => {
+  db.query(sqlQuery, (err, result) => {
     if (err) {
       console.error("Error executing SQL query:", err);
       res
@@ -1106,5 +966,199 @@ server.get("/api/get/obj-and-action-plans", (req, res) => {
   });
 });
 
+server.delete("/api/delete/kpi-and-action-plan", (req, res) => {
+  const { id } = req.query;
+
+  // Execute the SQL query to delete records from tbl_kpis
+  const sqlQueryKPIs = `DELETE FROM tbl_kpi_and_action_plans WHERE id = ?`;
+
+  // Execute the query with the provided ID
+  db.query(sqlQueryKPIs, [id], (error, results) => {
+    if (error) {
+      // Handle the error
+      console.error("Error deleting KPIs:", error);
+      res.status(500).send("Error deleting KPIs");
+      return;
+    }
+    // If the query was successful, send a success response
+    console.log("KPIs deleted successfully:", results.affectedRows);
+    res.status(200).send("KPIs deleted successfully");
+  });
+});
+
+server.post("/api/submit-igcf", (req, res) => {
+  const {
+    fullname,
+    emp_number,
+    emp_position,
+    emp_dept,
+    completion_date,
+    formData,
+  } = req.body;
+
+  // Insert data into tbl_igcf_submission_history
+  let igcfSubmissionHistoryQuery = `
+      INSERT INTO tbl_igcf_submission_history SET ?`;
+  let empDetails = {
+    fullname,
+    emp_number,
+    emp_position,
+    emp_dept,
+    completion_date,
+  };
+  db.query(igcfSubmissionHistoryQuery, empDetails, (err, result) => {
+    if (err) {
+      console.error("Error updating pending user:", err);
+      res.status(500).json({ error: "Error updating pending user" });
+      return;
+    }
+
+    // Get the ID of the inserted record
+    const igcfSubmissionHistoryId = result.insertId;
+    // Initialize an array to store the SQL values for bulk insertion
+    const sqlValues = [];
+
+    // Iterate over each KPI object and push its values to the SQL values array
+    formData.forEach((kpi) => {
+      sqlValues.push([
+        igcfSubmissionHistoryId,
+        kpi.selected_kpi,
+        kpi.personalObject,
+        kpi.target,
+        kpi.initiatives,
+        kpi.personalMeasures,
+        kpi.weight,
+      ]);
+    });
+    // achieved: '';
+    // initiatives: 'fdas';
+    // personalMeasures: 'fads';
+    // personalObject: '11111';
+    // rating: '';
+    // target: '65%';
+    // weight: '100';
+    // SQL query to insert the KPIs into tbl_kpis
+    const submittedIgcfDetailsQuery =
+      "INSERT INTO tbl_submitted_igcf_details (tbl_igcf_submission_history_id, selected_kpi, selected_plan ,selected_plan_weight, initiatives, personal_measures_kpi ,weight) VALUES ?";
+
+    // Execute the SQL query with the SQL values array for bulk insertion
+    db.query(submittedIgcfDetailsQuery, [sqlValues], (err, result) => {
+      if (err) {
+        console.error("Error inserting KPIs:", err);
+        res.status(500).json({ error: "Error inserting KPIs" });
+        return;
+      }
+
+      console.log("KPIs inserted successfully.");
+      res.status(200).json({ success: true });
+    });
+  });
+});
+
+server.get("/api/get/igcf-submission-history-by-dept", (req, res) => {
+  const { dept } = req.query;
+  let sql = `SELECT * FROM tbl_igcf_submission_history WHERE emp_dept = ?`;
+
+  db.query(sql, [dept], (error, results) => {
+    if (error) {
+      console.error("Error fetching submission history:", error);
+      res.status(500).json({ error: "Internal server error" });
+      return;
+    }
+
+    // If the query was successful, send the results back to the client
+    res.status(200).json(results);
+  });
+});
+
+server.get("/api/get/igcf-submission-history-by-emp-num", (req, res) => {
+  const { emp_number } = req.query;
+  let sql = `SELECT * FROM tbl_igcf_submission_history WHERE emp_number = ?`;
+
+  db.query(sql, [emp_number], (error, results) => {
+    if (error) {
+      console.error("Error fetching submission history:", error);
+      res.status(500).json({ error: "Internal server error" });
+      return;
+    }
+
+    // If the query was successful, send the results back to the client
+    res.status(200).json(results);
+  });
+});
+
+server.get("/api/get/igcf-submission-history-every-dept", (req, res) => {
+  let sql = `SELECT * FROM tbl_igcf_submission_history`;
+
+  db.query(sql, (error, results) => {
+    if (error) {
+      console.error("Error fetching submission history:", error);
+      res.status(500).json({ error: "Internal server error" });
+      return;
+    }
+
+    // If the query was successful, send the results back to the client
+    res.status(200).json(results);
+  });
+});
 
 
+server.delete("/api/del/submitted-igcf/:id", (req, res) => {
+  const id = req.params.id;
+
+  // Perform the DELETE operation in your database
+  let deleteSubmissionHistory =
+    "DELETE FROM tbl_igcf_submission_history WHERE id = ?";
+  let deleteSubmittedIgcfDetails =
+    "DELETE FROM tbl_submitted_igcf_details WHERE tbl_igcf_submission_history_id = ?";
+
+  // Delete from tbl_igcf_submission_history
+  db.query(deleteSubmissionHistory, id, (err1, result1) => {
+    if (err1) {
+      console.error("Error deleting submission history:", err1);
+      res.status(500).json({ error: "Error deleting submission history" });
+      return;
+    }
+
+    // Delete from tbl_submitted_igcf_details
+    db.query(deleteSubmittedIgcfDetails, id, (err2, result2) => {
+      if (err2) {
+        console.error("Error deleting submitted IGCF details:", err2);
+        res
+          .status(500)
+          .json({ error: "Error deleting submitted IGCF details" });
+        return;
+      }
+
+      console.log("Submitted IGCF deleted successfully.");
+      res.status(200).json({ message: "Submitted IGCF deleted successfully." });
+    });
+  });
+});
+
+server.get("/api/get/submitted-igcf-details", (req, res) => {
+  const { id } = req.query;
+
+  // Query to fetch submitted IGCF details based on the provided id
+  let getSubmittedIgcfDetailsQuery =
+    "SELECT selected_kpi, selected_plan, selected_plan_weight, personal_measures_kpi, initiatives, weight FROM tbl_submitted_igcf_details WHERE tbl_igcf_submission_history_id = ?";
+
+  // Execute the query with the provided id
+  db.query(getSubmittedIgcfDetailsQuery, [id], (err, result) => {
+    if (err) {
+      console.error("Error fetching submitted IGCF details:", err);
+      res.status(500).json({ error: "Error fetching submitted IGCF details" });
+      return;
+    }
+
+    // Check if any data was returned
+    if (result.length === 0) {
+      // No data found with the provided id
+      res.status(404).json({ error: "Submitted IGCF details not found" });
+      return;
+    }
+
+    // Data found, send it in the response
+    res.status(200).json(result); // Assuming only one row is expected, so sending the first row
+  });
+});

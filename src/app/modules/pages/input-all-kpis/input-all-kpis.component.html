@@ -1,66 +1,148 @@
-<form [formGroup]="formGroup">
-    <table class="min-w-full border-2 border-collapse border-black">
-        <thead>
-            <tr>
-                <th>KPI Title</th>
-                <th>Weight %</th>
-                <th>Action</th>
-            </tr>
-        </thead>
-        <tbody formArrayName="kpis">
-            <tr *ngFor="let kpiControl of getFormArrayControls(); let i = index" [formGroupName]="i">
-                <td class="border-2 border-black">
-                    <div class="grid p-2">
-                        <mat-form-field>
-                            <input matInput formControlName="kpititle" placeholder="KPI Title" required minlength="5">
-                            <mat-error class="font-extrabold"
-                                *ngIf="getFormControl('kpis', 'kpititle', i)?.hasError('minlength') && getFormControl('kpis', 'kpititle', i)?.touched && !getFormControl('kpis', 'kpititle', i)?.hasError('required')">
-                                KPI Title must be at least 5 characters long.
-                            </mat-error>
-                            <mat-error class="font-extrabold"
-                                *ngIf="getFormControl('kpis', 'kpititle', i)?.hasError('required') && getFormControl('kpis', 'kpititle', i)?.touched && !getFormControl('kpis', 'kpititle', i)?.hasError('minlength')">
-                                KPI Title is required.
-                            </mat-error>
-                        </mat-form-field>
+<mat-form-field>
+    <mat-label>Selected tab index</mat-label>
+    <input matInput type="number" [formControl]="selected" min="0">
+</mat-form-field>
+<div>
+    <mat-checkbox #selectAfterAdding> Select tab after adding </mat-checkbox>
+</div>
 
-                    </div>
-                </td>
-                <td class="border-2 border-black">
-                    <div class="grid p-2">
-                        <mat-form-field>
-                            <input matInput formControlName="weight" type="number" placeholder="Weight" required min="1"
-                                max="100">
-                            <mat-error class="font-extrabold" *ngIf="getFormControl('kpis', 'weight', i)?.hasError('min') && getFormControl('kpis', 'weight', i)?.invalid 
-                                && getFormControl('kpis', 'weight', i)?.touched && !getFormControl('kpis', 'weight', i)?.hasError('max') &&
-                                 !getFormControl('kpis', 'weight', i)?.hasError('required')">
-                                Weight must be at least 1.
-                            </mat-error>
-                            <mat-error class="font-extrabold" *ngIf="getFormControl('kpis', 'weight', i)?.hasError('max') && getFormControl('kpis', 'weight', i)?.invalid 
-                                && getFormControl('kpis', 'weight', i)?.touched && !getFormControl('kpis', 'weight', i)?.hasError('min') 
-                                && !getFormControl('kpis', 'weight', i)?.hasError('required')">
-                                Weight must be at most 100.
-                            </mat-error>
-                            <mat-error class="font-extrabold"
-                                *ngIf="getFormControl('kpis', 'weight', i)?.hasError('required') && getFormControl('kpis', 'weight', i)?.touched">
-                                Weight is required.
-                            </mat-error>
-                        </mat-form-field>
 
+
+
+
+<mat-tab-group [selectedIndex]="selected.value" (selectedIndexChange)="selected.setValue($event)">
+    <form [formGroup]="formGroup">
+        <div formArrayName="kpis">
+            <mat-tab *ngFor="let kpiControl of getFormArrayControls(); let i = index" [formGroupName]="i"
+                [label]="'KPI ' + (i + 1)">
+                <div class="p-4">
+                    <div>
+                        <div>
+                            <div class="grid">
+                                <mat-form-field>
+                                    <mat-label>KPI Title</mat-label>
+                                    <input matInput formControlName="kpititle" placeholder="KPI Title" required
+                                        minlength="5">
+                                    <mat-error class="font-extrabold"
+                                        *ngIf="getFormControl('kpis', 'kpititle', i)?.hasError('minlength') && getFormControl('kpis', 'kpititle', i)?.touched && !getFormControl('kpis', 'kpititle', i)?.hasError('required')">
+                                        KPI Title must be at least 5 characters long.
+                                    </mat-error>
+                                    <mat-error class="font-extrabold"
+                                        *ngIf="getFormControl('kpis', 'kpititle', i)?.hasError('required') && getFormControl('kpis', 'kpititle', i)?.touched && !getFormControl('kpis', 'kpititle', i)?.hasError('minlength')">
+                                        KPI Title is required.
+                                    </mat-error>
+                                </mat-form-field>
+
+                            </div>
+                            <div formArrayName="actionPlans">
+                                <div class="flex gap-4"
+                                    *ngFor="let actionPlan of getActionPlansControls(i).controls; let j = index"
+                                    [formGroupName]="j">
+                                    <div class="min-w-[70%] grid">
+                                        <mat-form-field>
+                                            <mat-label>Plan</mat-label>
+                                            <input matInput formControlName="plan" placeholder="Action Plan" required>
+                                            <mat-error class="font-extrabold" *ngIf="getFormControl('kpis', 'plan', i)?.hasError('minlength') 
+                                                && getFormControl('kpis', 'plan', i)?.touched 
+                                                && !getFormControl('kpis', 'plan', i)?.hasError('required')">
+                                                Action Plan must be at least 5 characters long.
+                                            </mat-error>
+                                            <mat-error class="font-extrabold"
+                                                *ngIf="getActionPlanControl(i, j, 'plan').invalid && getActionPlanControl(i, j, 'plan').touched">
+                                                Action Plan is required.
+                                            </mat-error>
+                                        </mat-form-field>
+                                    </div>
+
+                                    <mat-form-field>
+                                        <mat-label>Weight %</mat-label>
+                                        <input matInput formControlName="weight" type="number" placeholder="24" required
+                                            min="1" max="100">
+                                        <mat-error class="font-extrabold" *ngIf="getActionPlanControl(i, j, 'weight').hasError('min') 
+                                                          && getActionPlanControl(i, j, 'weight').invalid 
+                                                          && getActionPlanControl(i, j, 'weight').touched 
+                                                          && !getActionPlanControl(i, j, 'weight').hasError('max') ">
+                                            Weight must be greater than or equal to 1.
+                                        </mat-error>
+
+                                        <mat-error class="font-extrabold" *ngIf="getActionPlanControl(i, j, 'weight').hasError('max') 
+                                                          && getActionPlanControl(i, j, 'weight').invalid 
+                                                          && getActionPlanControl(i, j, 'weight').touched 
+                                                          && !getActionPlanControl(i, j, 'weight').hasError('min') ">
+                                            Weight must be less than or equal to 100.
+                                        </mat-error>
+
+                                        <mat-error class="font-extrabold" *ngIf="getActionPlanControl(i, j, 'weight').hasError('required')  
+                                                          && getActionPlanControl(i, j, 'weight').invalid 
+                                                          && getActionPlanControl(i, j, 'weight').touched 
+                                                          && !getActionPlanControl(i, j, 'weight').hasError('min')
+                                                          && !getActionPlanControl(i, j, 'weight').hasError('max')">
+                                            Weight is required.
+                                        </mat-error>
+
+                                    </mat-form-field>
+
+
+                                    <mat-form-field>
+                                        <mat-label>Responsible</mat-label>
+                                        <mat-select formControlName="responsible" multiple>
+                                            <mat-select-trigger>
+                                                {{getActionPlanControl(i, j, 'responsible').value?.[0] || ''}}
+                                                <span
+                                                    *ngIf="(getActionPlanControl(i, j, 'responsible').value?.length || 0) > 1">
+                                                    (+{{(getActionPlanControl(i, j, 'responsible').value?.length || 0) -
+                                                    1}} {{getActionPlanControl(i, j, 'responsible').value?.length
+                                                    === 2 ?
+                                                    'other' : 'others'}})
+                                                </span>
+                                            </mat-select-trigger>
+                                            <mat-option *ngFor="let responsible of responsibleList"
+                                                [value]="responsible">{{responsible}}</mat-option>
+                                        </mat-select>
+                                        <mat-error class="font-extrabold"
+                                            *ngIf="getActionPlanControl(i, j, 'responsible').hasError('required')
+                                             && getActionPlanControl(i, j, 'responsible').invalid && getActionPlanControl(i, j, 'responsible').touched">
+                                            Person in charge is required
+                                        </mat-error>
+                                    </mat-form-field>
+
+                                    <button type="button" mat-icon-button color="warn" matTooltip="Remove KPI"
+                                        (click)="removeActionPlan(i,j)" [disabled]="isOnlyOneActionPlan(i)">
+                                        <mat-icon>cancel</mat-icon>
+                                    </button>
+
+
+                                </div>
+
+                            </div>
+
+                            <td>
+                                <div class="grid place-content-center">
+
+
+                                </div>
+                            </td>
+
+                        </div>
                     </div>
-                </td>
-                <td class="border-2 border-black">
-                    <div class="grid place-content-center">
-                        <button type="button" mat-icon-button color="warn" matTooltip="Remove KPI"
-                            (click)="removeKPIControl(i)">
-                            <mat-icon>cancel</mat-icon>
+
+                    <div class="p-4 space-x-4">
+                        <button mat-raised-button class="example-add-tab-button"
+                            (click)="addTab(selectAfterAdding.checked)">
+                            Add new tab
                         </button>
+                        <button mat-raised-button color="accent" (click)="addNewActionPlan(i)">
+                            Add new plan
+                        </button>
+                        <button mat-raised-button color="warn" [disabled]="getTabsLength() === 1"
+                            (click)="removeTab(i)">
+                            Delete Tab
+                        </button>
+                        <button type="button" mat-raised-button color="primary" (click)="submit()">Submit</button>
                     </div>
-                </td>
-            </tr>
-        </tbody>
-    </table>
-    <div class="p-4 space-x-4">
-        <button type="button" mat-raised-button (click)="addKPIControl()">Add KPI</button>
-        <button type="button" mat-raised-button color="primary" (click)="submit()">Submit</button>
-    </div>
-</form>
+                </div>
+
+            </mat-tab>
+        </div>
+    </form>
+</mat-tab-group>

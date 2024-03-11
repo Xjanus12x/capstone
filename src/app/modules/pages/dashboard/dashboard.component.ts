@@ -16,26 +16,29 @@ import { MatSort } from '@angular/material/sort';
   styleUrls: ['./dashboard.component.css'],
 })
 export class DashboardComponent implements OnInit {
-  submittedIgcfs$!: Observable<ISubmittedIGCF[]>;
-  originalSubmittedIgcf!: ISubmittedIGCF[];
-  dataToDisplay: ISubmittedIGCF[] = [];
-  selection = new SelectionModel<ISubmittedIGCF>(true, []);
-  dataSource = new MatTableDataSource<ISubmittedIGCF>();
+  submissionHistory$!: Observable<any>;
+  originalSubmissionHistory!: any[];
+  dataToDisplay: any[] = [];
+  selection = new SelectionModel<any>(true, []);
+  dataSource = new MatTableDataSource<any>();
   displayedHeader: string[] = [
+    'Fullname',
     'Employee Number',
-    'Full Name',
-    'Employee Department',
-    'Employee Position',
+    'Position',
+    'Department',
+    'Completion Date',
   ];
   displayedColumns: string[] = [
-    'emp_number',
     'fullname',
-    'emp_dept',
+    'emp_number',
     'emp_position',
+    'emp_dept',
+    'completion_date',
   ];
   userRole$!: Observable<string>;
-  isLoadingResults = true;
+  isLoadingResults = false;
   deadlineYears: any[] = [];
+
   @ViewChild(MatPaginator) paginator!: MatPaginator;
   @ViewChild(MatSort) sort!: MatSort;
   constructor(
@@ -47,6 +50,7 @@ export class DashboardComponent implements OnInit {
   ngOnInit(): void {
     this.userRole$ = this.authService.getUserRole();
     this.loadData();
+
     // Subscribe to router events
     this.router.events
       .pipe(filter((event) => event instanceof NavigationEnd))
@@ -64,25 +68,21 @@ export class DashboardComponent implements OnInit {
     const selectedYear = Number(date);
 
     // console.log(this.dataToDisplay);
-    const result = this.originalSubmittedIgcf
-      .map((item) => ({
-        ...item,
-        isSigned: item.ratee_signature.length > 0,
-      }))
-
-      .filter((igcf) => {
+    const result = this.originalSubmissionHistory.filter(
+      (submissionHistory) => {
         const yearSigned = new Date(
-          igcf.ratee_date_signed as string
+          submissionHistory.completion_date
         ).getFullYear();
         return yearSigned === selectedYear;
-      });
+      }
+    );
     this.dataToDisplay = result;
     this.updateDataSource();
   }
 
   isRouteActive() {
     return (
-      this.routerService.isRouteActive('submitted-form/:id/:isSigned') ||
+      this.routerService.isRouteActive('submitted-form/:id') ||
       this.routerService.isRouteActive('set-percentages') ||
       this.routerService.isRouteActive('fill-up') ||
       this.routerService.isRouteActive('view-igcf/:id') ||
@@ -104,20 +104,21 @@ export class DashboardComponent implements OnInit {
         if (role === 'Admin') {
           this.authService.getEmployeeDepartment().subscribe({
             next: (deptName) => {
-              this.submittedIgcfs$ =
-                this.backendService.getAllDeptSubmittedIgcf(deptName);
+              this.submissionHistory$ =
+                this.backendService.getSubmissionHistoryByDept(deptName);
               this.handleDataSubscription(currentYear);
-              this.isLoadingResults = false;
             },
             error: (error) => {
               this.handleError(error);
             },
           });
-        } else if (role === 'Regular') {
+        } else if (role === 'Faculty') {
           this.authService.getEmployeeNumber().subscribe({
             next: (empNumber) => {
-              this.submittedIgcfs$ =
-                this.backendService.getUserSubmittedIgcf(empNumber);
+              this.submissionHistory$ =
+                this.backendService.getSubmissionHistoryByEmployeeNumber(
+                  empNumber
+                );
               this.handleDataSubscription(currentYear);
               this.isLoadingResults = false;
             },
@@ -126,8 +127,8 @@ export class DashboardComponent implements OnInit {
             },
           });
         } else {
-          this.submittedIgcfs$ =
-            this.backendService.getAllSubmittedIgcfInEverydept();
+          this.submissionHistory$ =
+            this.backendService.getSubmissionHistoryEveryDept();
           this.handleDataSubscription(currentYear);
           this.isLoadingResults = false;
         }
@@ -139,21 +140,17 @@ export class DashboardComponent implements OnInit {
   }
 
   handleDataSubscription(currentYear: number) {
-    this.submittedIgcfs$.subscribe({
+    this.submissionHistory$.subscribe({
       next: (data) => {
-        this.originalSubmittedIgcf = data;
-        this.deadlineYears = this.extractYears(this.originalSubmittedIgcf);
-        const result = data
-          .map((item) => ({
-            ...item,
-            isSigned: item.ratee_signature.length > 0,
-          }))
-          .filter((igcf) => {
-            const yearSigned = new Date(
-              igcf.ratee_date_signed as string
-            ).getFullYear();
-            return yearSigned === currentYear;
-          });
+        this.originalSubmissionHistory = data;
+        this.deadlineYears = this.extractYears(this.originalSubmissionHistory);
+        const result = data.filter((submissionDetails: any) => {
+          const yearOfCompletion = new Date(
+            submissionDetails.completion_date
+          ).getFullYear();
+          return yearOfCompletion === currentYear;
+        });
+
         this.dataToDisplay = result;
         this.updateDataSource();
       },
@@ -167,6 +164,7 @@ export class DashboardComponent implements OnInit {
     this.dataSource = new MatTableDataSource(this.dataToDisplay);
     this.dataSource.paginator = this.paginator; // Set paginator after data is loaded
     this.dataSource.sort = this.sort;
+    this.isLoadingResults = false;
   }
 
   handleError(error: any) {
@@ -175,17 +173,18 @@ export class DashboardComponent implements OnInit {
   }
 
   deleteSubmittedIgcf(id: number) {
+    this.isLoadingResults = true;
     const indexToRemove = this.dataToDisplay.findIndex(
       (item) => item.id === id
     );
 
     // // If the item is found, remove it from the array
     if (indexToRemove === -1) return;
-
     this.backendService.deleteSubmittedIgcf(id).subscribe({
       next: () => {
         this.dataToDisplay.splice(indexToRemove, 1);
         this.dataSource.data = this.dataToDisplay;
+        this.isLoadingResults = false;
         this.authService.openSnackBar(
           'Row deleted successfully',
           'Close',
@@ -217,20 +216,12 @@ export class DashboardComponent implements OnInit {
     return this.displayedColumns.concat(additionalColumns);
   }
 
-  isAllSelected() {
-    const numSelected = this.selection.selected.length;
-    const numRows = this.dataSource?.data.length;
-    return numSelected === numRows;
-  }
-
-  extractYears(submittedIgcf: ISubmittedIGCF[]): number[] {
+  extractYears(submissionHistory: any[]): number[] {
     const years: number[] = [];
-
     // Populate years array
-    submittedIgcf.forEach((igcf) => {
-      const rateeDateSigned = new Date(igcf.ratee_date_signed);
+    submissionHistory.forEach((submission) => {
+      const rateeDateSigned = new Date(submission.completion_date);
       const year = rateeDateSigned.getFullYear();
-
       if (!isNaN(year) && !years.includes(year)) {
         years.push(year);
       }

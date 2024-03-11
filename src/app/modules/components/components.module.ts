@@ -13,8 +13,11 @@ import { MatInputModule } from '@angular/material/input';
 import { ReactiveFormsModule } from '@angular/forms';
 import { AngularSignaturePadModule } from '@almothafar/angular-signature-pad';
 import { MatSelectModule } from '@angular/material/select';
-import {MatButtonModule} from '@angular/material/button';
+import { MatButtonModule} from '@angular/material/button';
 import { UpdatePendingUserComponent } from './update-pending-user/update-pending-user.component';
+import { ReviewKpisComponent } from './review-kpis/review-kpis.component';
+import { MatExpansionModule } from '@angular/material/expansion';
+import { MatTableModule } from '@angular/material/table';
 
 @NgModule({
   declarations: [
@@ -23,8 +26,13 @@ import { UpdatePendingUserComponent } from './update-pending-user/update-pending
     DialogBoxComponent,
     UpdateUserComponent,
     UpdatePendingUserComponent,
+    ReviewKpisComponent,
   ],
-  exports: [DashboardHeaderComponent, SubmittedFormComponent],
+  exports: [
+    DashboardHeaderComponent,
+    SubmittedFormComponent,
+    ReviewKpisComponent,
+  ],
   imports: [
     CommonModule,
     MatIconModule,
@@ -37,6 +45,8 @@ import { UpdatePendingUserComponent } from './update-pending-user/update-pending
     AngularSignaturePadModule,
     MatSelectModule,
     MatButtonModule,
+    MatExpansionModule,
+    MatTableModule,
   ],
 })
 export class ComponentsModule {}

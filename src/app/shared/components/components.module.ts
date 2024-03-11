@@ -12,6 +12,10 @@ import { NestedListComponent } from './nested-list/nested-list.component';
 import { RouterModule } from '@angular/router';
 import { PartOneFormComponent } from './part-one-form/part-one-form.component';
 import { PartTwoFormComponent } from './part-two-form/part-two-form.component';
+import { MatExpansionModule } from '@angular/material/expansion';
+import { MatTabsModule } from '@angular/material/tabs';
+import { MatTooltipModule } from '@angular/material/tooltip';
+import { MatSelectModule } from '@angular/material/select';
 
 @NgModule({
   declarations: [
@@ -37,6 +41,10 @@ import { PartTwoFormComponent } from './part-two-form/part-two-form.component';
     MatIconModule,
     FormsModule,
     RouterModule,
+    MatExpansionModule,
+    MatTabsModule,
+    MatTooltipModule,
+    MatSelectModule,
   ],
 })
 export class ComponentsModule {}

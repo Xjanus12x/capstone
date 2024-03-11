@@ -9,6 +9,7 @@ import { ISubmittedIGCF } from '../models/SubmittedIgcf';
 import { ISignedIgcf } from '../models/SignedIGCF';
 import { IUserList } from '../models/UsersList';
 import { IPendingUser } from '../models/PendingUser';
+import { IIGCFSubmission } from '../models/IGCFSubmission';
 
 @Injectable({
   providedIn: 'root',
@@ -30,15 +31,8 @@ export class BackendService {
   deleteSubmittedIgcf(id: number): Observable<any> {
     return this.http.delete<any>(`${this.apiBaseUrl}/del/submitted-igcf/${id}`);
   }
-  deleteIgcfInformation(id: number): Observable<any> {
-    return this.http.delete<any>(
-      `${this.apiBaseUrl}/del/igcf-informations/${id}`
-    );
-  }
-  getIgcfInformations(deptName: string): Observable<any> {
-    const params = new HttpParams().set('dept_name', deptName);
-    return this.http.get(`${this.apiBaseUrl}/igcf-information`, { params });
-  }
+  
+  
   getNumberOfSubmittedIgcf() {
     return this.http.get(`${this.apiBaseUrl}/get/igcf-number-of-submissions`);
   }
@@ -55,35 +49,77 @@ export class BackendService {
     this.currentIgcfId = id;
   }
 
-  submitKpis(kpis: any[]) {
-    this.http.post<any>(`${this.apiBaseUrl}/submit-kpis`, kpis).subscribe({
-      next: () => {
-        // Handle success
-        this.authService.openSnackBar(
-          'KPIs submitted successfully',
-          'Close',
-          'bottom'
-        );
-        this.routerService.routeTo('dashboard');
-      },
-      error: (error) => {
-        // Handle error
-        console.error('Error submitting KPIs:', error);
-        this.authService.openSnackBar(
-          'Failed to submit KPIs',
-          'Close',
-          'bottom'
-        );
-        this.routerService.routeTo('dashboard');
-      },
+  submitIGCF(data: any) {
+    return this.http.post(`${this.apiBaseUrl}/submit-igcf`, data);
+  }
+
+  getSubmissionHistoryByDept(dept: string) {
+    const params = new HttpParams().set('dept', dept);
+    return this.http.get(
+      `${this.apiBaseUrl}/get/igcf-submission-history-by-dept`,
+      {
+        params,
+      }
+    );
+  }
+  getSubmissionHistoryByEmployeeNumber(empNumber: string) {
+    const params = new HttpParams().set('emp_number', empNumber);
+    return this.http.get(
+      `${this.apiBaseUrl}/get/igcf-submission-history-by-emp-num`,
+      {
+        params,
+      }
+    );
+  }
+  getSubmissionHistoryEveryDept() {
+    return this.http.get(
+      `${this.apiBaseUrl}/get/igcf-submission-history-every-dept`
+    );
+  }
+
+  getSubmittedIgcfDetails(id: string) {
+    const params = new HttpParams().set('id', id);
+    return this.http.get(`${this.apiBaseUrl}/get/submitted-igcf-details`, {
+      params,
     });
   }
 
-  getObjAndActionPlans(dept: string): Observable<any> {
+  submitKpis(kpis: any[]) {
+    this.http
+      .post<any>(`${this.apiBaseUrl}/add/kpi-and-action-plans`, kpis)
+      .subscribe({
+        next: () => {
+          // Handle success
+          this.authService.openSnackBar(
+            'KPIs submitted successfully',
+            'Close',
+            'bottom'
+          );
+          this.routerService.routeTo('dashboard');
+        },
+        error: (error) => {
+          // Handle error
+          console.error('Error submitting KPIs:', error);
+          this.authService.openSnackBar(
+            'Failed to submit KPIs',
+            'Close',
+            'bottom'
+          );
+          this.routerService.routeTo('dashboard');
+        },
+      });
+  }
+
+  getKpisAndActionPlans(): Observable<any> {
     // /api/get/obj-and-action-plans
-    const params = new HttpParams().set('dept', dept);
-    return this.http.get<any[]>(`${this.apiBaseUrl}/get/obj-and-action-plans`, {
+    return this.http.get<any[]>(`${this.apiBaseUrl}/get/kpi-and-action-plans`);
+  }
+
+  deleteKPIAndActionPlan(id: number) {
+    const params = new HttpParams().set('id', id.toString()); // Convert id to string
+    return this.http.delete(`${this.apiBaseUrl}/delete/kpi-and-action-plan`, {
       params,
+      responseType: 'text', // Set response type to text to prevent JSON parsing
     });
   }
 
@@ -141,12 +177,8 @@ export class BackendService {
     });
   }
 
-  getIgcfPercentages(dept: string): Observable<any[]> {
-    const params = new HttpParams().set('dept', dept);
-    return this.http.get<any[]>(`${this.apiBaseUrl}/get/igcf-informations`, {
-      params,
-    });
-  }
+
+  
 
   deletePendingUser(id: number) {
     return this.http.delete<any>(`${this.apiBaseUrl}/del/pending-user/${id}`);
@@ -242,19 +274,6 @@ export class BackendService {
       });
   }
 
-  addIGCFInformation(newIgcfPercentages: any): void {
-    this.http
-      .post(`${this.apiBaseUrl}/percentages/add`, newIgcfPercentages)
-      .subscribe({
-        next: () => {
-          this.authService.openSnackBar('Successfull', 'Close', 'bottom');
-          this.routerService.routeTo('dashboard');
-        },
-        error: (error) => {
-          console.error(error);
-        },
-      });
-  }
 
   addEmployeeDetails(): void {
     this.http

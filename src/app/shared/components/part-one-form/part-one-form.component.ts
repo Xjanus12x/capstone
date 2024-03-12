@@ -31,6 +31,7 @@ export class PartOneFormComponent implements OnInit {
   totalWeights: Map<string, number> = new Map<string, number>();
   currentUserRole: string = '';
   stepLabels: string[] = [];
+  overallAverageRating: number = 0;
   constructor(
     private formContentService: FormContentService,
     private authService: AuthService,
@@ -96,6 +97,7 @@ export class PartOneFormComponent implements OnInit {
             });
 
             igcfDetails.forEach((elem: any) => {
+              console.log('elem',elem);
               this.addFormGroupForAdmin(elem.selected_kpi, elem);
             });
           },
@@ -115,6 +117,7 @@ export class PartOneFormComponent implements OnInit {
 
   createFormGroupForAdmin(values: any): FormGroup {
     return this.fb.group({
+      uniqueId: [{ value: values.id, disabled: true }],
       personalObject: [
         { value: values.selected_plan, disabled: this.isAdmin },
         Validators.required,
@@ -138,8 +141,14 @@ export class PartOneFormComponent implements OnInit {
         { value: values.weight, disabled: this.isAdmin },
         Validators.required,
       ],
-      achieved: [{ value: '', disabled: this.isFaculty }, Validators.required],
-      rating: [{ value: '', disabled: this.isFaculty }, Validators.required],
+      achieved: [
+        { value: values.achieved || '', disabled: this.isFaculty },
+        Validators.required,
+      ],
+      rating: [
+        { value: values.rating || '', disabled: this.isFaculty },
+        Validators.required,
+      ],
     });
   }
 
@@ -195,8 +204,8 @@ export class PartOneFormComponent implements OnInit {
       });
       return igcfInputs;
     } else {
-      const values = this.formGroup.value as {
-        [key: string]: { achieved: string; rating: string }[];
+      const values = this.formGroup.getRawValue() as {
+        [key: string]: { uniqueId: string; achieved: string; rating: string }[];
       };
 
       let totalRating = 0;
@@ -205,28 +214,41 @@ export class PartOneFormComponent implements OnInit {
       // Loop through each key-value pair
       Object.entries(values).forEach(([key, value]) => {
         value.forEach((item, index) => {
-          console.log(item);
           // Convert the rating to a number and add it to the totalRating
           totalRating += parseInt(item.rating);
           // Increment the totalRatingsEncountered
           totalRatingsEncountered++;
         });
       });
-      console.log('tot rating enocu', totalRatingsEncountered);
-      
       let averageRating = 0;
 
       // Calculate the average rating
       if (totalRatingsEncountered !== 0) {
         averageRating = totalRating / totalRatingsEncountered;
+        this.setOverallAverageRating(averageRating);
       }
 
-      console.log('Average Rating:', averageRating);
-
-      return [];
+      const adminInputs: any[] = [];
+      // Loop through each key-value pair
+      Object.entries(values).forEach(([key, value]) => {
+        value.forEach((item, index) => {
+          adminInputs.push({
+            uniqueId: item.uniqueId,
+            achieved: item.achieved,
+            rating: item.rating,
+          });
+        });
+      });
+      return adminInputs;
     }
   }
 
+  setOverallAverageRating(overallAverage: number) {
+    this.overallAverageRating = overallAverage;
+  }
+  getOverallAverageRating() {
+    return this.overallAverageRating;
+  }
   validateFormGroup(): boolean {
     if (this.formGroup.invalid) {
       this.authService.openSnackBar(

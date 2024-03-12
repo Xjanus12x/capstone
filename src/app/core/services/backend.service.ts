@@ -31,8 +31,7 @@ export class BackendService {
   deleteSubmittedIgcf(id: number): Observable<any> {
     return this.http.delete<any>(`${this.apiBaseUrl}/del/submitted-igcf/${id}`);
   }
-  
-  
+
   getNumberOfSubmittedIgcf() {
     return this.http.get(`${this.apiBaseUrl}/get/igcf-number-of-submissions`);
   }
@@ -47,6 +46,10 @@ export class BackendService {
   }
   setCurrentIgcfId(id: number) {
     this.currentIgcfId = id;
+  }
+
+  rateIgcf(data: any) {
+    return this.http.post<any>(`${this.apiBaseUrl}/update/rate-igcf`, data);
   }
 
   submitIGCF(data: any) {
@@ -80,6 +83,12 @@ export class BackendService {
   getSubmittedIgcfDetails(id: string) {
     const params = new HttpParams().set('id', id);
     return this.http.get(`${this.apiBaseUrl}/get/submitted-igcf-details`, {
+      params,
+    });
+  }
+  getSubmittedIgcfPartTwo(id: string) {
+    const params = new HttpParams().set('id', id);
+    return this.http.get(`${this.apiBaseUrl}/get/igcf-part-two`, {
       params,
     });
   }
@@ -177,9 +186,6 @@ export class BackendService {
     });
   }
 
-
-  
-
   deletePendingUser(id: number) {
     return this.http.delete<any>(`${this.apiBaseUrl}/del/pending-user/${id}`);
   }
@@ -273,7 +279,6 @@ export class BackendService {
         },
       });
   }
-
 
   addEmployeeDetails(): void {
     this.http

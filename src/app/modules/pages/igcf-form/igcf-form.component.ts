@@ -116,13 +116,6 @@ export class IgcfFormComponent implements OnInit, IDeactivateComponent {
     this.isValid = true;
   }
 
-  // getStepLabel() {
-  //   return Object.keys(this.formGroup.value).map((key) => {
-  //     const weight = this.formGroup.get(key)?.value;
-  //     return `${key} ${weight}%`;
-  //   });
-  // }
-
   getKpiDropdownLength(): number {
     return this.kpiTitlesDropdown?.value?.length ?? 0;
   }
@@ -155,9 +148,6 @@ export class IgcfFormComponent implements OnInit, IDeactivateComponent {
       },
       error: () => {},
     });
-    // this.initializeRoute();
-    // this.fetchIgcfData();
-    // this.loadFormData();
   }
 
   isAdminRating(): boolean {
@@ -172,7 +162,7 @@ export class IgcfFormComponent implements OnInit, IDeactivateComponent {
     this.tableHeaders = formData.partOneForm.tableHeaders;
     this.tableRows = formData.partOneForm.tableRows;
     this.partOneStepLabel = formData.partOneForm.stepLabel;
-    
+
     this.groupCounts = formData.partOneForm.groupCounts;
     this.partOneFormArrayNames = formData.partOneForm.formArrayNames;
   }
@@ -286,12 +276,14 @@ export class IgcfFormComponent implements OnInit, IDeactivateComponent {
           },
         ],
       };
+
       this.dialog.open(DialogBoxComponent, {
         ...dialogBoxConfig,
         data: dialogBoxData,
       });
       return; // Exit the method if the form is invalid
     }
+
     const adminInputRatings: string[] = [];
     Object.values(this.partOneForm.formGroup.value).forEach(
       (formArray: any) => {
@@ -326,11 +318,6 @@ export class IgcfFormComponent implements OnInit, IDeactivateComponent {
 
     this.backendService.signIgcf(signedInfo);
   }
-  // initiatives: 'dfs';
-  // personalMeasures: '412';
-  // personalObject: '333333';
-  // selected_kpi: 'test1';
-  // weight: '100';
   submit(): void {
     try {
       if (
@@ -340,13 +327,13 @@ export class IgcfFormComponent implements OnInit, IDeactivateComponent {
         const { emp_fullname, emp_number, emp_position, emp_dept } =
           this.details;
         const currentDate = new Date();
-        const deadline = this.datePipe.transform(currentDate, 'yyyy-MM-dd');
+        const completionDate = this.datePipe.transform(currentDate, 'yyyy-MM-dd');
         const employeeDetails = {
           fullname: emp_fullname,
           emp_number,
           emp_position,
           emp_dept,
-          completion_date: deadline,
+          completion_date: completionDate,
         };
 
         this.backendService
@@ -364,12 +351,30 @@ export class IgcfFormComponent implements OnInit, IDeactivateComponent {
               this.routerService.routeTo('dashboard');
             },
           });
-      } else if (this.isAdminRating() && this.partOneForm.validateFormGroup() ) {
-        // && this.partTwoForm.formGroup.valid
-        console.log(this.partTwoForm.formGroup.valid);
-        
-        console.log('valid');
-        this.partOneForm.getValues();
+      } else if (
+        this.isAdminRating() &&
+        this.partOneForm.validateFormGroup() &&
+        this.partTwoForm.formGroup.valid
+      ) {
+          const currentDate = new Date();
+        const rateDate = this.datePipe.transform(currentDate, 'yyyy-MM-dd');
+        this.activatedRoute.paramMap.subscribe((params) => {
+          const id = params.get('id');
+          this.backendService
+            .rateIgcf({
+              id,
+              rates: this.partOneForm.getValues(),
+              overall_weighted_average_rating: this.partOneForm
+                .getOverallAverageRating()
+                .toFixed(2),
+              equivalent_description: this.getEquivalentDescription(
+                this.partOneForm.getOverallAverageRating()
+              ),
+              ...this.partTwoForm.getValues(),
+              rate_date: rateDate,
+            })
+            .subscribe();
+        });
       }
     } catch (e) {
       this.authService.openSnackBar(

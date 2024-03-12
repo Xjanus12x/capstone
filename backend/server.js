@@ -91,8 +91,6 @@ server.post("/api/employee-details/add", (req, res) => {
   });
 });
 
-
-
 // // fetch users
 // server.get("/api/users", (req, res) => {
 //   let sql = "SELECT * FROM tbl_users";
@@ -226,7 +224,6 @@ server.post("/api/login", (req, res) => {
   });
 });
 
-
 server.post("/api/user/check-existence", (req, res) => {
   try {
     const { emp_email } = req.body;
@@ -310,8 +307,6 @@ server.get("/api/get/employee-details", (req, res) => {
     }
   });
 });
-
-
 
 // signed the submitted igcf
 server.post("/api/signed-igcf", (req, res) => {
@@ -1030,14 +1025,6 @@ server.post("/api/submit-igcf", (req, res) => {
         kpi.weight,
       ]);
     });
-    // achieved: '';
-    // initiatives: 'fdas';
-    // personalMeasures: 'fads';
-    // personalObject: '11111';
-    // rating: '';
-    // target: '65%';
-    // weight: '100';
-    // SQL query to insert the KPIs into tbl_kpis
     const submittedIgcfDetailsQuery =
       "INSERT INTO tbl_submitted_igcf_details (tbl_igcf_submission_history_id, selected_kpi, selected_plan ,selected_plan_weight, initiatives, personal_measures_kpi ,weight) VALUES ?";
 
@@ -1102,7 +1089,6 @@ server.get("/api/get/igcf-submission-history-every-dept", (req, res) => {
   });
 });
 
-
 server.delete("/api/del/submitted-igcf/:id", (req, res) => {
   const id = req.params.id;
 
@@ -1141,7 +1127,7 @@ server.get("/api/get/submitted-igcf-details", (req, res) => {
 
   // Query to fetch submitted IGCF details based on the provided id
   let getSubmittedIgcfDetailsQuery =
-    "SELECT selected_kpi, selected_plan, selected_plan_weight, personal_measures_kpi, initiatives, weight FROM tbl_submitted_igcf_details WHERE tbl_igcf_submission_history_id = ?";
+    "SELECT id, selected_kpi, selected_plan, selected_plan_weight, personal_measures_kpi, initiatives, weight, achieved, rating FROM tbl_submitted_igcf_details WHERE tbl_igcf_submission_history_id = ?";
 
   // Execute the query with the provided id
   db.query(getSubmittedIgcfDetailsQuery, [id], (err, result) => {
@@ -1160,5 +1146,90 @@ server.get("/api/get/submitted-igcf-details", (req, res) => {
 
     // Data found, send it in the response
     res.status(200).json(result); // Assuming only one row is expected, so sending the first row
+  });
+});
+
+server.post("/api/update/rate-igcf", (req, res) => {
+  const {
+    id,
+    overall_weighted_average_rating,
+    equivalent_description,
+    rates,
+    step1,
+    step2,
+    step3,
+    step4,
+    step5,
+    rate_date,
+  } = req.body;
+
+  // Iterate over each rate and execute a parameterized update query
+  rates.forEach((rate) => {
+    const { achieved, rating, uniqueId } = rate;
+    const updateQuery =
+      "UPDATE tbl_submitted_igcf_details SET achieved = ?, rating = ? WHERE id = ?";
+
+    // Execute the parameterized query with rate values
+    db.query(updateQuery, [achieved, rating, uniqueId], (err, result) => {
+      if (err) {
+        console.error("Error updating IGCF rate:", err);
+        // If an error occurs, you might want to handle it appropriately
+        return;
+      }
+      console.log(`IGCF rate with ID ${uniqueId} updated successfully.`);
+    });
+  });
+
+  // Construct the SQL query to insert into tbl_part_two_igcf
+  const insertQuery =
+    "INSERT INTO tbl_part_two_igcf (tbl_submitted_igcf_details_id, overall_weighted_average_rating, equivalent_description, top_three_least_agc, top_three_highly_agc, top_three_competencies_improvement, top_three_competency_strengths, top_three_training_development_suggestion, rate_date) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)";
+
+  // Execute the insert query with the array of values
+  db.query(
+    insertQuery,
+    [
+      id,
+      overall_weighted_average_rating,
+      equivalent_description,
+      step1,
+      step2,
+      step3,
+      step4,
+      step5,
+      rate_date,
+    ],
+    (err, result) => {
+      if (err) {
+        console.error("Error inserting into tbl_part_two_igcf:", err);
+        res
+          .status(500)
+          .json({ error: "Error inserting into tbl_part_two_igcf" });
+        return;
+      }
+      console.log("Data inserted into tbl_part_two_igcf successfully.");
+
+      // Send a response once all updates and insertions are completed
+      res.status(200).json({ success: true });
+    }
+  );
+});
+
+server.get("/api/get/igcf-part-two", (req, res) => {
+  const { id } = req.query;
+  const sql =
+    "SELECT * FROM tbl_part_two_igcf WHERE tbl_submitted_igcf_details_id = ?";
+
+  // Execute the query with the provided id
+  db.query(sql, [id], (err, results) => {
+    if (err) {
+      console.error("Error fetching data from tbl_part_two_igcf:", err);
+      res
+        .status(500)
+        .json({ error: "Error fetching data from tbl_part_two_igcf" });
+      return;
+    }
+
+    // If there are no errors, send the results back as a response
+    res.status(200).json(results[0]);
   });
 });

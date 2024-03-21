@@ -49,11 +49,13 @@
 
                 <div>
                     <button mat-button matStepperNext>Next</button>
+                    <button routerLink="/login" mat-raised-button color="warn">Exit</button>
+
                 </div>
-                <button routerLink="/dashboard"
+                <!-- <button routerLink="/dashboard"
                     class="px-4 py-2 mt-3 font-bold text-white bg-black rounded hover:bg-red-600">
                     Exit
-                </button>
+                </button> -->
             </form>
         </mat-step>
         <mat-step [stepControl]="getFormGroup('userAccountFormGroup')">
@@ -121,11 +123,8 @@
                 <div>
                     <button mat-button matStepperPrevious>Back</button>
                     <button mat-button (click)="register()">Register</button>
+                    <button routerLink="/login" mat-raised-button color="warn">Exit</button>
                 </div>
-                <button routerLink="/dashboard"
-                    class="min-w-full px-4 py-2 mt-3 font-bold text-white bg-black rounded hover:bg-red-600">
-                    Exit
-                </button>
             </form>
         </mat-step>
         <!-- <mat-step>

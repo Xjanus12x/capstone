@@ -17,7 +17,15 @@ import {
   departmentColors,
   departmentNamesMap,
 } from 'src/app/core/constants/DepartmentData';
+import { Observable, forkJoin, map, switchMap } from 'rxjs';
+import { SelectionModel } from '@angular/cdk/collections';
+import { MatTableDataSource } from '@angular/material/table';
+import { MatPaginator } from '@angular/material/paginator';
+import { MatSort } from '@angular/material/sort';
 type ValidChartType = keyof ChartTypeRegistry;
+import { MatAccordion } from '@angular/material/expansion';
+import { FormControl } from '@angular/forms';
+
 @Component({
   selector: 'app-reports',
   templateUrl: './reports.component.html',
@@ -45,8 +53,6 @@ export class ReportsComponent implements OnInit, AfterViewInit {
   arrayNames: string[] = [];
   groupCounts: number[] = [];
   stepLabel: string[] = [];
-  fillColors: string[] = ['blue', 'yellow', 'green', 'orange', 'violet'];
-  canvas: any;
   signedCount: number = 0;
   notSignedCount: number = 0;
   role: string = '';
@@ -54,7 +60,87 @@ export class ReportsComponent implements OnInit, AfterViewInit {
   signedCountMap = new Map<string, number>();
   notSignedCountMap = new Map<string, number>();
   deadlineYears: any[] = [];
-  originalSubmittedIgcf: ISubmittedIGCF[] = [];
+  originalSubmissionHistory: any[] = [];
+  numberOfSubmittedIgcfByDept: number = 0;
+  numberOfNotRatedIgcfByDept: number = 0;
+  overallAverageDescriptionMap = new Map<string, number>();
+  displayedHeaderForSubmissionHistory: string[] = [
+    'Fullname',
+    'Employee Number',
+    'Position',
+    'Department',
+    'Completion Date',
+  ];
+  displayedColumnsForSubmissionHistory: string[] = [
+    'fullname',
+    'emp_number',
+    'emp_position',
+    'emp_dept',
+    'completion_date',
+  ];
+  displayedHeaderForNotRatedIgcf: string[] = [
+    'Fullname',
+    'Employee Number',
+    'Position',
+    'Department',
+    'Completion Date',
+    'Rated On',
+  ];
+  displayedColumnsForNotRatedIgcf: string[] = [
+    'fullname',
+    'emp_number',
+    'emp_position',
+    'emp_dept',
+    'completion_date',
+    'rate_date',
+  ];
+
+  displayedHeaderForDeliveredAgreedIgc: string[] = [
+    'Fullname',
+    'Employee Number',
+    'Position',
+    'Department',
+    'Overall Weighted Average Rating',
+    'Completion Date',
+    'Rated On',
+  ];
+  displayedColumnsForDeliveredAgreedIgc: string[] = [
+    'fullname',
+    'emp_number',
+    'emp_position',
+    'emp_dept',
+    'overall_weighted_average_rating',
+    'completion_date',
+    'rate_date',
+  ];
+
+  generatePdfCtrl = new FormControl('');
+  pdfList: string[] = [
+    'Submitted IGCFs Hard Copy',
+    'List of employees who submitted IGCFs',
+    'Pending List to be rated IGCFs',
+    'Partially delivered agreed individual goal commitment IGCF employees list',
+    'Delivered agreed individual goal commitment IGCF employees list',
+    'Exceeded or Delivered beyond individual goal commitment IGCF employees list',
+  ];
+
+  submissionHistory$!: Observable<any>;
+  filteredSubmissionHistory: any[] = [];
+  currentDate: Date = new Date();
+  dataToDisplay: any[] = [];
+  originalPartTwoIgcfData: any[] = [];
+  selection = new SelectionModel<any>(true, []);
+  dataSourceForSubmissionHistory = new MatTableDataSource<any>([]);
+  dataSourceForNotRatedIgcf = new MatTableDataSource<any>([]);
+  dataSourceForFailedDeliveredAgreedIgc = new MatTableDataSource<any>([]);
+  dataSourceForPartiallyDeliveredAgreedIgc = new MatTableDataSource<any>([]);
+  dataSourceForDeliveredAgreedIgc = new MatTableDataSource<any>([]);
+  dataSourceForExceededOrDeliveredAgreedIgc = new MatTableDataSource<any>([]);
+
+  @ViewChild(MatPaginator) paginator!: MatPaginator;
+  @ViewChild(MatSort) sort!: MatSort;
+  @ViewChild(MatAccordion) accordion!: MatAccordion;
+
   ngOnInit(): void {
     const { formArrayNames, groupCounts, stepLabel } = formData.partOneForm;
     this.arrayNames = formArrayNames;
@@ -67,42 +153,219 @@ export class ReportsComponent implements OnInit, AfterViewInit {
     });
     this.authService.getUserRole().subscribe({
       next: (role: string) => {
-        this.role = role;
+        if (role === 'Admin') {
+          this.backendService.getSubmissionHistoryByDept(this.dept).subscribe({
+            next: (submissionHistory: any) => {
+              this.deadlineYears = this.extractYears(submissionHistory);
+              this.originalSubmissionHistory = submissionHistory;
+
+              const filteredData =
+                this.filterDataToCurrentYear(submissionHistory);
+
+              this.filteredSubmissionHistory = filteredData;
+
+              const filterNotRatedIgcf = filteredData.filter(
+                (submission: any) => !submission.rate_date
+              );
+
+              this.numberOfSubmittedIgcfByDept = filteredData.length;
+              this.numberOfNotRatedIgcfByDept = filterNotRatedIgcf.length;
+              this.dataSourceForSubmissionHistory.data = filteredData;
+              this.dataSourceForNotRatedIgcf.data = filterNotRatedIgcf;
+            },
+          });
+          this.backendService
+            .getSubmittedIgcfPartTwoByDept(this.dept)
+            .subscribe({
+              next: (data: any) => {
+                this.originalPartTwoIgcfData = data;
+                const filteredData = this.filterDataToCurrentYear(data);
+                this.filteredSubmissionHistory = filteredData;
+                const filteredFailedDeliveredAgreedIgc =
+                  this.filterDataBaseOnEquivalentDescription(
+                    filteredData,
+                    'Failed to deliver agreed individual goal commitment'
+                  );
+
+                const filteredPartiallyDeliveredAgreedIgc =
+                  this.filterDataBaseOnEquivalentDescription(
+                    filteredData,
+                    'Partially delivered agreed individual goal commitment'
+                  );
+                const filterDeliveredAgreedIgc =
+                  this.filterDataBaseOnEquivalentDescription(
+                    filteredData,
+                    'Delivered agreed individual goal commitment'
+                  );
+                const filterExceededOrDeliveredIgc =
+                  this.filterDataBaseOnEquivalentDescription(
+                    filteredData,
+                    'Exceeded or Delivered beyond individual goal commitment'
+                  );
+                this.overallAverageDescriptionMap =
+                  this.mapEquivalentDescription(filteredData);
+                this.dataSourceForFailedDeliveredAgreedIgc.data =
+                  filteredFailedDeliveredAgreedIgc;
+                this.dataSourceForPartiallyDeliveredAgreedIgc.data =
+                  filteredPartiallyDeliveredAgreedIgc;
+                this.dataSourceForDeliveredAgreedIgc.data =
+                  filterDeliveredAgreedIgc;
+                this.dataSourceForExceededOrDeliveredAgreedIgc.data =
+                  filterExceededOrDeliveredIgc;
+                // Now equivalentDescriptionMap contains the desired mapping of equivalent descriptions to counts
+              },
+            });
+        } else if (role === 'HRD') {
+          this.backendService.getSubmissionHistoryEveryDept().subscribe({
+            next: (submissionHistory: any) => {
+              this.deadlineYears = this.extractYears(submissionHistory);
+              this.originalSubmissionHistory = submissionHistory;
+              const filteredData =
+                this.filterDataToCurrentYear(submissionHistory);
+              const filterNotRatedIgcf = filteredData.filter(
+                (submission: any) => !submission.rate_date
+              );
+              this.numberOfSubmittedIgcfByDept = filteredData.length;
+              this.numberOfNotRatedIgcfByDept = filterNotRatedIgcf.length;
+              this.dataSourceForSubmissionHistory.data = filteredData;
+              this.dataSourceForNotRatedIgcf.data = filterNotRatedIgcf;
+            },
+          });
+          this.backendService.getSubmittedIgcfPartTwoByDept('').subscribe({
+            next: (data: any) => {
+              this.originalPartTwoIgcfData = data;
+              const filteredData = this.filterDataToCurrentYear(data);
+              const filteredFailedDeliveredAgreedIgc =
+                this.filterDataBaseOnEquivalentDescription(
+                  filteredData,
+                  'Failed to deliver agreed individual goal commitment'
+                );
+
+              const filteredPartiallyDeliveredAgreedIgc =
+                this.filterDataBaseOnEquivalentDescription(
+                  filteredData,
+                  'Partially delivered agreed individual goal commitment'
+                );
+              const filterDeliveredAgreedIgc =
+                this.filterDataBaseOnEquivalentDescription(
+                  filteredData,
+                  'Delivered agreed individual goal commitment'
+                );
+              const filterExceededOrDeliveredIgc =
+                this.filterDataBaseOnEquivalentDescription(
+                  filteredData,
+                  'Exceeded or Delivered beyond individual goal commitment'
+                );
+              this.overallAverageDescriptionMap =
+                this.mapEquivalentDescription(filteredData);
+              this.dataSourceForFailedDeliveredAgreedIgc.data =
+                filteredFailedDeliveredAgreedIgc;
+              this.dataSourceForPartiallyDeliveredAgreedIgc.data =
+                filteredPartiallyDeliveredAgreedIgc;
+              this.dataSourceForDeliveredAgreedIgc.data =
+                filterDeliveredAgreedIgc;
+              this.dataSourceForExceededOrDeliveredAgreedIgc.data =
+                filterExceededOrDeliveredIgc;
+              // Now equivalentDescriptionMap contains the desired mapping of equivalent descriptions to counts
+            },
+          });
+        }
       },
     });
   }
 
+  filterDataBaseOnEquivalentDescription(data: any[], description: string) {
+    return data.filter(
+      (data: any) => data.equivalent_description === description
+    );
+  }
+
+  filterDataToCurrentYear(data: any[]) {
+    return data.filter(
+      (partTwo: any) =>
+        new Date(partTwo.completion_date).getFullYear() ===
+        this.currentDate.getFullYear()
+    );
+  }
+
+  mapEquivalentDescription(data: any[]) {
+    // Initialize an empty map to store equivalent descriptions and their counts
+    const equivalentDescriptionMap = new Map<string, number>();
+
+    // Iterate through the filtered data to populate the map
+    data.forEach((partTwo: any) => {
+      const equivalentDescription = partTwo.equivalent_description;
+
+      // If the equivalent description already exists in the map, increment its count
+      if (equivalentDescriptionMap.has(equivalentDescription)) {
+        equivalentDescriptionMap.set(
+          equivalentDescription,
+          equivalentDescriptionMap.get(equivalentDescription)! + 1
+        );
+      } else {
+        // Otherwise, add it to the map with a count of 1
+        equivalentDescriptionMap.set(equivalentDescription, 1);
+      }
+    });
+    return equivalentDescriptionMap;
+  }
+
   ngAfterViewInit(): void {
-    if (this.role === 'Admin') {
-      this.backendService.getAllDeptSubmittedIgcf(this.dept).subscribe({
-        next: (submittedIgcf: ISubmittedIGCF[]) => {
-          this.originalSubmittedIgcf = submittedIgcf; // Store original data
-          this.deadlineYears = this.extractYears(submittedIgcf);
-          this.submittedIgcf = this.fillterSignedIgcf(submittedIgcf);
-          this.countSignedStatus(submittedIgcf, new Date().getFullYear());
-          this.renderCharts();
-        },
-      });
-    } else if (this.role === 'Viewer Only') {
-      this.backendService.getAllSubmittedIgcfInEverydept().subscribe({
-        next: (submittedIgcf: ISubmittedIGCF[]) => {
-          this.originalSubmittedIgcf = submittedIgcf; // Store original data
-          this.deadlineYears = this.extractYears(submittedIgcf);
-          this.submittedIgcf = this.fillterSignedIgcf(submittedIgcf);
-          this.countSignedStatus(submittedIgcf, new Date().getFullYear());
-          this.renderCharts();
-        },
-      });
+    this.dataSourceForSubmissionHistory.paginator = this.paginator;
+    this.dataSourceForSubmissionHistory.sort = this.sort;
+
+    this.dataSourceForNotRatedIgcf.paginator = this.paginator;
+    this.dataSourceForNotRatedIgcf.sort = this.sort;
+
+    this.dataSourceForFailedDeliveredAgreedIgc.paginator = this.paginator;
+    this.dataSourceForFailedDeliveredAgreedIgc.sort = this.sort;
+
+    this.dataSourceForPartiallyDeliveredAgreedIgc.paginator = this.paginator;
+    this.dataSourceForPartiallyDeliveredAgreedIgc.sort = this.sort;
+
+    this.dataSourceForDeliveredAgreedIgc.paginator = this.paginator;
+    this.dataSourceForDeliveredAgreedIgc.sort = this.sort;
+
+    this.dataSourceForExceededOrDeliveredAgreedIgc.paginator = this.paginator;
+    this.dataSourceForExceededOrDeliveredAgreedIgc.sort = this.sort;
+  }
+
+  applySubmissionHistoryFilter(event: Event) {
+    this.applyFilter(event, this.dataSourceForSubmissionHistory);
+  }
+  applyFilterInNotRatedIgcf(event: Event) {
+    this.applyFilter(event, this.dataSourceForNotRatedIgcf);
+  }
+
+  applyFilterForDeliveredAgreedIgc(event: Event) {
+    this.applyFilter(event, this.dataSourceForDeliveredAgreedIgc);
+  }
+
+  applyFilterForExceededOrDeliveredIgc(event: Event) {
+    this.applyFilter(event, this.dataSourceForExceededOrDeliveredAgreedIgc);
+  }
+
+  applyFilterForPartiallyDeliveredAgreedIgc(event: Event) {
+    this.applyFilter(event, this.dataSourceForPartiallyDeliveredAgreedIgc);
+  }
+  applyFilterForFailedDeliveredAgreedIgc(event: Event) {
+    this.applyFilter(event, this.dataSourceForFailedDeliveredAgreedIgc);
+  }
+
+  applyFilter(event: Event, dataSource: MatTableDataSource<any>) {
+    const filterValue = (event.target as HTMLInputElement).value;
+    dataSource.filter = filterValue.trim().toLowerCase();
+    if (dataSource.paginator) {
+      dataSource.paginator.firstPage();
     }
   }
-  extractYears(submittedIgcf: ISubmittedIGCF[]): number[] {
+
+  extractYears(submissionHistory: any[]): number[] {
     const years: number[] = [];
-
     // Populate years array
-    submittedIgcf.forEach((igcf) => {
-      const rateeDateSigned = new Date(igcf.ratee_date_signed);
+    submissionHistory.forEach((submission) => {
+      const rateeDateSigned = new Date(submission.completion_date);
       const year = rateeDateSigned.getFullYear();
-
       if (!isNaN(year) && !years.includes(year)) {
         years.push(year);
       }
@@ -114,316 +377,158 @@ export class ReportsComponent implements OnInit, AfterViewInit {
     return years;
   }
 
-  renderCharts() {
-    this.renderPieChart(this.signedCountMap, this.notSignedCountMap);
-    this.renderTotalEquivalentRatings(this.submittedIgcf);
-    this.renderOverallWeightedAverageRatings(this.submittedIgcf);
-  }
-
-  filterSubmittedIgcf(date: string) {
+  filterSubmissionHistory(date: string) {
     // Convert date to number
-    let selectedYear = Number(date);
+    const selectedYear = Number(date);
     // Filter the originalSubmittedIgcf array instead of submittedIgcf
-    this.submittedIgcf = this.originalSubmittedIgcf.filter((igcf) => {
-      const yearSigned = new Date(
-        igcf.ratee_date_signed as string
-      ).getFullYear();
-      return yearSigned === selectedYear;
-    });
-
-    this.countSignedStatus(this.originalSubmittedIgcf, selectedYear);
-    this.renderCharts();
-  }
-
-  renderPieChart(
-    signedCountMap: Map<string, number>,
-    notSignedCountMap: Map<string, number>
-  ): void {
-    const ctx: any = document.getElementById('signedAndNotSignedChart');
-    if (!ctx) return;
-
-    // Destroy existing chart instance if it exists
-    const existingChart = Chart.getChart(ctx);
-    if (existingChart) {
-      existingChart.destroy();
-    }
-
-    const departments = Array.from(signedCountMap.keys());
-    const departmentAcronyms = this.getDepartmentAccronyms(departments);
-    const signedCounts = departments.map(
-      (dept) => signedCountMap.get(dept) || 0
+    const filteredData = this.originalSubmissionHistory.filter(
+      (submission) =>
+        selectedYear === new Date(submission.completion_date).getFullYear()
     );
-    const notSignedCounts = departments.map(
-      (dept) => notSignedCountMap.get(dept) || 0
+    this.filteredSubmissionHistory = filteredData;
+
+    this.dataSourceForSubmissionHistory.data = filteredData;
+    this.numberOfSubmittedIgcfByDept = filteredData.length;
+
+    const filterNotRatedIgcf = filteredData.filter(
+      (submission: any) => !submission.rate_date
     );
 
-    const colors = this.getColors(departmentAcronyms);
+    const filteredIgcPartTwo = this.originalPartTwoIgcfData.filter(
+      (data: any) =>
+        new Date(data.completion_date).getFullYear() === selectedYear
+    );
 
-    new Chart(ctx, {
-      type: 'doughnut',
-      data: {
-        labels: departmentAcronyms,
-        datasets: [
-          {
-            label: 'Signed',
-            data: signedCounts,
-            backgroundColor: colors, // Use green color for signed
-          },
-          {
-            label: 'Not Signed',
-            data: notSignedCounts,
-            backgroundColor: colors, // Use red color for not signed
-          },
-        ],
-      },
-    });
-  }
+    this.overallAverageDescriptionMap =
+      this.mapEquivalentDescription(filteredIgcPartTwo);
 
-  getColors(accronyms: any[]) {
-    return accronyms.map((acronym) => {
-      const color = departmentColors.get(acronym as string);
-      return color || '#000000'; // Default color if no matching color found
-    });
-  }
-  getDepartmentAccronyms(departments: any) {
-    return departments
-      .map((department: any) => departmentNamesMap.get(department))
-      .filter((acronym: any) => acronym !== undefined);
-  }
-  createChart(
-    chartType: ValidChartType,
-    ctx: any,
-    label: string,
-    labels: string[],
-    data: any,
-    bgColors: string[]
-  ): void {
-    new Chart(ctx, {
-      type: chartType,
-      data: {
-        labels: labels,
-        datasets: [
-          {
-            label: label,
-            data: data,
-            backgroundColor: bgColors,
-          },
-        ],
-      },
-    });
-  }
-
-  renderOverallWeightedAverageRatings(submittedIgcf: ISubmittedIGCF[]): void {
-    const ctx: any = document.getElementById('empEquivalentRatings');
-    if (!ctx) return;
-    // Destroy existing chart instance if it exists
-    const existingChart = Chart.getChart(ctx);
-    if (existingChart) {
-      existingChart.destroy();
-    }
-
-    const ratingRanges = [
-      {
-        label: 'Failed to deliver agreed individual goal commitment',
-        min: 1.0,
-        max: 1.5,
-      },
-      {
-        label: 'Partially delivered agreed individual goal commitment',
-        min: 1.51,
-        max: 2.5,
-      },
-      {
-        label: 'Delivered agreed individual goal commitment',
-        min: 2.51,
-        max: 3.5,
-      },
-      {
-        label: 'Exceeded or Delivered beyond individual goal commitment',
-        min: 3.51,
-        max: 4.0,
-      },
-    ];
-
-    const ratingCounts = new Map<string, number>();
-
-    submittedIgcf.forEach((igcf) => {
-      if (igcf.overall_weighted_average_rating !== undefined) {
-        const rating = parseFloat(igcf.overall_weighted_average_rating);
-        ratingRanges.forEach((range) => {
-          if (rating >= range.min && rating <= range.max) {
-            const count = ratingCounts.get(range.label) || 0;
-            ratingCounts.set(range.label, count + 1);
-          }
-        });
-      }
-    });
-
-    const data: any[] = [];
-
-    ratingCounts.forEach((count, label) => {
-      data.push({
-        label: label,
-        data: [count],
-        backgroundColor: this.getRandomColor(),
-      });
-    });
-
-    const config: any = {
-      type: 'bar',
-      data: {
-        labels: [''],
-        datasets: data,
-      },
-      options: {
-        scales: {
-          y: {
-            beginAtZero: true,
-            title: {
-              display: true,
-              text: 'Count',
-            },
-          },
-          x: {
-            title: {
-              display: true,
-              text: 'Rating Range',
-            },
-          },
-        },
-      },
-    };
-
-    new Chart(ctx, config);
-  }
-
-  getRandomColor(): string {
-    const letters = '0123456789ABCDEF';
-    let color = '#';
-    for (let i = 0; i < 6; i++) {
-      color += letters[Math.floor(Math.random() * 16)];
-    }
-    return color;
-  }
-  fillterSignedIgcf(submittedIgcf: ISubmittedIGCF[]) {
-    const currentYear = new Date().getFullYear(); // Get the current year
-
-    // Filter submittedIgcf based on the date criteria
-    return submittedIgcf.filter((igcf) => {
-      // Convert ratee_date_signed to a Date object
-      const rateeDateSigned = new Date(igcf.ratee_date_signed);
-
-      // Check if the year matches the current year
-      return (
-        igcf.ratee_signature.length > 0 &&
-        rateeDateSigned.getFullYear() === currentYear
+    const filteredFailedDeliveredAgreedIgc =
+      this.filterDataBaseOnEquivalentDescription(
+        filteredData,
+        'Failed to deliver agreed individual goal commitment'
       );
-    });
-  }
 
-  renderTotalEquivalentRatings(submittedIgcf: ISubmittedIGCF[]): void {
-    const ctx: any = document.getElementById('totalEquivalentRatings');
-    if (!ctx) return;
-    // Destroy existing chart instance if it exists
-    const existingChart = Chart.getChart(ctx);
-    if (existingChart) {
-      existingChart.destroy();
-    }
-    // Aggregate equivalent ratings for each department
-    const departmentEquivalentRatingsMap = new Map<string, number>();
-    submittedIgcf.forEach((igcf) => {
-      const department = igcf.emp_dept;
-      const equivalentRatings = igcf.equivalent_ratings
-        ?.split(',')
-        .map((str) => parseFloat(str)) // Return the parsed value
-        .reduce((accumulator, currentValue) => accumulator + currentValue, 0);
-
-      const currentSum = departmentEquivalentRatingsMap.get(department) || 0;
-
-      departmentEquivalentRatingsMap.set(
-        department,
-        currentSum + equivalentRatings!
+    const filteredPartiallyDeliveredAgreedIgc =
+      this.filterDataBaseOnEquivalentDescription(
+        filteredData,
+        'Partially delivered agreed individual goal commitment'
       );
-    });
 
-    // Get department names using the keys of departmentEquivalentRatingsMap
-    const departmentNames = Array.from(
-      departmentEquivalentRatingsMap.keys()
-    ).map((key) => departmentNamesMap.get(key));
-
-    // Extract labels and data from the aggregated map
-    const labels = departmentNames.filter(
-      (name) => name !== undefined
-    ) as string[];
-    const data = Array.from(departmentEquivalentRatingsMap.values());
-    const bgColors = Array.from(departmentEquivalentRatingsMap.keys()).map(
-      (key) => departmentColors.get(key)
+    const filterDeliveredAgreedIgc = this.filterDataBaseOnEquivalentDescription(
+      filteredIgcPartTwo,
+      'Delivered agreed individual goal commitment'
     );
-    // Filter out undefined values and provide a default value if necessary
-    // Filter out undefined values and map them to empty strings
-    const datasets = labels.map((label, i) => {
-      return {
-        label: label,
-        data: [data[i]],
-        backgroundColor: departmentColors.get(label),
-      };
-    });
-    new Chart(ctx, {
-      type: 'bar',
-      data: {
-        labels: [' '],
-        datasets: datasets,
-      },
-    });
+
+    const filterExceededOrDeliveredIgc =
+      this.filterDataBaseOnEquivalentDescription(
+        filteredIgcPartTwo,
+        'Exceeded or Delivered beyond individual goal commitment'
+      );
+
+    this.numberOfNotRatedIgcfByDept = filterNotRatedIgcf.length;
+    this.dataSourceForNotRatedIgcf.data = filterNotRatedIgcf;
+
+    this.dataSourceForPartiallyDeliveredAgreedIgc.data =
+      filteredPartiallyDeliveredAgreedIgc;
+
+    this.dataSourceForPartiallyDeliveredAgreedIgc.data =
+      filteredFailedDeliveredAgreedIgc;
+
+    this.dataSourceForDeliveredAgreedIgc.data = filterDeliveredAgreedIgc;
+
+    this.dataSourceForExceededOrDeliveredAgreedIgc.data =
+      filterExceededOrDeliveredIgc;
   }
 
-  countSignedStatus(submittedIgcf: ISubmittedIGCF[], year: number): void {
-    const currentYear = year; // Get the current year
+  // generatePDF() {
+  //   // Filter out entries with null rate_date
+  //   const submissionHistory = this.dataSourceForSubmissionHistory.data.filter(
+  //     (entry: any) => entry.rate_date !== null
+  //   );
 
-    // Check if the maps have values before clearing them
-    if (this.signedCountMap.size > 0 || this.notSignedCountMap.size > 0) {
-      this.signedCountMap.clear();
-      this.notSignedCountMap.clear();
-    }
+  //   // Check if filtered submissionHistory is empty
+  //   if (submissionHistory.length === 0) {
+  //     this.authService.openSnackBar(
+  //       'No IGCFs have been submitted or No Year is Selected.',
+  //       'close',
+  //       'bottom'
+  //     );
+  //     return;
+  //   }
 
-    submittedIgcf.forEach((igcf) => {
-      const department = igcf.emp_dept;
-      const rateeDate = new Date(igcf.ratee_date_signed); // Date when IGCF was signed by ratee
-      const rateeYear = rateeDate.getFullYear(); // Year when IGCF was signed
+  //   // Sort the filtered submissionHistory
+  //   submissionHistory.sort((a: any, b: any) => {
+  //     // Compare emp_dept values
+  //     if (a.emp_dept < b.emp_dept) {
+  //       return -1; // a should come before b
+  //     } else if (a.emp_dept > b.emp_dept) {
+  //       return 1; // b should come before a
+  //     } else {
+  //       return 0; // emp_dept values are equal
+  //     }
+  //   });
 
-      // Check if the department exists in the departmentNamesMap
-      if (departmentNamesMap.has(department)) {
-        // Check if the IGCF was signed in the current year
-        if (rateeYear === currentYear) {
-          let currentSigned = this.signedCountMap.get(department) || 0;
-          let currentNotSigned = this.notSignedCountMap.get(department) || 0;
+  //   const logoUrl = 'assets/images/logo/hau-logo.png';
+  //   // Fetch the image as a data URL
+  //   this.http.get(logoUrl, { responseType: 'blob' }).subscribe((blob) => {
+  //     const reader = new FileReader();
+  //     reader.onloadend = () => {
+  //       const logoDataURL = reader.result as string;
 
-          if (igcf.ratee_signature.length > 0) {
-            currentSigned++;
-          } else {
-            currentNotSigned++;
-          }
+  //       // Create an empty array to store content of each submittedIgcf
+  //       const pdfContent: any[] = [];
 
-          this.signedCountMap.set(department, currentSigned);
-          this.notSignedCountMap.set(department, currentNotSigned);
-        }
-      }
-    });
+  //       // Create an array of observables for each submission
+  //       const observables = submissionHistory.map((igcf) =>
+  //         this.backendService.getSubmittedIgcfDetails(igcf.id).pipe(
+  //           switchMap((data) =>
+  //             this.backendService.getSubmittedIgcfPartTwo(igcf.id).pipe(
+  //               map((data2) => ({
+  //                 igcfInformation: igcf,
+  //                 igcfPartOne: data,
+  //                 igcfPartTwo: data2,
+  //               }))
+  //             )
+  //           )
+  //         )
+  //       );
 
-    // If you need to keep track of total counts across all departments,
-    // you can sum up the counts in the maps
-    this.signedCount = Array.from(this.signedCountMap.values()).reduce(
-      (acc, val) => acc + val,
-      0
-    );
-    this.notSignedCount = Array.from(this.notSignedCountMap.values()).reduce(
-      (acc, val) => acc + val,
-      0
-    );
-  }
+  //       // Wait for all observables to complete
+  //       forkJoin(observables).subscribe((igcfDataArray: any[]) => {
+  //         igcfDataArray.forEach((igcfData, index) => {
+  //           // Call the createDocumentDefinition function with the correct arguments
+  //           const documentDefinition = this.createDocumentDefinition(
+  //             logoDataURL,
+  //             igcfData
+  //           );
+  //           // Add content to pdfContent
+  //           pdfContent.push(...documentDefinition.content);
+
+  //           // Add page break after each submittedIgcf, except for the last one
+  //           if (index !== this.submittedIgcf.length - 1) {
+  //             pdfContent.push({ text: '', pageBreak: 'after' });
+  //           }
+  //         });
+
+  //         // Create the final document definition with concatenated content
+  //         const finalDocumentDefinition = { content: pdfContent };
+
+  //         // Open the PDF document
+  //         pdfMake.createPdf(finalDocumentDefinition).open();
+  //       });
+  //     };
+  //     reader.readAsDataURL(blob);
+  //   });
+  // }
 
   generatePDF() {
-    if (this.submittedIgcf.length === 0) {
+    // Filter out entries with null rate_date
+    const submissionHistory = this.dataSourceForSubmissionHistory.data.filter(
+      (entry: any) => entry.rate_date !== null
+    );
+
+    // Check if filtered submissionHistory is empty
+    if (submissionHistory.length === 0) {
       this.authService.openSnackBar(
         'No IGCFs have been submitted or No Year is Selected.',
         'close',
@@ -432,16 +537,6 @@ export class ReportsComponent implements OnInit, AfterViewInit {
       return;
     }
 
-    this.submittedIgcf.sort((a: ISubmittedIGCF, b: ISubmittedIGCF) => {
-      // Compare emp_dept values
-      if (a.emp_dept < b.emp_dept) {
-        return -1; // a should come before b
-      } else if (a.emp_dept > b.emp_dept) {
-        return 1; // b should come before a
-      } else {
-        return 0; // emp_dept values are equal
-      }
-    });
     const logoUrl = 'assets/images/logo/hau-logo.png';
     // Fetch the image as a data URL
     this.http.get(logoUrl, { responseType: 'blob' }).subscribe((blob) => {
@@ -452,31 +547,53 @@ export class ReportsComponent implements OnInit, AfterViewInit {
         // Create an empty array to store content of each submittedIgcf
         const pdfContent: any[] = [];
 
-        // Iterate through each submittedIgcf and add its content to pdfContent
-        this.submittedIgcf.forEach((igcf: ISubmittedIGCF, index) => {
-          const documentDefinition = this.createDocumentDefinition(
-            logoDataURL,
-            igcf
-          );
-          pdfContent.push(...documentDefinition.content);
+        // Create an array of observables for each submission
+        const observables = submissionHistory.map((igcf) =>
+          this.backendService.getSubmittedIgcfDetails(igcf.id).pipe(
+            switchMap((data) =>
+              this.backendService.getSubmittedIgcfPartTwo(igcf.id).pipe(
+                map((data2) => ({
+                  igcfInformation: igcf,
+                  igcfPartOne: data,
+                  igcfPartTwo: data2,
+                }))
+              )
+            )
+          )
+        );
 
-          // Add page break after each submittedIgcf, except for the last one
-          if (index !== this.submittedIgcf.length - 1) {
-            pdfContent.push({ text: '', pageBreak: 'after' });
-          }
+        // Wait for all observables to complete
+        forkJoin(observables).subscribe((igcfDataArray: any[]) => {
+          igcfDataArray.forEach((igcfData, index) => {
+            // Call the createDocumentDefinition function with the correct arguments
+            const documentDefinition = this.createDocumentDefinition(
+              logoDataURL,
+              igcfData
+            );
+            // Add content to pdfContent
+            pdfContent.push(...documentDefinition.content);
+
+            // Add page break after each submittedIgcf
+            if (index !== igcfDataArray.length - 1) {
+              pdfContent.push({ text: '', pageBreak: 'after' });
+            }
+          });
+
+          // Create the final document definition with concatenated content
+          const finalDocumentDefinition = { content: pdfContent };
+
+          // Open the PDF document
+          pdfMake.createPdf(finalDocumentDefinition).open();
         });
-
-        // Create the final document definition with concatenated content
-        const finalDocumentDefinition = { content: pdfContent };
-
-        // Open the PDF document
-        pdfMake.createPdf(finalDocumentDefinition).open();
       };
       reader.readAsDataURL(blob);
     });
   }
+  createDocumentDefinition(logoDataURL: string, data: any): any {
+    const { fullname, emp_position, emp_number, emp_dept } =
+      data.igcfInformation;
+    console.log(data.igcfPartTwo);
 
-  createDocumentDefinition(logoDataURL: string, igcf: ISubmittedIGCF): any {
     return {
       content: [
         // Logo and organization information
@@ -501,7 +618,7 @@ export class ReportsComponent implements OnInit, AfterViewInit {
                   margin: [30, 20, 30, 0],
                 },
                 {
-                  margin: [0, 20, 0, 0],
+                  margin: [20, 20, 0, 0],
                   alignment: 'right',
                   table: {
                     headerRows: 1,
@@ -555,8 +672,8 @@ export class ReportsComponent implements OnInit, AfterViewInit {
                       [
                         {
                           stack: [
-                            { text: `Employee Name.: ${igcf.fullname}` },
-                            { text: `Position: ${igcf.emp_position}` },
+                            { text: `Employee Name.: ${fullname}` },
+                            { text: `Position: ${emp_position}` },
                           ],
                           alignment: 'left',
                         },
@@ -576,8 +693,8 @@ export class ReportsComponent implements OnInit, AfterViewInit {
                       [
                         {
                           stack: [
-                            { text: `Employee No.: ${igcf.emp_number}` },
-                            { text: `Dept./Unit: ${igcf.emp_dept}` },
+                            { text: `Employee No.: ${emp_number}` },
+                            { text: `Dept./Unit: ${emp_dept}` },
                           ],
                           alignment: 'left',
                         },
@@ -592,7 +709,7 @@ export class ReportsComponent implements OnInit, AfterViewInit {
         // Rating description
         {
           text: 'Immediate Supervisor rates accomplishment of corresponding employee using the following Evaluation Rating Equivalents:',
-          margin: [0, 5, 0, 0],
+          margin: [0, 10, 0, 0],
           bold: true,
         },
         {
@@ -602,111 +719,55 @@ export class ReportsComponent implements OnInit, AfterViewInit {
             '2.51 – 3.50 Delivered agreed individual goal commitment',
             '3.51 – 4.00 Exceeded or Delivered beyond individual goal commitment',
           ],
-          margin: [0, 0, 0, 10],
+          margin: [0, 5, 0, 10],
         },
+        // Performance table
         // Performance table
         {
           table: {
             headerRows: 1,
-            widths: ['*', '*', '*', '*', '*'],
+            widths: ['auto', 'auto', 'auto', 'auto', 'auto', 'auto', 'auto'], // Adjust widths as needed
             body: [
               [
-                { text: '', style: 'tableHeader' },
-                { text: 'Weight (%)', style: 'tableHeader' },
                 {
-                  text: 'Individual Goal Commitment (%)',
+                  text: 'Individual Commitment',
                   style: 'tableHeader',
+                  colSpan: 4,
+                  alignment: 'center',
                 },
-                { text: 'Accomplishment (%)', style: 'tableHeader' },
-                { text: 'Equivalent (1-4)', style: 'tableHeader' },
+                {},
+                {},
+                {},
+                {},
+                {
+                  text: 'Assessment',
+                  style: 'tableHeader',
+                  colSpan: 2,
+                  alignment: 'center',
+                },
+                { text: '', style: 'tableHeader' },
               ],
-              ...this.generateTableRow(igcf),
+
+              [
+                {
+                  text: 'Personal Objective',
+                  style: 'tableHeader',
+                }, // Spanning 4 columns
+                { text: 'Personal Measures (KPI)', style: 'tableHeader' }, // Header f
+                { text: 'Target', style: 'tableHeader' }, // Header f
+                { text: 'Initiatives', style: 'tableHeader' }, // Header f
+                { text: 'Weight', style: 'tableHeader' }, // Header f
+                { text: 'Achieved', style: 'tableHeader' }, // Header f
+                { text: 'Rating (1 - 4)', style: 'tableHeader' }, // Header for 'Assessment' column
+              ],
+              ...this.generatePartOneTable(data.igcfPartOne),
             ],
           },
           styles: {
             tableHeader: { fillColor: '#CCCCCC', color: '#000000', bold: true },
           },
         },
-        // Overall Weighted Average Rating and Equivalent Description
-        {
-          text: `Overall Weighted Average Rating: ${igcf.overall_weighted_average_rating}`,
-          margin: [0, 10, 0, 0],
-        },
-        {
-          text: `Equivalent Description: ${igcf.equivalent_description}`,
-          margin: [0, 10, 0, 0],
-        },
-
-        this.generatePartTwo(igcf),
-
-        {
-          layout: 'noBorders',
-          table: {
-            body: [
-              [
-                {
-                  margin: [0, 30, 0, 0],
-                  layout: 'noBorders',
-                  alignment: 'left',
-                  table: {
-                    headerRows: 1,
-                    widths: ['*'],
-                    body: [
-                      [
-                        {
-                          stack: [
-                            `${igcf.fullname}`,
-                            {
-                              image: igcf.rater_signature,
-                              width: 100,
-                              height: 75,
-                            },
-                            {
-                              text: `${igcf.rater_date_signed?.split('T')[0]}`,
-                            },
-                          ],
-                          alignment: 'left',
-                        },
-                      ],
-                    ],
-                  },
-                },
-                {
-                  stack: [],
-                  alignment: 'center',
-                  margin: [80, 0, 80, 0],
-                },
-                {
-                  margin: [0, 30, 0, 0],
-                  layout: 'noBorders',
-                  alignment: 'right',
-                  table: {
-                    headerRows: 1,
-                    widths: ['*'],
-                    body: [
-                      [
-                        {
-                          stack: [
-                            `${igcf.ratee_fullname}`,
-                            {
-                              image: igcf.ratee_signature,
-                              width: 100,
-                              height: 75,
-                            },
-                            {
-                              text: `${igcf.ratee_date_signed?.split('T')[0]}`,
-                            },
-                          ],
-                          alignment: 'left',
-                        },
-                      ],
-                    ],
-                  },
-                },
-              ],
-            ],
-          },
-        },
+        this.generatePartTwo(data.igcfPartTwo, fullname),
       ],
       styles: {
         tableHeader: {
@@ -718,113 +779,224 @@ export class ReportsComponent implements OnInit, AfterViewInit {
       },
     };
   }
-
-  generateTableRow(submittedIgcf: ISubmittedIGCF) {
-    const {
-      commitments,
-      weight_percentages,
-      igc_percentages,
-      accomplishment_percentages,
-      equivalent_ratings,
-      selected_weight_percentages,
-      selected_igc_percentages,
-      selected_commitment_percentages,
-    } = submittedIgcf;
-    const commitmentsArr = commitments.split(',');
-    const weightPercentagesArr = weight_percentages.split(',');
-    const igcPercentagesArr = igc_percentages.split(',');
-    const accomplishmentPercentagesArr = accomplishment_percentages.split(',');
-    const selectedWeightPercentages = selected_weight_percentages.split(',');
-    const selectedIgcPercentages = selected_igc_percentages.split(',');
-    const selectedCommitmentPercentages =
-      selected_commitment_percentages.split(',');
-    let indexValue = 0;
-    const partOneValues = this.arrayNames.map((name, index) => {
-      const group: any[] = [];
-      for (let i = 0; i < this.groupCounts[index]; i++) {
-        group.push({
-          commitment: commitmentsArr[indexValue],
-          weight: weightPercentagesArr[indexValue],
-          individualGoalCommitment: igcPercentagesArr[indexValue],
-          accomplishment: accomplishmentPercentagesArr[indexValue],
-          rating:
-            equivalent_ratings?.length === 0
-              ? ''
-              : equivalent_ratings?.split(',')[indexValue],
-        });
-
-        indexValue === 9 ? (indexValue = 0) : indexValue++;
-      }
-      return { [name]: group };
+  generatePartOneTable(igcfPartOne: any[]) {
+    const partOneValues: any[] = [];
+    const kpiPercentagesMap = new Map<string, number>();
+    igcfPartOne.forEach((data: any) => {
+      if (!partOneValues.includes(data.selected_kpi))
+        partOneValues.push(data.selected_kpi);
+      const totalWeight = kpiPercentagesMap.get(data.selected_kpi) || 0;
+      kpiPercentagesMap.set(data.selected_kpi, totalWeight + data.weight);
+      partOneValues.push(data);
     });
 
-    const temp: any = [];
-    this.stepLabel.forEach((label: string, i: number) => {
-      temp.push(
-        [
+    return partOneValues.map((value) => {
+      if (typeof value === 'string') {
+        return [
           {
-            text: label,
-            fillColor: this.fillColors[i],
-            color: i === 0 || i === 2 ? 'white' : 'black',
-            bold: true,
-            colSpan: 5,
+            text: value,
+            colSpan: 4,
             alignment: 'center',
-          },
-          '',
-          '',
-          '',
-          '',
-        ],
-        [
+            fillColor: '#FFFF00',
+            bold: true,
+          }, // Corrected typo here
+          {},
+          {},
+          {},
           {
-            text: 'Key Performance Indicators (KPIs)',
+            text: `${kpiPercentagesMap.get(value)}%`,
+            fillColor: '#FFFF00',
             bold: true,
           },
-          `${selectedWeightPercentages[i]}%`,
-          `${selectedIgcPercentages[i]}%`,
-          `${selectedCommitmentPercentages[i]}%`,
-          '',
-        ]
-      );
-      // let arrName: string = this.arrayNames[i];
-      partOneValues[i][this.arrayNames[i]].forEach((vals: any) => {
-        temp.push([
           {
-            text: vals.commitment,
+            text: '',
+            colSpan: 2,
+            fillColor: '#FFFF00',
           },
-          `${vals.weight}%`,
-          `${vals.individualGoalCommitment}%`,
-          `${vals.accomplishment}%`,
-          `${vals.rating}`,
-        ]);
-      });
-      // commitment: 'hahaha0', weight: '1', individualGoalCommitment: '2', accomplishment: '3', rating: '4'
-      // Additional code if necessary
+          {},
+        ];
+      }
+      return [
+        { text: value.selected_plan },
+        { text: value.personal_measures_kpi },
+        { text: value.selected_plan_weight },
+        { text: value.initiatives },
+        { text: `${value.weight}%` },
+        {
+          text: value.achieved,
+        },
+        { text: value.rating },
+      ];
     });
-    return temp;
   }
-  generatePartTwo(submittedIgcf: ISubmittedIGCF) {
+
+  generatePartTwo(igcfPartTwo: any, rater_fullname: string) {
     const {
+      overall_weighted_average_rating,
+      ratee_fullname,
+      equivalent_description,
+      rate_date,
+      rater_completion_date,
       top_three_least_agc,
       top_three_highly_agc,
       top_three_competencies_improvement,
-      top_three_competency_strenghts,
-      top_three_training_development_suggestions,
-    } = submittedIgcf;
-
-    const partTwoAnswers = [
+      top_three_competency_strengths,
+      top_three_training_development_suggestion,
+    } = igcfPartTwo[0];
+    const answers = [
       top_three_least_agc.split(','),
       top_three_highly_agc.split(','),
       top_three_competencies_improvement.split(','),
-      top_three_competency_strenghts.split(','),
-      top_three_training_development_suggestions.split(','),
+      top_three_competency_strengths.split(','),
+      top_three_training_development_suggestion.split(','),
+    ];
+    // Overall Weighted Average Rating and Equivalent Description
+
+    const result: any[] = [
+      {
+        text: `Overall Weighted Average Rating: ${overall_weighted_average_rating}`,
+        margin: [0, 10, 0, 0],
+      },
+      {
+        text: `Equivalent Description: ${equivalent_description}`,
+        margin: [0, 5, 0, 10],
+      },
     ];
 
-    return this.partTwoQuestions.map((question, i) => {
-      return [
-        { text: question, margin: [0, 10, 0, 0], bold: true },
-        { ul: partTwoAnswers[i] },
-      ];
+    this.partTwoQuestions.forEach((question: string, i) => {
+      result.push({ text: question });
+      result.push({
+        ul: answers[i],
+        margin: [0, 5, 0, 10], // Adjust margins as needed
+      });
     });
+
+    return [
+      ...result,
+      {
+        layout: 'noBorders',
+        table: {
+          body: [
+            [
+              {
+                margin: [0, 60, 0, 0],
+                layout: 'noBorders',
+                alignment: 'left',
+                table: {
+                  headerRows: 1,
+                  widths: ['*'],
+                  body: [
+                    [
+                      {
+                        stack: [
+                          rater_fullname,
+                          {
+                            text: rater_completion_date,
+                          },
+                        ],
+                        alignment: 'left',
+                      },
+                    ],
+                  ],
+                },
+              },
+              {
+                stack: [],
+                alignment: 'center',
+                margin: [100, 0, 100, 0],
+              },
+              {
+                margin: [0, 60, 0, 0],
+                layout: 'noBorders',
+                alignment: 'right',
+                table: {
+                  headerRows: 1,
+                  widths: ['*'],
+                  body: [
+                    [
+                      {
+                        stack: [
+                          ratee_fullname,
+                          {
+                            text: rate_date,
+                          },
+                        ],
+                        alignment: 'left',
+                      },
+                    ],
+                  ],
+                },
+              },
+            ],
+          ],
+        },
+      },
+    ];
+  }
+
+  generateReport(event: MouseEvent, data: any[], title: string): void {
+    event.stopPropagation();
+
+    if (!data || data.length === 0) {
+      this.authService.openSnackBar(
+        'No data available to generate PDF.',
+        'close',
+        'bottom'
+      );
+      return;
+    }
+
+    const headerRow = Object.keys(data[0])
+      .filter((key) => !key.toLowerCase().includes('id')) // Exclude keys containing 'id'
+      .map((key) => key.replace(/_/g, ' ').toUpperCase());
+
+    const maxWidth = 200; // Maximum width for each column
+    const columnWidths: string[] = [];
+
+    // Adjust column widths based on content length
+    data.forEach((item) => {
+      Object.values(item)
+        .filter(
+          (value, index) =>
+            !Object.keys(item)[index].toLowerCase().includes('id')
+        ) // Exclude ID columns
+        .forEach((value, index) => {
+          if (typeof value === 'string' && value.length * 8 > maxWidth) {
+            // Adjust based on approximate average character width
+            columnWidths[index] = maxWidth.toString(); // Convert maxWidth to string before assigning it
+          } else {
+            columnWidths[index] = '*'; // Otherwise, use auto width
+          }
+        });
+    });
+
+    const bodyRows = data.map((item) => {
+      return Object.values(item).filter(
+        (value, index) => !Object.keys(item)[index].toLowerCase().includes('id')
+      ); // Exclude ID columns
+    });
+
+    const docDefinition: any = {
+      content: [
+        {
+          margin: [0, 20, 0, 0],
+          stack: [
+            { text: title, bold: true, fontSize: 16 },
+          ],
+          alignment: 'center',
+        },
+        {
+          layout: 'lightHorizontalLines',
+          margin: [0, 20, 0, 0],
+          table: {
+            headerRows: 1,
+            widths: columnWidths,
+            body: [headerRow, ...bodyRows],
+          },
+        },
+      ],
+    };
+
+    pdfMake.createPdf(docDefinition).open();
   }
 }

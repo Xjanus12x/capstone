@@ -1,14 +1,9 @@
 import { Component, OnDestroy } from '@angular/core';
-import {
-  FormBuilder,
-  FormControl,
-  FormGroup,
-  Validators,
-} from '@angular/forms';
+import { FormBuilder, FormGroup, Validators } from '@angular/forms';
 import { AuthService } from 'src/app/core/services/auth.service';
 import { Router } from '@angular/router';
-import { Subject, takeUntil } from 'rxjs';
-
+import { Subject } from 'rxjs';
+import { takeUntil } from 'rxjs/operators';
 
 @Component({
   selector: 'app-login',
@@ -16,41 +11,38 @@ import { Subject, takeUntil } from 'rxjs';
   styleUrls: ['./login.component.css'],
 })
 export class LoginComponent implements OnDestroy {
-  loginFormGroup!: FormGroup;
+  loginFormGroup: FormGroup;
   private unsubscribe$: Subject<void> = new Subject<void>();
-  isAuth: boolean = false;
+
   constructor(
-    private _formBuilder: FormBuilder,
+    private formBuilder: FormBuilder,
     private authService: AuthService,
-    private router: Router,
+    private router: Router
   ) {
-    this.loginFormGroup = this._formBuilder.group({
+    this.loginFormGroup = this.formBuilder.group({
       email: ['socadmin@yahoo.com', [Validators.required]],
       password: ['socadmin1', [Validators.required]],
     });
   }
 
-  getFormControl(formControl: string) {
-    return this.loginFormGroup.get(formControl) as FormControl;
-  }
   login(): void {
+    if (this.loginFormGroup.invalid) return;
+
     const { email, password } = this.loginFormGroup.value;
-    if (!email || !password) return;
+
     this.authService.setEmailAddress(email);
     this.authService.setPassword(password);
+
     this.authService.isAuthenticated$
       .pipe(takeUntil(this.unsubscribe$))
-      .subscribe({
-        next: (isAuthenticated) => {
-          if (isAuthenticated) this.router.navigate(['dashboard']);
-        },
+      .subscribe(() => {
+        this.router.navigate(['dashboard']);
       });
+
     this.authService.authenticate();
   }
 
-
   ngOnDestroy(): void {
-    // Emit a signal to all subscribers to complete
     this.unsubscribe$.next();
     this.unsubscribe$.complete();
   }

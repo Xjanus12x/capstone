@@ -95,11 +95,11 @@
                                     <td class="border border-black">
 
                                         <div class="grid">
-                                            <ng-container *ngIf="isAdmin; else dropDown">
+                                            <ng-container *ngIf="!isFillingUp; else dropDown">
 
                                                 <mat-form-field>
                                                     <mat-label
-                                                        [ngClass]='{"font-extranbold text-red-500 text-xl":isAdmin}'>Personal
+                                                        [ngClass]='{"font-extranbold text-red-500 text-xl":!isFillingUp}'>Personal
                                                         Objective</mat-label>
                                                     <textarea
                                                         class="disabled:font-extrabold disabled:text-red-500 min-h-[8rem]"
@@ -131,8 +131,8 @@
                                             <mat-form-field>
                                                 <mat-label
                                                     [ngClass]='{"font-extranbold text-red-500 text-xl":isAdmin}'>Target</mat-label>
-                                                <input class="disabled:font-extrabold disabled:text-red-500" matInput
-                                                    formControlName="target">
+                                                <textarea class="disabled:font-extrabold disabled:text-red-500 min-h-[8rem]" matInput
+                                                    formControlName="target"> </textarea>
                                             </mat-form-field>
                                         </div>
                                     </td>
@@ -141,7 +141,7 @@
                                         <div class="grid">
                                             <mat-form-field>
                                                 <mat-label
-                                                    [ngClass]='{"font-extranbold text-red-500 text-xl":isAdmin}'>Initiatives</mat-label>
+                                                    [ngClass]='{"font-extranbold text-red-500 text-xl":!isFillingUp}'>Initiatives</mat-label>
                                                 <textarea
                                                     class="disabled:font-extrabold disabled:text-red-500 min-h-[8rem]"
                                                     matInput formControlName="initiatives"></textarea>
@@ -156,7 +156,7 @@
                                         <div class="grid">
                                             <mat-form-field>
                                                 <mat-label
-                                                    [ngClass]='{"font-extranbold text-red-500 text-xl":isAdmin}'>Personal
+                                                    [ngClass]='{"font-extranbold text-red-500 text-xl":!isFillingUp}'>Personal
                                                     Measures (KPI)</mat-label>
                                                 <textarea
                                                     class="disabled:font-extrabold disabled:text-red-500 min-h-[8rem]"
@@ -171,7 +171,7 @@
                                         <div class="grid">
                                             <mat-form-field>
                                                 <mat-label
-                                                    [ngClass]='{"font-extranbold text-red-500 text-xl":isAdmin}'>Weight</mat-label>
+                                                    [ngClass]='{"font-extranbold text-red-500 text-xl":!isFillingUp}'>Weight</mat-label>
                                                 <input class="disabled:font-extrabold disabled:text-red-500" matInput
                                                     formControlName="weight">
                                             </mat-form-field>
@@ -183,7 +183,7 @@
                                         <div class="grid">
                                             <mat-form-field>
                                                 <mat-label
-                                                    [ngClass]='{"font-extranbold text-red-500 text-xl":isFaculty}'>Achieved</mat-label>
+                                                    [ngClass]='{"font-extranbold text-red-500 text-xl":isFaculty || isDoneRating, }'>Achieved</mat-label>
                                                 <input class="disabled:font-extrabold disabled:text-red-500" matInput
                                                     formControlName="achieved">
                                             </mat-form-field>
@@ -192,35 +192,47 @@
 
                                     <td class="border border-black">
                                         <div class="grid">
-                                            <mat-form-field>
-                                                <mat-label
-                                                    [ngClass]='{"font-extranbold text-red-500 text-xl":isFaculty}'>Rating
-                                                    ( 1 - 4 )</mat-label>
-                                                <mat-select formControlName="rating">
-                                                    <mat-option>
-                                                        --None--
-                                                    </mat-option>
-                                                    <mat-option value="1">
-                                                        1
-                                                    </mat-option>
-                                                    <mat-option value="2">
-                                                        2
-                                                    </mat-option>
-                                                    <mat-option value="3">
-                                                        3
-                                                    </mat-option>
-                                                    <mat-option value="4">
-                                                        4
-                                                    </mat-option>
-                                                </mat-select>
-                                            </mat-form-field>
+                                            <ng-container *ngIf="!isDoneRating;else done">
+                                                <mat-form-field>
+                                                    <mat-label
+                                                        [ngClass]='{"font-extranbold text-red-500 text-xl":isFaculty || isDoneRating}'>Rating
+                                                        ( 1 - 4 )</mat-label>
+                                                    <mat-select formControlName="rating">
+                                                        <mat-option>
+                                                            --None--
+                                                        </mat-option>
+                                                        <mat-option value="1">
+                                                            1
+                                                        </mat-option>
+                                                        <mat-option value="2">
+                                                            2
+                                                        </mat-option>
+                                                        <mat-option value="3">
+                                                            3
+                                                        </mat-option>
+                                                        <mat-option value="4">
+                                                            4
+                                                        </mat-option>
+                                                    </mat-select>
+                                                </mat-form-field>
+                                            </ng-container>
+                                            <ng-template #done>
+                                                <mat-form-field>
+                                                    <mat-label
+                                                        [ngClass]='{"font-extranbold text-red-500 text-xl":isFaculty || isDoneRating}'>Rating
+                                                        ( 1 - 4 )</mat-label>
+                                                    <input class="disabled:font-extrabold disabled:text-red-500"
+                                                        matInput formControlName="rating">
+                                                </mat-form-field>
+                                            </ng-template>
                                         </div>
                                     </td>
 
                                     <div class="grid items-center justify-start">
                                         <button mat-icon-button color="warn" matTooltip="Remove"
                                             (click)="removeIGCControl(getLabel(label),i)"
-                                            [disabled]="getFormArrayLength(getLabel(label)) === 1 || currentUserRole === 'Admin' ">
+                                            [disabled]="getFormArrayLength(getLabel(label)) === 1"
+                                            *ngIf="currentUserRole === 'Faculty'">
                                             <mat-icon>cancel</mat-icon>
                                         </button>
                                     </div>
@@ -230,7 +242,7 @@
                         </div>
                     </div>
                     <button class="mt-4" type="button" mat-raised-button color="primary"
-                        (click)="addFormGroup(getLabel(label))" [disabled]="currentUserRole === 'Admin'">Add
+                        (click)="addFormGroup(getLabel(label))" *ngIf="currentUserRole === 'Faculty'">Add
                         another</button>
 
                 </form>

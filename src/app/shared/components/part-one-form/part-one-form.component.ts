@@ -6,6 +6,7 @@ import {
   FormControl,
   FormGroup,
   Validators,
+  isFormGroup,
 } from '@angular/forms';
 import { FormContentService } from '../../services/form-content.service';
 import { AuthService } from 'src/app/core/services/auth.service';
@@ -32,6 +33,9 @@ export class PartOneFormComponent implements OnInit {
   currentUserRole: string = '';
   stepLabels: string[] = [];
   overallAverageRating: number = 0;
+  isDoneRating: boolean = false;
+  @Input() responsible: string = '';
+  @Input() isFillingUp: boolean = false;
   constructor(
     private formContentService: FormContentService,
     private authService: AuthService,
@@ -53,9 +57,13 @@ export class PartOneFormComponent implements OnInit {
         console.error('Error fetching user role:', error);
       },
     });
-
+    this.activatedRoute.queryParamMap.subscribe((params) => {
+      this.isDoneRating = !!params.get('rateDate');
+    });
     // Create FormArrays dynamically based on step labels
-    if (this.isFaculty) {
+    if (this.isFillingUp) {
+      console.log(1);
+      
       this.stepLabels = this.formContentService.getStepLabels();
       this.stepLabels.forEach((label: string) => {
         this.formGroup.addControl(
@@ -63,9 +71,9 @@ export class PartOneFormComponent implements OnInit {
           this.fb.array([this.createFormGroupForFaculty()])
         );
       });
-    }
-
-    if (this.isAdminRating()) {
+    } else if (this.isAdminRating()) {
+      console.log(2);
+      
       const selectedKpiMap = new Map<string, number>();
       this.activatedRoute.paramMap.subscribe((params) => {
         const id = params.get('id');
@@ -97,7 +105,6 @@ export class PartOneFormComponent implements OnInit {
             });
 
             igcfDetails.forEach((elem: any) => {
-              console.log('elem',elem);
               this.addFormGroupForAdmin(elem.selected_kpi, elem);
             });
           },
@@ -142,11 +149,17 @@ export class PartOneFormComponent implements OnInit {
         Validators.required,
       ],
       achieved: [
-        { value: values.achieved || '', disabled: this.isFaculty },
+        {
+          value: values.achieved || '',
+          disabled: this.isFaculty || this.isDoneRating,
+        },
         Validators.required,
       ],
       rating: [
-        { value: values.rating || '', disabled: this.isFaculty },
+        {
+          value: values.rating || '',
+          disabled: this.isFaculty || this.isDoneRating,
+        },
         Validators.required,
       ],
     });
@@ -154,16 +167,15 @@ export class PartOneFormComponent implements OnInit {
 
   isAdminRating(): boolean {
     return (
-      this.routerService.isRouteActive('submitted-form/:id') && this.isAdmin
+      this.routerService.isRouteActive('submitted-form/:id/:completionDate') &&
+      this.isAdmin
     );
   }
 
   getActionPlans(label: string): string[] {
     const actionPlans = this.kpis.filter((kpi) => {
-      const responsible = kpi.responsible.split(',');
-      return (
-        kpi.kpi_title === label && responsible.includes(this.currentUserRole)
-      );
+      const responsibles = kpi.responsible.split(',');
+      return kpi.kpi_title === label && responsibles.includes(this.responsible);
     });
     return actionPlans.map((kpi) => kpi.action_plan);
   }
@@ -173,18 +185,17 @@ export class PartOneFormComponent implements OnInit {
     const selectedPlan = this.kpis.find((kpi) => {
       return kpi.kpi_title === label && kpi.action_plan === value;
     });
-
     // Set the target control value to the selected plan's weight percentage
-    if (selectedPlan) {
+    if (selectedPlan) {      
       const targetControl = this.formGroup.get(
         `${label}.${index}.target`
       ) as FormControl;
-      targetControl.setValue(`${selectedPlan.weight}%`);
+      targetControl.setValue(`${selectedPlan.target}`);
     }
   }
 
   getValues() {
-    if (this.currentUserRole === 'Faculty') {
+    if (this.isFillingUp) {
       const values = this.formGroup.getRawValue() as {
         [key: string]: {
           personalObject: string;
@@ -258,7 +269,7 @@ export class PartOneFormComponent implements OnInit {
       );
       return false;
     }
-    if (this.currentUserRole === 'Faculty') {
+    if (this.isFillingUp) {
       // Clear the totalWeights map before recalculating
       this.totalWeights.clear();
 
@@ -340,21 +351,27 @@ export class PartOneFormComponent implements OnInit {
   createFormGroupForFaculty(): FormGroup {
     return this.fb.group({
       personalObject: [
-        { value: '', disabled: this.isAdmin },
+        { value: '', disabled: !this.isFillingUp },
         Validators.required,
       ],
       personalMeasures: [
-        { value: '', disabled: this.isAdmin },
+        { value: '', disabled: !this.isFillingUp },
         Validators.required,
       ],
       target: [
         { value: 'None', disabled: this.isAdmin || this.isFaculty },
         Validators.required,
       ],
-      initiatives: [{ value: '', disabled: this.isAdmin }, Validators.required],
-      weight: [{ value: '', disabled: this.isAdmin }, Validators.required],
-      achieved: [{ value: '', disabled: this.isFaculty }, Validators.required],
-      rating: [{ value: '', disabled: this.isFaculty }, Validators.required],
+      initiatives: [
+        { value: '', disabled: !this.isFillingUp },
+        Validators.required,
+      ],
+      weight: [{ value: '', disabled: !this.isFillingUp }, Validators.required],
+      achieved: [
+        { value: '', disabled: this.isFillingUp },
+        Validators.required,
+      ],
+      rating: [{ value: '', disabled: this.isFillingUp }, Validators.required],
     });
   }
   getPersonalObjectControl(

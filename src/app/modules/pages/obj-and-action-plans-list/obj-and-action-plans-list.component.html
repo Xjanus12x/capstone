@@ -13,27 +13,48 @@
                     {{ displayedHeader[i] }}
                 </mat-header-cell>
                 <mat-cell mat-cell *matCellDef="let element">
-                    {{ element[column] }}
+                    <ng-container *ngIf="column === 'target' || column === 'timeframe'; else normal">
+                        <div class='grid'>
+                            <span *ngFor="let data of element[column].split(',')">
+                                {{data}}
+                            </span>
+                        </div>
+
+                    </ng-container>
+                    <ng-template #normal>
+                        {{ element[column] }}
+                    </ng-template>
                 </mat-cell>
             </ng-container>
 
-            <ng-container matColumnDef="isSigned">
-                <mat-header-cell mat-header-cell *matHeaderCellDef mat-sort-header> Status
-                </mat-header-cell>
-                <mat-cell mat-cell *matCellDef="let element">
-                    <span [ngClass]="{'bg-green-200': element.isSigned,'bg-red-200':!element.isSigned}"
-                        class="p-1 font-extrabold rounded-md">
-                        {{element.isSigned? 'Signed': 'Not sign'}}
-                    </span>
-                </mat-cell>
+            <!-- <ng-container matColumnDef="target">
+                <th mat-header-cell *matHeaderCellDef>Target</th>
+                <td mat-cell *matCellDef="let actionPlan">{{ actionPlan.target }}
+                    <div class="grid">
+                        <span *ngFor="let target of actionPlan.target.split(',')">
+                            {{target}}
+                        </span>
+                    </div>
+            
+                </td>
             </ng-container>
-
+            
+            <ng-container matColumnDef="timeFrame">
+                <th mat-header-cell *matHeaderCellDef>Time Frame</th>
+                <td mat-cell *matCellDef="let actionPlan">
+                    <div class="grid">
+                        <span *ngFor="let timeFrame of actionPlan.timeFrame.split(',')">
+                            {{timeFrame}}
+                        </span>
+                    </div>
+                </td>
+            </ng-container> -->
 
             <!-- Manually define the "actions" column -->
             <ng-container matColumnDef="actions">
                 <mat-header-cell mat-header-cell *matHeaderCellDef> Actions </mat-header-cell>
                 <mat-cell class="flex flex-wrap" mat-cell *matCellDef="let element">
-    
+
                     <button mat-icon-button color="warn" matTooltip="Delete KPI"
                         (click)="deleteKPIAndActionPlan(element.id)">
                         <mat-icon>close</mat-icon>

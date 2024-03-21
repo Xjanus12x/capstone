@@ -1,9 +1,16 @@
 <div class="relative p-4 text-black">
-    <ng-container *ngIf="isLoadingResults; else table">
+    <ng-container *ngIf="isLoadingResults || isRatingPending; else table">
         <div class="grid min-h-[40rem] place-content-center">
-            <mat-spinner></mat-spinner>
+            <ng-container *ngIf="isLoadingResults; else pending">
+                <mat-spinner class="mx-auto"></mat-spinner>
+                <span class="mt-4">Loading results...</span>
+            </ng-container>
+            <ng-template #pending>
+                <mat-spinner class="mx-auto"></mat-spinner>
+                <span class="mt-4">Admin is still processing the rating...</span>
+            </ng-template>
         </div>
-    </ng-container>
+    </ng-container>>
     <ng-template #table>
         <div class="flex items-center justify-center gap-8 p-4">
             <img class="aspect-square max-w-[8rem]" src="../../../../assets/images/logo/hau-logo.png" alt="HAU logo">
@@ -53,72 +60,135 @@
             </div>
 
         </div>
-
-        <div class="flex p-4 justify-evenly">
+        <!-- completion_date
+        :
+        "2024-03-10"
+        id
+        :
+        4
+        rate_date
+        :
+        "2024-03-11" -->
+        <div class="flex p-4 justify-evenly" *ngFor="let submittedInfo of submittedInfos;">
             <div>
                 <p class="font-bold">
-                    Employee Name: <span class="font-semibold underline">{{fullName}}</span>
+                    Employee Name: <span class="font-semibold underline">{{submittedInfo.fullname}}</span>
                 </p>
-                <p class="font-bold">Position: <span class="font-semibold underline">{{empPosition
-                        }}</span></p>
-                <p class="font-bold">Overall Weighted Average Rating: <span
-                        class="font-semibold underline">{{overallWeightedAverageRating}}</span></p>
+                <p class="font-bold">Position: <span
+                        class="font-semibold underline">{{submittedInfo.emp_position}}</span></p>
+
             </div>
             <div>
-                <p class="font-bold">Employee No. <span class="font-semibold underline">{{empNumber}}</span></p>
-                <p class="font-bold">Dept./Unit: <Span class="font-semibold underline">{{empDept}}</Span>
+                <p class="font-bold">Employee No. <span
+                        class="font-semibold underline">{{submittedInfo.emp_number}}</span></p>
+                <p class="font-bold">Dept./Unit: <Span class="font-semibold underline">{{submittedInfo.emp_dept}}</Span>
                 </p>
-                <p class="font-bold ">Equivalent Description: <Span
-                        class="font-semibold underline">{{equivalentDescription}}</Span>
-                </p>
-            </div>
 
+            </div>
         </div>
 
 
         <table class="mx-auto border border-collapse border-black table-auto">
             <thead>
                 <tr>
-                    <th class="px-4 py-2 border border-black " *ngFor="let tableHeader of tableHeaders">
-                        {{tableHeader}}</th>
+                    <th colspan="5" class="p-2 border border-black ">
+                        Individual Commitment
+                    </th>
+                    <th></th>
+                    <th class="p-2 border border-black">
+                        Assesment
+                    </th>
+                </tr>
+                <tr>
+                    <th class="p-2 border border-black">
+                        Personal Objective
+                    </th>
+                    <th class="p-2 border border-black">
+                        Personal Measures (KPI)
+                    </th>
+                    <th class="p-2 border border-black">
+                        Target
+                    </th>
+                    <th class="p-2 border border-black">
+                        Initiatives
+                    </th>
+                    <th class="p-2 border border-black">
+                        Weight
+                    </th>
+                    <th class="p-2 border border-black">
+                        Achieved
+                    </th>
+                    <th class="p-2 border border-black">
+                        Rating ( 1 - 4 )
+                    </th>
                 </tr>
             </thead>
             <tbody>
-                <ng-container *ngFor="let igcfValue of partOneIgcfValues;let i = index">
-                    <tr>
-                        <td colspan="5" class='px-4 py-2 font-bold tracking-widest text-white border border-black'
-                            [ngClass]="{'bg-blue-500':i===0,'bg-yellow-500':i===1,'bg-green-500':i===2,'bg-orange-500':i===3,'bg-violet-500':i===4}">
-                            {{ igcfValue.category }}
+                <ng-container *ngFor="let partOne of submittedPartOneIgcf;">
+                    <tr *ngIf="!isObject(partOne)">
+                        <td colspan="4" class="p-2 font-extrabold bg-yellow-300 border border-black">
+                            Department Objective: {{partOne}}
+                        </td>
+                        <td class="p-2 font-extrabold bg-yellow-300 border border-black">
+                            {{getKPIPerntage(partOne)}}%
+                        </td>
+                        <td class="p-2 bg-yellow-300" colspan="2">
+
                         </td>
                     </tr>
-                    <tr>
-                        <td class="px-4 py-2 border border-black">Key Performance Indicators (KPIs)</td>
-                        <td class="px-4 py-2 border border-black">{{igcfValue.selectedWeightPercentage}}%</td>
-                        <td class="px-4 py-2 border border-black">{{igcfValue.selectedIgcPercentage}}%</td>
-                        <td class="px-4 py-2 border border-black">{{igcfValue.selectedCommitmentPercentage}}%
+                    <tr *ngIf="isObject(partOne)">
+                        <td class="p-2 border border-black">
+                            {{partOne.selected_plan}}
                         </td>
-                        <td class="px-4 py-2 border border-black"></td>
-                    </tr>
-                    <tr *ngFor="let igcfValue2 of igcfValue[arrayNames[i]]; let j = index">
-                        <td class="px-4 py-2 border border-black divide-x divide-black">
-                            {{j+1}}. {{igcfValue2.commitment}}
+                        <td class="p-2 border border-black">
+                            {{partOne.personal_measures_kpi}}
                         </td>
-                        <td class="px-4 py-2 border border-black">{{igcfValue2.weight}}%</td>
-                        <td class="px-4 py-2 border border-black">{{igcfValue2.individualGoalCommitment}}%</td>
-                        <td class="px-4 py-2 border border-black">{{igcfValue2.accomplishment}}%</td>
-                        <td class="px-4 py-2 border border-black">{{igcfValue2.rating}}</td>
+                        <td class="p-2 border border-black">
+                            <div class="grid" *ngFor="let target of partOne.selected_plan_weight.split(',')">
+                                <span>{{target}}</span>
+                            </div>
+                        </td>
+                        <td class="p-2 border border-black">
+                            {{partOne.initiatives}}
+                        </td>
+                        <td class="p-2 border border-black">
+                            {{partOne.weight}}%
+                        </td>
+                        <td class="p-2 border border-black">
+                            {{partOne.achieved}}
+                        </td>
+                        <td class="p-2 border border-black">
+                            {{partOne.rating}}
+                        </td>
                     </tr>
+
                 </ng-container>
             </tbody>
         </table>
 
         <div class="grid gap-8 p-4 place-content-center">
+            <!-- <div class="space-y-4">
+                <p class="font-bold">Overall Weighted Average Rating: <span
+                        class="font-semibold underline">{{submittedPartTwoIgcf[0].overall_weighted_average_rating}}</span></p>
+                <p class="font-bold ">Equivalent Description: <Span
+                        class="font-semibold underline">{{submittedPartTwoIgcf[0].equivalent_description}}</Span>
+                </p>
+            </div> -->
 
 
-            <div *ngFor="let question of partTwoQuestions; let i = index">
+            <div class="space-y-4" *ngIf="submittedPartTwoIgcf.length > 0">
+                <p class="font-bold">Overall Weighted Average Rating: <span
+                        class="font-semibold underline">{{submittedPartTwoIgcf[0]?.overall_weighted_average_rating}}</span>
+                </p>
+                <p class="font-bold ">Equivalent Description: <Span
+                        class="font-semibold underline">{{submittedPartTwoIgcf[0]?.equivalent_description}}</Span></p>
+            </div>
+
+
+            <div *ngFor="let question of partTwoQuestions">
                 <h2 class="font-bold">{{question}}</h2>
-                <ul class="pl-8 list-disc" *ngFor="let value of partTwoIgcfValues[i]">
-                    <li>{{value}}</li>
+                <ul class="pl-8 list-disc" *ngFor="let value of submittedPartTwoIgcf; let i = index">
+                    <li *ngFor="let answer of getPartTwoAnswers('question'+(i+1))">{{answer}}</li>
                 </ul>
             </div>
 
@@ -128,34 +198,21 @@
                 This further certifies that
                 the ratee understands and agrees with the above ratings and comments.</h2>
 
-            <div class="flex gap-8 justify-normal">
+            <div class="flex justify-between mt-10">
                 <div class="text-center">
-                    <p>Rater’s Signature over Printed Name</p>
-                    <h2 class="font-bold underline">{{fullName | uppercase}}</h2>
-                    <img class="max-h-[6rem] mx-auto" [src]="raterSignature" alt="">
-                    <h3 class="font-bold underline">{{raterDateSigned}}</h3>
+                    <h3 class="font-bold underline">Rater's Name: {{ fullname }}</h3>
+                    <h3 class="font-bold underline">Completion Date: {{completion_date}}</h3>
                 </div>
                 <div class="text-center">
-                    <ng-container *ngIf="!rateeSignInfo; else signed">
-                        <h2 class="font-bold underline">Name:</h2>
-                        <h3 class="font-bold underline">Signature:
-                        </h3>
-                        <h3 class="font-bold underline">Date:</h3>
-                    </ng-container>
 
-                    <ng-template #signed>
-                        <p>Ratee’s Signature over Printed Name</p>
-                        <h2 class="font-bold underline">{{(rateeSignInfo?.rateeFullName | uppercase) }}
-                        </h2>
-                        <img class="max-h-[6rem] mx-auto " [src]="rateeSignInfo?.rateeSignature" alt="">
-                        <h3 class="font-bold underline">{{rateeSignInfo?.rateeDateSigned }}</h3>
-                    </ng-template>
+                    <h2 class="font-bold underline">Ratee Name: </h2>
+                    <h3 class="font-bold underline">Rated On: </h3>
+
                 </div>
             </div>
         </div>
         <ng-container *ngIf="(userRole$ | async) as role">
-            <div class="sticky inset-0 flex items-center justify-between"
-                *ngIf="role === 'Admin' || role === 'Viewer' || isRouteActive()">
+            <div class="sticky inset-0 flex items-center justify-between" *ngIf="role === 'Admin' || role === 'HRD' ">
 
                 <button
                     class="grid p-4 text-white transition duration-300 ease-in-out bg-red-800 rounded-full place-content-center hover:bg-red-600 "

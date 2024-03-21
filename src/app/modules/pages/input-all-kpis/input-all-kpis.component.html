@@ -17,116 +17,230 @@
                 [label]="'KPI ' + (i + 1)">
                 <div class="p-4">
                     <div>
-                        <div>
-                            <div class="grid">
-                                <mat-form-field>
-                                    <mat-label>KPI Title</mat-label>
-                                    <input matInput formControlName="kpititle" placeholder="KPI Title" required
-                                        minlength="5">
-                                    <mat-error class="font-extrabold"
-                                        *ngIf="getFormControl('kpis', 'kpititle', i)?.hasError('minlength') && getFormControl('kpis', 'kpititle', i)?.touched && !getFormControl('kpis', 'kpititle', i)?.hasError('required')">
-                                        KPI Title must be at least 5 characters long.
-                                    </mat-error>
-                                    <mat-error class="font-extrabold"
-                                        *ngIf="getFormControl('kpis', 'kpititle', i)?.hasError('required') && getFormControl('kpis', 'kpititle', i)?.touched && !getFormControl('kpis', 'kpititle', i)?.hasError('minlength')">
-                                        KPI Title is required.
-                                    </mat-error>
-                                </mat-form-field>
-
-                            </div>
-                            <div formArrayName="actionPlans">
-                                <div class="flex gap-4"
-                                    *ngFor="let actionPlan of getActionPlansControls(i).controls; let j = index"
-                                    [formGroupName]="j">
-                                    <div class="min-w-[70%] grid">
-                                        <mat-form-field>
-                                            <mat-label>Plan</mat-label>
-                                            <input matInput formControlName="plan" placeholder="Action Plan" required>
-                                            <mat-error class="font-extrabold" *ngIf="getFormControl('kpis', 'plan', i)?.hasError('minlength') 
+                        <div class="grid">
+                            <mat-form-field>
+                                <mat-label>KPI Title</mat-label>
+                                <input matInput formControlName="kpititle" placeholder="KPI Title" required
+                                    minlength="5">
+                                <mat-error class="font-extrabold"
+                                    *ngIf="getFormControl('kpis', 'kpititle', i)?.hasError('minlength') && getFormControl('kpis', 'kpititle', i)?.touched && !getFormControl('kpis', 'kpititle', i)?.hasError('required')">
+                                    KPI Title must be at least 5 characters long.
+                                </mat-error>
+                                <mat-error class="font-extrabold"
+                                    *ngIf="getFormControl('kpis', 'kpititle', i)?.hasError('required') && getFormControl('kpis', 'kpititle', i)?.touched && !getFormControl('kpis', 'kpititle', i)?.hasError('minlength')">
+                                    KPI Title is required.
+                                </mat-error>
+                            </mat-form-field>
+                        </div>
+                        <div formArrayName="actionPlans">
+                            <div class="flex flex-wrap items-start gap-4"
+                                *ngFor="let actionPlan of getActionPlansControls(i).controls; let j = index"
+                                [formGroupName]="j">
+                                <div class="min-w-[100%] grid">
+                                    <mat-form-field>
+                                        <mat-label>Plan</mat-label>
+                                        <input matInput formControlName="plan" placeholder="Action Plan" required>
+                                        <mat-error class="font-extrabold" *ngIf="getFormControl('kpis', 'plan', i)?.hasError('minlength') 
                                                 && getFormControl('kpis', 'plan', i)?.touched 
                                                 && !getFormControl('kpis', 'plan', i)?.hasError('required')">
-                                                Action Plan must be at least 5 characters long.
-                                            </mat-error>
-                                            <mat-error class="font-extrabold"
-                                                *ngIf="getActionPlanControl(i, j, 'plan').invalid && getActionPlanControl(i, j, 'plan').touched">
-                                                Action Plan is required.
-                                            </mat-error>
+                                            Action Plan must be at least 5 characters long.
+                                        </mat-error>
+                                        <mat-error class="font-extrabold"
+                                            *ngIf="getActionPlanControl(i, j, 'plan').invalid && getActionPlanControl(i, j, 'plan').touched">
+                                            Action Plan is required.
+                                        </mat-error>
+                                    </mat-form-field>
+                                </div>
+
+                                <!-- <div formArrayName='target'>
+                                        <ng-container *ngFor="let targerForm of getTargetFormArray().controls">
+                                            <mat-form-field>
+                                                <mat-label>Target</mat-label>
+                                                <input matInput formControlName="weight" placeholder="24" required> -->
+
+                                <!-- <mat-error class="font-extrabold" *ngIf="getActionPlanControl(i, j, 'weight').hasError('min') 
+                                                                                                                                              && getActionPlanControl(i, j, 'weight').invalid 
+                                                                                                                                              && getActionPlanControl(i, j, 'weight').touched 
+                                                                                                                                              && !getActionPlanControl(i, j, 'weight').hasError('max') ">
+                                                                                                                                Weight must be greater than or equal to 1.
+                                                                                                                            </mat-error>
+                                                                                    
+                                                                                                                            <mat-error class="font-extrabold" *ngIf="getActionPlanControl(i, j, 'weight').hasError('max') 
+                                                                                                                                              && getActionPlanControl(i, j, 'weight').invalid 
+                                                                                                                                              && getActionPlanControl(i, j, 'weight').touched 
+                                                                                                                                              && !getActionPlanControl(i, j, 'weight').hasError('min') ">
+                                                                                                                                Weight must be less than or equal to 100.
+                                                                                                                            </mat-error>
+                                                                                    
+                                                                                                                            <mat-error class="font-extrabold" *ngIf="getActionPlanControl(i, j, 'weight').hasError('required')  
+                                                                                                                                              && getActionPlanControl(i, j, 'weight').invalid 
+                                                                                                                                              && getActionPlanControl(i, j, 'weight').touched 
+                                                                                                                                              && !getActionPlanControl(i, j, 'weight').hasError('min')
+                                                                                                                                              && !getActionPlanControl(i, j, 'weight').hasError('max')">
+                                                                                                                                Weight is required.
+                                                                                                                            </mat-error> -->
+
+                                <!-- </mat-form-field>
+                                        </ng-container>
+
+                                    </div> -->
+                                <!-- <div formArrayName='timeFrame' class="grid">
+                                        <ng-container
+                                            *ngFor="let timeframe of getTimeFrameFormArray(i,j).controls; let t = index"
+                                            [formGroupName]="t">
+                                            <mat-form-field>
+                                                <mat-label>Start Date</mat-label>
+                                                <input matInput formControlName="start_date" placeholder="Target Weight"
+                                                    required>
+                                            </mat-form-field>
+                                            <mat-form-field>
+                                                <mat-label>Due Date</mat-label>
+                                                <input matInput formControlName="due_date" placeholder="Target Weight"
+                                                    required>
+                                            </mat-form-field>
+
+                                            <mat-form-field>
+                                                <mat-label>Enter a date range</mat-label>
+                                                <mat-date-range-input [formGroup]="range" [rangePicker]="picker">
+                                                    <input matStartDate formControlName="start"
+                                                        placeholder="Start date">
+                                                    <input matEndDate formControlName="end" placeholder="End date">
+                                                </mat-date-range-input>
+                                                <mat-hint>MM/DD/YYYY – MM/DD/YYYY</mat-hint>
+                                                <mat-datepicker-toggle matIconSuffix
+                                                    [for]="picker"></mat-datepicker-toggle>
+                                                <mat-date-range-picker #picker></mat-date-range-picker>
+
+                                                <mat-error
+                                                    *ngIf="range.controls.start.hasError('matStartDateInvalid')">Invalid
+                                                    start date</mat-error>
+                                                <mat-error
+                                                    *ngIf="range.controls.end.hasError('matEndDateInvalid')">Invalid end
+                                                    date</mat-error>
+                                            </mat-form-field>
+
+
+                                        </ng-container>
+                                    </div> -->
+
+                                <div formGroupName="timeFrame" class="grid">
+
+                                    <ng-container
+                                        *ngFor="let timeframe of getTimeFrameFormArray(i,j).controls; let t = index"
+                                        [formGroupName]="t">
+
+                                        <mat-form-field>
+                                            <mat-label>Time Frame</mat-label>
+                                            <mat-date-range-input [rangePicker]="picker">
+                                                <input matStartDate formControlName="start_date"
+                                                    placeholder="Start date">
+                                                <input matEndDate formControlName="due_date" placeholder="End date">
+                                            </mat-date-range-input>
+                                            <mat-hint>MM/DD/YYYY – MM/DD/YYYY</mat-hint>
+                                            <mat-datepicker-toggle matIconSuffix [for]="picker"></mat-datepicker-toggle>
+                                            <mat-date-range-picker #picker></mat-date-range-picker>
+
+                                            <!-- <mat-error *ngIf="range.controls.start.hasError('matStartDateInvalid')">Invalid start date</mat-error>
+                                                <mat-error *ngIf="range.controls.end.hasError('matEndDateInvalid')">Invalid end date</mat-error> -->
                                         </mat-form-field>
+
+                                    </ng-container>
+                                    <!-- Inside the loop where you display action plans -->
+                                    <div class="space-x-4">
+                                        <button mat-raised-button color="primary" (click)="addNewTimeFrame(i, j)">Add
+                                            Time Frame</button>
+                                        <!-- Inside the loop where you display action plans -->
+                                        <button mat-raised-button color="warn" (click)="deleteLastTimeFrame(i, j)"
+                                            [disabled]="getTimeFrameArrayLength(i,j) === 1">Delete Time
+                                            Frame</button>
                                     </div>
 
-                                    <mat-form-field>
-                                        <mat-label>Weight %</mat-label>
-                                        <input matInput formControlName="weight" type="number" placeholder="24" required
-                                            min="1" max="100">
-                                        <mat-error class="font-extrabold" *ngIf="getActionPlanControl(i, j, 'weight').hasError('min') 
-                                                          && getActionPlanControl(i, j, 'weight').invalid 
-                                                          && getActionPlanControl(i, j, 'weight').touched 
-                                                          && !getActionPlanControl(i, j, 'weight').hasError('max') ">
-                                            Weight must be greater than or equal to 1.
-                                        </mat-error>
-
-                                        <mat-error class="font-extrabold" *ngIf="getActionPlanControl(i, j, 'weight').hasError('max') 
-                                                          && getActionPlanControl(i, j, 'weight').invalid 
-                                                          && getActionPlanControl(i, j, 'weight').touched 
-                                                          && !getActionPlanControl(i, j, 'weight').hasError('min') ">
-                                            Weight must be less than or equal to 100.
-                                        </mat-error>
-
-                                        <mat-error class="font-extrabold" *ngIf="getActionPlanControl(i, j, 'weight').hasError('required')  
-                                                          && getActionPlanControl(i, j, 'weight').invalid 
-                                                          && getActionPlanControl(i, j, 'weight').touched 
-                                                          && !getActionPlanControl(i, j, 'weight').hasError('min')
-                                                          && !getActionPlanControl(i, j, 'weight').hasError('max')">
-                                            Weight is required.
-                                        </mat-error>
-
-                                    </mat-form-field>
-
-
-                                    <mat-form-field>
-                                        <mat-label>Responsible</mat-label>
-                                        <mat-select formControlName="responsible" multiple>
-                                            <mat-select-trigger>
-                                                {{getActionPlanControl(i, j, 'responsible').value?.[0] || ''}}
-                                                <span
-                                                    *ngIf="(getActionPlanControl(i, j, 'responsible').value?.length || 0) > 1">
-                                                    (+{{(getActionPlanControl(i, j, 'responsible').value?.length || 0) -
-                                                    1}} {{getActionPlanControl(i, j, 'responsible').value?.length
-                                                    === 2 ?
-                                                    'other' : 'others'}})
-                                                </span>
-                                            </mat-select-trigger>
-                                            <mat-option *ngFor="let responsible of responsibleList"
-                                                [value]="responsible">{{responsible}}</mat-option>
-                                        </mat-select>
-                                        <mat-error class="font-extrabold"
-                                            *ngIf="getActionPlanControl(i, j, 'responsible').hasError('required')
-                                             && getActionPlanControl(i, j, 'responsible').invalid && getActionPlanControl(i, j, 'responsible').touched">
-                                            Person in charge is required
-                                        </mat-error>
-                                    </mat-form-field>
-
-                                    <button type="button" mat-icon-button color="warn" matTooltip="Remove KPI"
-                                        (click)="removeActionPlan(i,j)" [disabled]="isOnlyOneActionPlan(i)">
-                                        <mat-icon>cancel</mat-icon>
-                                    </button>
-
-
                                 </div>
+
+
+
+                                <div formArrayName="target" class="grid">
+
+
+                                    <ng-container
+                                        *ngFor="let target of getTargetFormArray(i, j).controls; let k = index"
+                                        [formGroupName]="k">
+                                        <!-- Inside each target -->
+                                        <mat-form-field>
+                                            <mat-label>Target</mat-label>
+                                            <input matInput formControlName="target_weight" placeholder="Target Weight"
+                                                required>
+                                            <!-- Error messages -->
+                                        </mat-form-field>
+
+                                        <mat-form-field>
+                                            <mat-label>Target Year Span</mat-label>
+                                            <mat-date-range-input [rangePicker]="picker">
+                                                <input matStartDate formControlName="target_year_start"
+                                                    placeholder="Start date">
+                                                <input matEndDate formControlName="target_year_end"
+                                                    placeholder="End date">
+                                            </mat-date-range-input>
+                                            <mat-hint>MM/DD/YYYY – MM/DD/YYYY</mat-hint>
+                                            <mat-datepicker-toggle matIconSuffix [for]="picker"></mat-datepicker-toggle>
+                                            <mat-date-range-picker #picker></mat-date-range-picker>
+
+                                            <!-- <mat-error *ngIf="range.controls.start.hasError('matStartDateInvalid')">Invalid start date</mat-error>
+                                                                                                                                        <mat-error *ngIf="range.controls.end.hasError('matEndDateInvalid')">Invalid end date</mat-error> -->
+                                        </mat-form-field>
+                                    </ng-container>
+
+
+                                    <div class="space-x-4">
+                                        <button mat-raised-button color="primary"
+                                            (click)="addNewTargetFormGroup(i, j)">Add New
+                                            Target</button>
+
+                                        <!-- Inside the loop where you display action plans -->
+                                        <button mat-raised-button color="warn" (click)="deleteTargetFormGroup(i, j)"
+                                            [disabled]="getTargetFormGroupLength(i,j) === 1">Delete Year
+                                            Span</button>
+
+                                    </div>
+                                </div>
+
+                                <mat-form-field>
+                                    <mat-label>Responsible</mat-label>
+                                    <mat-select formControlName="responsible" multiple>
+                                        <mat-select-trigger>
+                                            {{getActionPlanControl(i, j, 'responsible').value?.[0] || ''}}
+                                            <span
+                                                *ngIf="(getActionPlanControl(i, j, 'responsible').value?.length || 0) > 1">
+                                                (+{{(getActionPlanControl(i, j, 'responsible').value?.length || 0) -
+                                                1}} {{getActionPlanControl(i, j, 'responsible').value?.length
+                                                === 2 ?
+                                                'other' : 'others'}})
+                                            </span>
+                                        </mat-select-trigger>
+                                        <mat-option *ngFor="let responsible of responsibleList"
+                                            [value]="responsible">{{responsible}}</mat-option>
+                                    </mat-select>
+                                    <mat-error class="font-extrabold"
+                                        *ngIf="getActionPlanControl(i, j, 'responsible').hasError('required')
+                                             && getActionPlanControl(i, j, 'responsible').invalid && getActionPlanControl(i, j, 'responsible').touched">
+                                        Person in charge is required
+                                    </mat-error>
+                                </mat-form-field>
+                                <button type="button" mat-icon-button color="warn" matTooltip="Remove KPI"
+                                    (click)="removeActionPlan(i,j)" [disabled]="isOnlyOneActionPlan(i)">
+                                    <mat-icon>cancel</mat-icon>
+                                </button>
+
 
                             </div>
 
-                            <td>
-                                <div class="grid place-content-center">
-
-
-                                </div>
-                            </td>
-
                         </div>
+
+
+
                     </div>
 
-                    <div class="p-4 space-x-4">
+                    <div class="p-4 mt-4 space-x-4">
                         <button mat-raised-button class="example-add-tab-button"
                             (click)="addTab(selectAfterAdding.checked)">
                             Add new tab
@@ -138,6 +252,7 @@
                             (click)="removeTab(i)">
                             Delete Tab
                         </button>
+                        <button (click)="test()">Test</button>
                         <button type="button" mat-raised-button color="primary" (click)="submit()">Submit</button>
                     </div>
                 </div>

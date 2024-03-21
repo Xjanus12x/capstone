@@ -44,7 +44,7 @@ export class SidenavComponent {
           outlet: 'dashboardContent',
         },
       ],
-      collapsed: true, 
+      collapsed: true,
       canAccess: ['Admin'],
     },
     {
@@ -57,7 +57,7 @@ export class SidenavComponent {
           canAccess: ['Faculty', 'Admin'],
         },
       ],
-      collapsed: true, 
+      collapsed: true,
       canAccess: ['Faculty', 'Admin'],
     },
 

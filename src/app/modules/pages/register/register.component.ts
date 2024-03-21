@@ -170,6 +170,7 @@ export class RegisterComponent implements IDeactivateComponent {
 
   canExit(): boolean | Promise<boolean> | Observable<boolean> {
     if (this.isAllInputFilled()) return true; // Allow navigation
+
     const dialogBoxData: IDialogBox = {
       title: 'Confirm Exit',
       content:
@@ -195,6 +196,7 @@ export class RegisterComponent implements IDeactivateComponent {
 
     return dialogRef.afterClosed().pipe(
       map((result) => {
+        console.log(result);
         return result || false; // If result is undefined, treat it as "No"
       })
     );

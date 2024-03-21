@@ -5,12 +5,8 @@ import { MatPaginator } from '@angular/material/paginator';
 import { MatSort } from '@angular/material/sort';
 import { MatTableDataSource } from '@angular/material/table';
 import { Observable } from 'rxjs';
-import { IUserList } from 'src/app/core/models/UsersList';
 import { AuthService } from 'src/app/core/services/auth.service';
 import { BackendService } from 'src/app/core/services/backend.service';
-import { UpdateUserComponent } from '../../components/update-user/update-user.component';
-import { IPendingUser } from 'src/app/core/models/PendingUser';
-import { UpdatePendingUserComponent } from '../../components/update-pending-user/update-pending-user.component';
 
 @Component({
   selector: 'app-obj-and-action-plans-list',
@@ -23,20 +19,29 @@ export class ObjAndActionPlansListComponent {
     private authService: AuthService,
     public dialog: MatDialog
   ) {}
-  objAndActionPlans$!: Observable<IPendingUser[]>;
-  dataToDisplay: IPendingUser[] = [];
+  objAndActionPlans$!: Observable<any>;
+  dataToDisplay: any[] = [];
   selection = new SelectionModel<any>(true, []);
   dataSource = new MatTableDataSource<any>();
   displayedHeader: string[] = [
     'KPI Title',
     'Action PLan',
-    'Weight',
+    'Target',
+    'Time Frame',
     'Responsible',
   ];
+
+  // action_plan: 'j212112';
+  // id: 22;
+  // kpi_title: '11111';
+  // responsible: 'Organizations,Lab';
+  // target: '34 (03-21-2024 to 04-20-2024)';
+  // timeframe: '03-21-2024 - 04-20-2024';
   displayedColumns: string[] = [
     'kpi_title',
     'action_plan',
-    'weight',
+    'target',
+    'timeframe',
     'responsible',
   ];
   isLoadingResults = true;
@@ -63,7 +68,9 @@ export class ObjAndActionPlansListComponent {
 
   handleDataSubscription() {
     this.objAndActionPlans$.subscribe({
-      next: (data: IPendingUser[]) => {
+      next: (data: any) => {
+        console.log(data);
+
         this.dataToDisplay = data;
         this.updateDataSource();
       },

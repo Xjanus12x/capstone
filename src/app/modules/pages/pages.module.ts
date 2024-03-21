@@ -34,9 +34,10 @@ import { ReportsComponent } from './reports/reports.component';
 import { MatDialogModule } from '@angular/material/dialog';
 import { InputAllKpisComponent } from './input-all-kpis/input-all-kpis.component';
 import { PendingUserListComponent } from './pending-user-list/pending-user-list.component';
-import { KpiListComponent } from './kpi-list/kpi-list.component';
 import { ActionPlansComponent } from './action-plans/action-plans.component';
 import { ObjAndActionPlansListComponent } from './obj-and-action-plans-list/obj-and-action-plans-list.component';
+import { MatDatepickerModule } from '@angular/material/datepicker';
+import { MatExpansionModule } from '@angular/material/expansion';
 
 @NgModule({
   declarations: [
@@ -49,7 +50,6 @@ import { ObjAndActionPlansListComponent } from './obj-and-action-plans-list/obj-
     ReportsComponent,
     InputAllKpisComponent,
     PendingUserListComponent,
-    KpiListComponent,
     ActionPlansComponent,
     ObjAndActionPlansListComponent,
   ],
@@ -85,7 +85,9 @@ import { ObjAndActionPlansListComponent } from './obj-and-action-plans-list/obj-
     MatSortModule,
     MatProgressSpinnerModule,
     MatDialogModule,
+    MatDatepickerModule,
 
+    MatExpansionModule,
   ],
   providers: [],
 })

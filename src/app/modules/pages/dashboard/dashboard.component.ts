@@ -17,7 +17,7 @@ import { MatSort } from '@angular/material/sort';
 })
 export class DashboardComponent implements OnInit {
   submissionHistory$!: Observable<any>;
-  originalSubmissionHistory!: any[];
+  originalSubmissionHistory: any[] = [];
   dataToDisplay: any[] = [];
   selection = new SelectionModel<any>(true, []);
   dataSource = new MatTableDataSource<any>();
@@ -27,6 +27,7 @@ export class DashboardComponent implements OnInit {
     'Position',
     'Department',
     'Completion Date',
+    'Rated On',
   ];
   displayedColumns: string[] = [
     'fullname',
@@ -34,8 +35,10 @@ export class DashboardComponent implements OnInit {
     'emp_position',
     'emp_dept',
     'completion_date',
+    'rate_date',
   ];
   userRole$!: Observable<string>;
+  currentUserRole: string = '';
   isLoadingResults = false;
   deadlineYears: any[] = [];
 
@@ -63,9 +66,13 @@ export class DashboardComponent implements OnInit {
       });
   }
 
-  filterSubmittedIgcf(date: string) {
+  ngAfterViewInit() {
+    this.updateDataSource();
+  }
+
+  filterSubmittedIgcf(year: string) {
     // Convert date to number
-    const selectedYear = Number(date);
+    const selectedYear = Number(year);
 
     // console.log(this.dataToDisplay);
     const result = this.originalSubmissionHistory.filter(
@@ -82,17 +89,19 @@ export class DashboardComponent implements OnInit {
 
   isRouteActive() {
     return (
-      this.routerService.isRouteActive('submitted-form/:id') ||
+      this.routerService.isRouteActive('submitted-form/:id/:completionDate') ||
       this.routerService.isRouteActive('set-percentages') ||
       this.routerService.isRouteActive('fill-up') ||
-      this.routerService.isRouteActive('view-igcf/:id') ||
+      this.routerService.isRouteActive(
+        'view-igcf/:id/:ratingStatus/:name/:date'
+      ) ||
       this.routerService.isRouteActive('user-list') ||
       this.routerService.isRouteActive('reports') ||
       this.routerService.isRouteActive('percentages-list') ||
       this.routerService.isRouteActive('pending-user-list') ||
       this.routerService.isRouteActive('input-kpis') ||
       this.routerService.isRouteActive('action-plans') ||
-      this.routerService.isRouteActive('obj-and-action-plan-list')
+      this.routerService.isRouteActive('obj-and-action-plan-list') 
     );
   }
 
@@ -101,6 +110,7 @@ export class DashboardComponent implements OnInit {
     this.authService.getUserRole().subscribe({
       next: (role) => {
         this.isLoadingResults = true;
+        this.currentUserRole = role;
         if (role === 'Admin') {
           this.authService.getEmployeeDepartment().subscribe({
             next: (deptName) => {
@@ -126,7 +136,7 @@ export class DashboardComponent implements OnInit {
               this.handleError(error);
             },
           });
-        } else {
+        } else if (role === 'HRD') {
           this.submissionHistory$ =
             this.backendService.getSubmissionHistoryEveryDept();
           this.handleDataSubscription(currentYear);
@@ -142,9 +152,30 @@ export class DashboardComponent implements OnInit {
   handleDataSubscription(currentYear: number) {
     this.submissionHistory$.subscribe({
       next: (data) => {
-        this.originalSubmissionHistory = data;
-        this.deadlineYears = this.extractYears(this.originalSubmissionHistory);
-        const result = data.filter((submissionDetails: any) => {
+        // this.originalSubmissionHistory = data;
+        // this.deadlineYears = this.extractYears(this.originalSubmissionHistory);
+        // const result = data.filter((submissionDetails: any) => {
+        //   const yearOfCompletion = new Date(
+        //     submissionDetails.completion_date
+        //   ).getFullYear();
+        //   return yearOfCompletion === currentYear;
+        // });
+        // .map((submissionDetails: any) => {
+        //   return {
+        //     ...submissionDetails,
+        //     rating_status: submissionDetails.rate_date.length > 0,
+        //   };
+        // });
+
+        const modifiedData = data.map((submissionDetails: any) => {
+          return {
+            ...submissionDetails,
+            rating_status: !!submissionDetails.rate_date,
+          };
+        });
+        this.deadlineYears = this.extractYears(modifiedData);
+        this.originalSubmissionHistory = modifiedData;
+        const result = modifiedData.filter((submissionDetails: any) => {
           const yearOfCompletion = new Date(
             submissionDetails.completion_date
           ).getFullYear();
@@ -161,10 +192,12 @@ export class DashboardComponent implements OnInit {
   }
 
   updateDataSource() {
-    this.dataSource = new MatTableDataSource(this.dataToDisplay);
-    this.dataSource.paginator = this.paginator; // Set paginator after data is loaded
-    this.dataSource.sort = this.sort;
-    this.isLoadingResults = false;
+    setTimeout(() => {
+      this.dataSource = new MatTableDataSource(this.dataToDisplay);
+      this.dataSource.paginator = this.paginator; // Set paginator after data is loaded
+      this.dataSource.sort = this.sort;
+      this.isLoadingResults = false;
+    }, 0);
   }
 
   handleError(error: any) {

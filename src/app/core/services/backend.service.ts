@@ -92,6 +92,12 @@ export class BackendService {
       params,
     });
   }
+  getSubmittedIgcfPartTwoByDept(dept: string) {
+    const params = new HttpParams().set('dept', dept);
+    return this.http.get(`${this.apiBaseUrl}/get/igcf-part-two-by-dept`, {
+      params,
+    });
+  }
 
   submitKpis(kpis: any[]) {
     this.http
@@ -216,25 +222,6 @@ export class BackendService {
     return this.igcfValues;
   }
 
-  // Assuming you have defined the ISubmittedIGCF interface
-
-  getAllDeptSubmittedIgcf(deptName: string): Observable<ISubmittedIGCF[]> {
-    const params = new HttpParams().set('emp_dept', deptName);
-    return this.http.get(`${this.apiBaseUrl}/get/all-dept-submitted-igcf`, {
-      params,
-    }) as Observable<ISubmittedIGCF[]>;
-  }
-  getUserSubmittedIgcf(emp_number: string): Observable<ISubmittedIGCF[]> {
-    const params = new HttpParams().set('emp_number', emp_number);
-    return this.http.get(`${this.apiBaseUrl}/get/emp-submitted-igcf`, {
-      params,
-    }) as Observable<ISubmittedIGCF[]>;
-  }
-  getAllSubmittedIgcfInEverydept() {
-    return this.http.get(
-      `${this.apiBaseUrl}/get/all-emp-submitted-igcf`
-    ) as Observable<ISubmittedIGCF[]>;
-  }
   signIgcf(info: ISignedIgcf) {
     this.http.post(`${this.apiBaseUrl}/signed-igcf`, info).subscribe({
       next: () => {

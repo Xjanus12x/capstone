@@ -47,10 +47,20 @@
                             </mat-form-field>
 
                         </li>
+                        <li>
+                            <mat-form-field>
+                                <mat-label>Role</mat-label>
+                                <mat-select [formControl]="responsibleRole">
+                                    <mat-option *ngFor="let respnsible of responsibles"
+                                        [value]="respnsible">{{respnsible}}</mat-option>
+                                </mat-select>
+                            </mat-form-field>
+                        </li>
                     </ul>
                 </ng-container>
-                <button (click)="confirm()">Confirm</button>
             </div>
+            <button class="mx-4" mat-raised-button color="primary" (click)="confirm()">Confirm</button>
+
         </mat-tab>
 
         <mat-tab *ngIf="isValid || isAdminRating()"
@@ -83,7 +93,7 @@
                         </li>
                     </ol>
                 </div>
-                <app-part-one-form [kpis]="kpis">
+                <app-part-one-form [kpis]="kpis" [responsible]="responsibleRole.value!" [isFillingUp]="isFillingUp()">
                 </app-part-one-form>
 
             </div>
@@ -96,15 +106,14 @@
 
     </mat-tab-group>
 
-    <div class="grid gap-4 p-4" [ngClass]="{'grid-cols-2':!isSigned,'grid-cols-1':isSigned}">
-        <ng-container *ngIf="!isSigned">
-            <button
+    <div class="grid gap-4 p-4" [ngClass]="{'grid-cols-2':!isDoneRating,'grid-cols-1':isDoneRating}">
+        <ng-container *ngIf="!isDoneRating">
+            <button type="button"
                 class="px-4 py-2 text-white transition-colors duration-500 ease-in-out bg-black rounded-md hover:bg-green-700"
-                (click)="submit()">{{currentUserRole === "Faculty"? 'Submit':'Rate'}}</button>
+                (click)="submit()">{{isFillingUp()? 'Submit':'Rate'}}</button>
         </ng-container>
-        <button
-            class="px-4 py-2 text-white transition-colors duration-500 ease-in-out bg-black rounded-md hover:bg-red-500"
-            (click)="exit()">Exit</button>
+        <button routerLink="/dashboard" type="button"
+            class="px-4 py-2 text-white transition-colors duration-500 ease-in-out bg-black rounded-md hover:bg-red-500">Exit</button>
     </div>
 
 </div>

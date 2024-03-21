@@ -1,6 +1,6 @@
-import { AfterViewInit, Component, OnInit, ViewChild } from '@angular/core';
+import { Component, OnInit, ViewChild } from '@angular/core';
 import { FormControl, FormGroup, Validators } from '@angular/forms';
-import { Observable, elementAt } from 'rxjs';
+import { Observable } from 'rxjs';
 import { formData } from 'src/app/core/constants/formData';
 import { IDeactivateComponent } from 'src/app/core/models/DeactivateComponent';
 import { DialogBoxComponent } from '../../components/dialog-box/dialog-box.component';
@@ -14,9 +14,7 @@ import { PartOneFormComponent } from 'src/app/shared/components/part-one-form/pa
 import { PartTwoFormComponent } from 'src/app/shared/components/part-two-form/part-two-form.component';
 import { dialogBoxConfig } from 'src/app/core/constants/DialogBoxConfig';
 import { ActivatedRoute } from '@angular/router';
-import { ISignedIgcf } from 'src/app/core/models/SignedIGCF';
 import { MatTabChangeEvent, MatTabGroup } from '@angular/material/tabs';
-import { IEmployeeDetails } from 'src/app/core/models/EmployeeDetails';
 import { DatePipe } from '@angular/common';
 import { FormContentService } from 'src/app/shared/services/form-content.service';
 
@@ -27,32 +25,27 @@ import { FormContentService } from 'src/app/shared/services/form-content.service
   providers: [DatePipe],
 })
 export class IgcfFormComponent implements OnInit, IDeactivateComponent {
-  partOneFormArrayNames!: string[];
-  controlNames!: string[];
-  tableHeaders!: string[];
-  tableRows!: string[];
-  partOneStepLabel!: string[];
   partTwoStepLabel!: string[];
-  groupCounts!: number[];
-  percentages!: any[];
-  unfilteredIgcfPercentages!: IIgcfPercentages[];
-  percentagesCtrl = new FormControl('');
-  igcfPercentages: string[][] = [];
   userRole$: Observable<string> = this.authService.getUserRole();
   currentUserRole: string = '';
-  currentIgcfId!: number;
-  isSigned!: boolean;
   kpiTitlesDropdown = new FormControl('', [Validators.required]);
   kpiTitleList: string[] = [];
-  @ViewChild(PartOneFormComponent) partOneForm!: PartOneFormComponent;
-  @ViewChild(PartTwoFormComponent) partTwoForm!: PartTwoFormComponent;
-  @ViewChild('tabGroup') tabGroup!: MatTabGroup;
+  @ViewChild(PartOneFormComponent, { static: false })
+  partOneForm!: any;
+  @ViewChild(PartTwoFormComponent, { static: false })
+  partTwoForm!: any;
 
+  @ViewChild('tabGroup') tabGroup!: MatTabGroup;
   formGroup: FormGroup = new FormGroup({}); // Form group to hold dynamically generated controls
   currentTab: number = 0;
   isValid: boolean = false;
   kpis: any[] = [];
   details!: any;
+  currentUserId: string = '';
+  completionDate: string = '';
+  isDoneRating: boolean = false;
+  responsibleRole = new FormControl('');
+  responsibles: string[] = ['Dean', 'Chair', 'Faculty'];
   constructor(
     private backendService: BackendService,
     private authService: AuthService,
@@ -81,6 +74,38 @@ export class IgcfFormComponent implements OnInit, IDeactivateComponent {
     });
   }
 
+  ngOnInit() {
+    this.partTwoStepLabel = formData.partTwoForm.stepLabel;
+    this.backendService.getKpisAndActionPlans().subscribe({
+      next: (data) => {
+        this.kpiTitleList = Array.from(
+          new Set(data.map((kpi: any) => kpi.kpi_title))
+        );
+        this.kpis = data;
+      },
+    });
+    this.authService.getEmployeeNumber().subscribe({
+      next: (empNumber: string) => {
+        this.authService.getEmployeeDetails(empNumber).subscribe({
+          next: (response: any) => {
+            this.details = response.data;
+          },
+        });
+      },
+    });
+    this.authService.getUserRole().subscribe({
+      next: (role: string) => {
+        this.currentUserRole = role;
+      },
+    });
+    this.activatedRoute.paramMap.subscribe((params) => {
+      this.currentUserId = params.get('id')!;
+      this.completionDate = params.get('completionDate')!;
+    });
+    this.activatedRoute.queryParamMap.subscribe((params) => {
+      this.isDoneRating = !!params.get('rateDate');
+    });
+  }
   onTabChange(event: MatTabChangeEvent) {
     // Check if the user is going back to the first tab
     if (event.index === 0) {
@@ -105,7 +130,17 @@ export class IgcfFormComponent implements OnInit, IDeactivateComponent {
       this.isValid = false;
       return;
     }
-    if (this.currentUserRole === 'Faculty') {
+    if (this.responsibleRole.value === '') {
+      this.authService.openSnackBar(
+        'Responsible role is required.',
+        'close',
+        'bottom'
+      );
+      this.isValid = false;
+      return;
+    }
+
+    if (this.isFillingUp()) {
       const stepLabels = Object.keys(this.formGroup.value).map((key) => {
         const weight = this.formGroup.get(key)?.value;
         return `${key} ${weight}%`;
@@ -123,70 +158,31 @@ export class IgcfFormComponent implements OnInit, IDeactivateComponent {
     return this.formGroup.get(kpiTitle) as FormControl;
   }
 
-  ngOnInit() {
-    this.partTwoStepLabel = formData.partTwoForm.stepLabel;
-    this.backendService.getKpisAndActionPlans().subscribe({
-      next: (data) => {
-        this.kpiTitleList = Array.from(
-          new Set(data.map((kpi: any) => kpi.kpi_title))
-        );
-        this.kpis = data;
-      },
-    });
-    this.authService.getEmployeeNumber().subscribe({
-      next: (empNumber: string) => {
-        this.authService.getEmployeeDetails(empNumber).subscribe({
-          next: (response: any) => {
-            this.details = response.data;
-          },
-        });
-      },
-    });
-    this.authService.getUserRole().subscribe({
-      next: (role: string) => {
-        this.currentUserRole = role;
-      },
-      error: () => {},
-    });
-  }
-
   isAdminRating(): boolean {
     return (
-      this.routerService.isRouteActive('submitted-form/:id') &&
+      this.routerService.isRouteActive('submitted-form/:id/:completionDate') &&
       this.currentUserRole === 'Admin'
     );
   }
 
-  loadFormData() {
-    this.controlNames = formData.partOneForm.controlNames;
-    this.tableHeaders = formData.partOneForm.tableHeaders;
-    this.tableRows = formData.partOneForm.tableRows;
-    this.partOneStepLabel = formData.partOneForm.stepLabel;
-
-    this.groupCounts = formData.partOneForm.groupCounts;
-    this.partOneFormArrayNames = formData.partOneForm.formArrayNames;
-  }
-
-  exit() {
-    this.routerService.routeTo('dashboard');
+  isFillingUp() {
+    return (
+      (this.routerService.isRouteActive('fill-up') &&
+        this.currentUserRole === 'Admin') ||
+      this.currentUserRole === 'Faculty'
+    );
   }
 
   canExit(): boolean | Promise<boolean> | Observable<boolean> {
-    // if (
-    //   this.currentUserRole === 'Faculty' &&
-    //   this.partOneForm.formGroup.valid &&
-    //   this.kpiTitlesDropdown.valid
-    // ) {
-    //   return Promise.resolve(true); // Allow navigation
-    // }
-    if (true) return Promise.resolve(true); // Allow navigation
-    // temp
-    else if (
-      this.currentUserRole === 'Admin' &&
-      this.partOneForm.formGroup.valid &&
-      this.partTwoForm.isFormValid
-    ) {
-      return Promise.resolve(true); // Allow navigation
+    if (this.partOneForm || this.partOneForm) {
+      if (this.isFillingUp() && this.partOneForm.validateFormGroup())
+        return Promise.resolve(true); // Allow navigation
+      else if (
+        this.partOneForm.validateFormGroup() &&
+        this.partTwoForm.validateFormGroup() &&
+        this.currentUserRole === 'Admin'
+      )
+        return Promise.resolve(true); // Allow navigation
     }
 
     const dialogBoxData: IDialogBox = {
@@ -218,116 +214,16 @@ export class IgcfFormComponent implements OnInit, IDeactivateComponent {
       .then((result) => result || false);
   }
 
-  updateIgcfPercentages() {
-    const inputValue = this.percentagesCtrl.getRawValue();
-    // Check if inputValue is null or empty
-    if (!inputValue) {
-      const dialogBoxData: IDialogBox = {
-        title: 'Attention',
-        content: 'Please select a set of percentages for your form.',
-        buttons: [
-          {
-            isVisible: true,
-            matDialogCloseValue: false,
-            content: 'OK',
-          },
-        ],
-      };
-
-      this.dialog.open(DialogBoxComponent, {
-        ...dialogBoxConfig,
-        data: dialogBoxData,
-      });
-
-      // Proceed with updating igcfPercentages
-      this.igcfPercentages.splice(0, this.igcfPercentages.length);
-      return;
-    }
-
-    this.igcfPercentages.splice(0, this.igcfPercentages.length);
-
-    // Filter the data based on the inputValue
-
-    const filteredData = this.unfilteredIgcfPercentages.filter(
-      (item) => item.id === parseInt(inputValue, 10)
-    );
-
-    // Map the filtered data to igcfPercentages array
-    filteredData[0]['set_weight_%'].split(',').map((weight, index) => {
-      this.igcfPercentages.push([
-        'Key Performance Indicators (KPIs)',
-        weight,
-        filteredData[0]['set_individual_goal_commitment_%'].split(',')[index],
-        filteredData[0]['set_accomplishment_%'].split(',')[index],
-      ]);
-    });
-  }
-
-  signIgcf(employeeDetails: any): void {
-    if (this.partOneForm.formGroup.invalid) {
-      const dialogBoxData: IDialogBox = {
-        title: 'Incomplete Ratings',
-        content: 'Please fill in all the ratings.',
-        buttons: [
-          {
-            isVisible: true,
-            matDialogCloseValue: false,
-            content: 'Close',
-          },
-        ],
-      };
-
-      this.dialog.open(DialogBoxComponent, {
-        ...dialogBoxConfig,
-        data: dialogBoxData,
-      });
-      return; // Exit the method if the form is invalid
-    }
-
-    const adminInputRatings: string[] = [];
-    Object.values(this.partOneForm.formGroup.value).forEach(
-      (formArray: any) => {
-        formArray.forEach((item: { rating: string }) => {
-          adminInputRatings.push(item.rating);
-        });
-      }
-    );
-
-    const id = this.backendService.getCurrentIgcfId();
-    const { emp_signature, emp_fullname } = employeeDetails;
-    const currentDate: Date = new Date();
-    const year: number = currentDate.getFullYear();
-    const month: number = currentDate.getMonth() + 1; // Month is zero-indexed, so add 1
-    const day: number = currentDate.getDate();
-
-    const sum = adminInputRatings
-      .map(parseFloat) // Convert each string element to a number
-      .reduce((accumulator, currentValue) => accumulator + currentValue, 0); // Sum up the array elements
-
-    const average = sum / adminInputRatings.length;
-
-    const signedInfo: ISignedIgcf = {
-      id: id,
-      equivalent_ratings: adminInputRatings.join(','),
-      overall_weighted_average_rating: average.toFixed(2),
-      equivalent_description: this.getEquivalentDescription(average),
-      ratee_fullname: emp_fullname,
-      ratee_signature: emp_signature,
-      ratee_date_signed: `${year}-${month}-${day}`,
-    };
-
-    this.backendService.signIgcf(signedInfo);
-  }
   submit(): void {
-    try {
-      if (
-        this.currentUserRole === 'Faculty' &&
-        this.partOneForm.validateFormGroup()
-      ) {
+    if (this.partOneForm || this.partTwoForm) {
+      if (this.isFillingUp() && this.partOneForm.validateFormGroup()) {
         const { emp_fullname, emp_number, emp_position, emp_dept } =
           this.details;
         const currentDate = new Date();
-        const completionDate = this.datePipe.transform(currentDate, 'yyyy-MM-dd');
+        const completionDate = this.datePipe.transform(
+          currentDate,
+          'yyyy-MM-dd'
+        );
         const employeeDetails = {
           fullname: emp_fullname,
           emp_number,
@@ -354,144 +250,39 @@ export class IgcfFormComponent implements OnInit, IDeactivateComponent {
       } else if (
         this.isAdminRating() &&
         this.partOneForm.validateFormGroup() &&
-        this.partTwoForm.formGroup.valid
+        this.partTwoForm.validateFormGroup()
       ) {
-          const currentDate = new Date();
+        console.log(1);
+
+        const currentDate = new Date();
         const rateDate = this.datePipe.transform(currentDate, 'yyyy-MM-dd');
-        this.activatedRoute.paramMap.subscribe((params) => {
-          const id = params.get('id');
-          this.backendService
-            .rateIgcf({
-              id,
-              rates: this.partOneForm.getValues(),
-              overall_weighted_average_rating: this.partOneForm
-                .getOverallAverageRating()
-                .toFixed(2),
-              equivalent_description: this.getEquivalentDescription(
-                this.partOneForm.getOverallAverageRating()
-              ),
-              ...this.partTwoForm.getValues(),
-              rate_date: rateDate,
-            })
-            .subscribe();
-        });
+        this.backendService
+          .rateIgcf({
+            id: this.currentUserId,
+            ratee_fullname: this.details.emp_fullname,
+            rates: this.partOneForm.getValues(),
+            overall_weighted_average_rating: this.partOneForm
+              .getOverallAverageRating()
+              .toFixed(2),
+            equivalent_description: this.getEquivalentDescription(
+              this.partOneForm.getOverallAverageRating()
+            ),
+            ...this.partTwoForm.getValues(),
+            rate_date: rateDate,
+            rater_completion_date: this.completionDate,
+          })
+          .subscribe({
+            next: () => {
+              this.authService.openSnackBar('Sucessful', 'close', 'bottom');
+              this.routerService.routeTo('dashboard');
+            },
+          });
+
+
       }
-    } catch (e) {
-      this.authService.openSnackBar(
-        'Please complete all sections of the IGCF form before submitting.',
-        'close',
-        'bottom'
-      );
-      return;
     }
-
-    // else if (!this.percentagesCtrl.value && userRole === 'Regular') {
-    //   this.openDialogBox(
-    //     'Attention',
-    //     'Please select a set of percentages for your form.'
-    //   );
-    // }
-
-    // else {
-    //   this.authService.getEmployeeNumber().subscribe({
-    //     next: (employeeNumber: string) => {
-    //       this.authService.getEmployeeDetails(employeeNumber).subscribe({
-    //         next: (employeeDetails) => {
-    //           const {
-    //             userInputCommitments,
-    //             userInputWeightPercentages,
-    //             userInputIndividualGoalCommitmentPercentages,
-    //             userInputAccomplishmentPercentages,
-    //             topThreeLeastAccomplishedGoalCommitments,
-    //             topThreeHighlyAccomplishedtGoalCommitments,
-    //             topThreeCompetenciesThatNeedImprovement,
-    //             topThreeCompetencyStrenghts,
-    //             topThreeTrainingAndDevelopmentSuggestionsBasedOnPreviousItems,
-    //           } = this.extractFormValues();
-
-    //           if (userRole === 'Regular') {
-    //             let selectedWeightPercentages = '';
-    //             let selectedIndividualGoalCommitmentPercentages = '';
-    //             let selectedCommitmentPercentages = '';
-
-    //             const inputValue = this.percentagesCtrl.value;
-    //             if (inputValue !== null) {
-    //               const data: IIgcfPercentages[] =
-    //                 this.unfilteredIgcfPercentages.filter(
-    //                   (item) => item.id === parseInt(inputValue, 10)
-    //                 );
-    //               if (data.length > 0) {
-    //                 selectedWeightPercentages = data[0]['set_weight_%'];
-    //                 selectedIndividualGoalCommitmentPercentages =
-    //                   data[0]['set_individual_goal_commitment_%'];
-    //                 selectedCommitmentPercentages =
-    //                   data[0]['set_accomplishment_%'];
-
-    //                 const igcfValues = {
-    //                   ...employeeDetails.data,
-    //                   selectedWeightPercentages,
-    //                   selectedIndividualGoalCommitmentPercentages,
-    //                   selectedCommitmentPercentages,
-    //                   emp_set_commitments: userInputCommitments.join(','),
-    //                   emp_set_weight_percentage:
-    //                     userInputWeightPercentages.join(','),
-    //                   emp_set_igc_percentage:
-    //                     userInputIndividualGoalCommitmentPercentages.join(
-    //                       ','
-    //                     ),
-    //                   emp_set_accomplishment_percentage:
-    //                     userInputAccomplishmentPercentages.join(','),
-    //                   emp_top_three_least_agc:
-    //                     topThreeLeastAccomplishedGoalCommitments.join(','),
-    //                   emp_top_three_highly_agc:
-    //                     topThreeHighlyAccomplishedtGoalCommitments.join(
-    //                       ','
-    //                     ),
-    //                   emp_top_three_competencies_improvement:
-    //                     topThreeCompetenciesThatNeedImprovement.join(','),
-    //                   emp_top_three_competency_strenghts:
-    //                     topThreeCompetencyStrenghts.join(','),
-    //                   emp_top_three_training_development_suggestion:
-    //                     topThreeTrainingAndDevelopmentSuggestionsBasedOnPreviousItems.join(
-    //                       ','
-    //                     ),
-    //                 };
-
-    //                 this.backendService.setSubmittedFormValues(igcfValues);
-    //                 this.backendService.submitForm();
-    //               }
-    //             }
-    //           } else if (userRole === 'Admin') {
-    //             this.signIgcf(employeeDetails.data);
-    //           }
-    //         },
-    //         error: (err) => {
-    //           console.error(
-    //             'Error occurred while fetching employee details:',
-    //             err
-    //           );
-    //           this.authService.openSnackBar(
-    //             'Failed to fetch employee details. Please try again.',
-    //             'Close',
-    //             'bottom'
-    //           );
-    //         },
-    //       });
-    //     },
-    //     error: (err) => {
-    //       console.error(
-    //         'Error occurred while fetching employee number:',
-    //         err
-    //       );
-    //       this.authService.openSnackBar(
-    //         'Failed to fetch employee number. Please try again.',
-    //         'Close',
-    //         'bottom'
-    //       );
-    //     },
-    //   });
-    // }
   }
+
   getEquivalentDescription(score: number): string {
     switch (true) {
       case score >= 1.0 && score <= 1.5:
@@ -528,48 +319,5 @@ export class IgcfFormComponent implements OnInit, IDeactivateComponent {
       ...dialogBoxConfig,
       data: dialogBoxData,
     });
-  }
-
-  extractFormValues() {
-    const partOne = this.partOneForm.formGroup;
-    const partTwo = this.partTwoForm.formGroup;
-
-    const userInputCommitments: string[] = [];
-    const userInputWeightPercentages: string[] = [];
-    const userInputIndividualGoalCommitmentPercentages: string[] = [];
-    const userInputAccomplishmentPercentages: string[] = [];
-
-    Object.values(partOne.value).forEach((formArray: any) => {
-      formArray.forEach((item: any) => {
-        userInputCommitments.push(item.commitment);
-        userInputWeightPercentages.push(item.weight);
-        userInputIndividualGoalCommitmentPercentages.push(
-          item.individualGoalCommitment
-        );
-        userInputAccomplishmentPercentages.push(item.accomplishment);
-      });
-    });
-
-    const topThreeLeastAccomplishedGoalCommitments: string[] =
-      partTwo.get('step1')?.value;
-    const topThreeHighlyAccomplishedtGoalCommitments: string[] =
-      partTwo.get('step2')?.value;
-    const topThreeCompetenciesThatNeedImprovement: string[] =
-      partTwo.get('step3')?.value;
-    const topThreeCompetencyStrenghts: string[] = partTwo.get('step4')?.value;
-    const topThreeTrainingAndDevelopmentSuggestionsBasedOnPreviousItems: string[] =
-      partTwo.get('step5')?.value;
-
-    return {
-      userInputCommitments,
-      userInputWeightPercentages,
-      userInputIndividualGoalCommitmentPercentages,
-      userInputAccomplishmentPercentages,
-      topThreeLeastAccomplishedGoalCommitments,
-      topThreeHighlyAccomplishedtGoalCommitments,
-      topThreeCompetenciesThatNeedImprovement,
-      topThreeCompetencyStrenghts,
-      topThreeTrainingAndDevelopmentSuggestionsBasedOnPreviousItems,
-    };
   }
 }

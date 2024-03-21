@@ -16,6 +16,7 @@ import { PendingUserListComponent } from './modules/pages/pending-user-list/pend
 import { InputAllKpisComponent } from './modules/pages/input-all-kpis/input-all-kpis.component';
 import { ActionPlansComponent } from './modules/pages/action-plans/action-plans.component';
 import { ObjAndActionPlansListComponent } from './modules/pages/obj-and-action-plans-list/obj-and-action-plans-list.component';
+import { canAcessFillUpIgcf } from './core/guards/canAccessFillUpIgcf.guard';
 
 const routes: Routes = [
   { path: '', redirectTo: 'login', pathMatch: 'full' },
@@ -47,16 +48,17 @@ const routes: Routes = [
         path: 'fill-up',
         component: IgcfFormComponent,
         outlet: 'dashboardContent',
+        canActivate: [canAcessFillUpIgcf],
         canDeactivate: [canExit],
       },
       {
-        path: 'submitted-form/:id',
+        path: 'submitted-form/:id/:completionDate',
         component: IgcfFormComponent,
         outlet: 'dashboardContent',
         canDeactivate: [canExit],
       },
       {
-        path: 'view-igcf/:id',
+        path: 'view-igcf/:id/:ratingStatus/:name/:date',
         component: ViewIgcfComponent,
         outlet: 'dashboardContent',
       },
@@ -82,7 +84,10 @@ const routes: Routes = [
       },
     ],
   },
-
+  {
+    path: 'view-igcf',
+    component: ViewIgcfComponent,
+  },
   { path: '**', component: LoginComponent },
 ];
 

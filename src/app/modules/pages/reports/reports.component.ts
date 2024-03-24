@@ -12,17 +12,12 @@ import * as pdfFonts from 'pdfmake/build/vfs_fonts';
 import { HttpClient } from '@angular/common/http';
 import { ISubmittedIGCF } from 'src/app/core/models/SubmittedIgcf';
 import { formData } from 'src/app/core/constants/formData';
-import { Chart, ChartConfiguration, ChartTypeRegistry } from 'chart.js/auto';
-import {
-  departmentColors,
-  departmentNamesMap,
-} from 'src/app/core/constants/DepartmentData';
+
 import { Observable, forkJoin, map, switchMap } from 'rxjs';
 import { SelectionModel } from '@angular/cdk/collections';
 import { MatTableDataSource } from '@angular/material/table';
 import { MatPaginator } from '@angular/material/paginator';
 import { MatSort } from '@angular/material/sort';
-type ValidChartType = keyof ChartTypeRegistry;
 import { MatAccordion } from '@angular/material/expansion';
 import { FormControl } from '@angular/forms';
 
@@ -62,7 +57,7 @@ export class ReportsComponent implements OnInit, AfterViewInit {
   deadlineYears: any[] = [];
   originalSubmissionHistory: any[] = [];
   numberOfSubmittedIgcfByDept: number = 0;
-  numberOfNotRatedIgcfByDept: number = 0;
+  numberOfDoneRatingIgcByDept: number = 0;
   overallAverageDescriptionMap = new Map<string, number>();
   displayedHeaderForSubmissionHistory: string[] = [
     'Fullname',
@@ -131,7 +126,7 @@ export class ReportsComponent implements OnInit, AfterViewInit {
   originalPartTwoIgcfData: any[] = [];
   selection = new SelectionModel<any>(true, []);
   dataSourceForSubmissionHistory = new MatTableDataSource<any>([]);
-  dataSourceForNotRatedIgcf = new MatTableDataSource<any>([]);
+  dataSourceForRatedIgcf = new MatTableDataSource<any>([]);
   dataSourceForFailedDeliveredAgreedIgc = new MatTableDataSource<any>([]);
   dataSourceForPartiallyDeliveredAgreedIgc = new MatTableDataSource<any>([]);
   dataSourceForDeliveredAgreedIgc = new MatTableDataSource<any>([]);
@@ -164,14 +159,14 @@ export class ReportsComponent implements OnInit, AfterViewInit {
 
               this.filteredSubmissionHistory = filteredData;
 
-              const filterNotRatedIgcf = filteredData.filter(
-                (submission: any) => !submission.rate_date
+              const filterRatedIgcf = filteredData.filter(
+                (submission: any) => submission.rate_date
               );
 
               this.numberOfSubmittedIgcfByDept = filteredData.length;
-              this.numberOfNotRatedIgcfByDept = filterNotRatedIgcf.length;
+              this.numberOfDoneRatingIgcByDept = filterRatedIgcf.length;
               this.dataSourceForSubmissionHistory.data = filteredData;
-              this.dataSourceForNotRatedIgcf.data = filterNotRatedIgcf;
+              this.dataSourceForRatedIgcf.data = filterRatedIgcf;
             },
           });
           this.backendService
@@ -215,61 +210,62 @@ export class ReportsComponent implements OnInit, AfterViewInit {
                 // Now equivalentDescriptionMap contains the desired mapping of equivalent descriptions to counts
               },
             });
-        } else if (role === 'HRD') {
-          this.backendService.getSubmissionHistoryEveryDept().subscribe({
-            next: (submissionHistory: any) => {
-              this.deadlineYears = this.extractYears(submissionHistory);
-              this.originalSubmissionHistory = submissionHistory;
-              const filteredData =
-                this.filterDataToCurrentYear(submissionHistory);
-              const filterNotRatedIgcf = filteredData.filter(
-                (submission: any) => !submission.rate_date
-              );
-              this.numberOfSubmittedIgcfByDept = filteredData.length;
-              this.numberOfNotRatedIgcfByDept = filterNotRatedIgcf.length;
-              this.dataSourceForSubmissionHistory.data = filteredData;
-              this.dataSourceForNotRatedIgcf.data = filterNotRatedIgcf;
-            },
-          });
-          this.backendService.getSubmittedIgcfPartTwoByDept('').subscribe({
-            next: (data: any) => {
-              this.originalPartTwoIgcfData = data;
-              const filteredData = this.filterDataToCurrentYear(data);
-              const filteredFailedDeliveredAgreedIgc =
-                this.filterDataBaseOnEquivalentDescription(
-                  filteredData,
-                  'Failed to deliver agreed individual goal commitment'
-                );
-
-              const filteredPartiallyDeliveredAgreedIgc =
-                this.filterDataBaseOnEquivalentDescription(
-                  filteredData,
-                  'Partially delivered agreed individual goal commitment'
-                );
-              const filterDeliveredAgreedIgc =
-                this.filterDataBaseOnEquivalentDescription(
-                  filteredData,
-                  'Delivered agreed individual goal commitment'
-                );
-              const filterExceededOrDeliveredIgc =
-                this.filterDataBaseOnEquivalentDescription(
-                  filteredData,
-                  'Exceeded or Delivered beyond individual goal commitment'
-                );
-              this.overallAverageDescriptionMap =
-                this.mapEquivalentDescription(filteredData);
-              this.dataSourceForFailedDeliveredAgreedIgc.data =
-                filteredFailedDeliveredAgreedIgc;
-              this.dataSourceForPartiallyDeliveredAgreedIgc.data =
-                filteredPartiallyDeliveredAgreedIgc;
-              this.dataSourceForDeliveredAgreedIgc.data =
-                filterDeliveredAgreedIgc;
-              this.dataSourceForExceededOrDeliveredAgreedIgc.data =
-                filterExceededOrDeliveredIgc;
-              // Now equivalentDescriptionMap contains the desired mapping of equivalent descriptions to counts
-            },
-          });
         }
+        // else if (role === 'HRD') {
+        //   this.backendService.getSubmissionHistoryEveryDept().subscribe({
+        //     next: (submissionHistory: any) => {
+        //       this.deadlineYears = this.extractYears(submissionHistory);
+        //       this.originalSubmissionHistory = submissionHistory;
+        //       const filteredData =
+        //         this.filterDataToCurrentYear(submissionHistory);
+        //       const filterNotRatedIgcf = filteredData.filter(
+        //         (submission: any) => !submission.rate_date
+        //       );
+        //       this.numberOfSubmittedIgcfByDept = filteredData.length;
+        //       this.numberOfNotRatedIgcfByDept = filterNotRatedIgcf.length;
+        //       this.dataSourceForSubmissionHistory.data = filteredData;
+        //       this.dataSourceForNotRatedIgcf.data = filterNotRatedIgcf;
+        //     },
+        //   });
+        //   this.backendService.getSubmittedIgcfPartTwoByDept('').subscribe({
+        //     next: (data: any) => {
+        //       this.originalPartTwoIgcfData = data;
+        //       const filteredData = this.filterDataToCurrentYear(data);
+        //       const filteredFailedDeliveredAgreedIgc =
+        //         this.filterDataBaseOnEquivalentDescription(
+        //           filteredData,
+        //           'Failed to deliver agreed individual goal commitment'
+        //         );
+
+        //       const filteredPartiallyDeliveredAgreedIgc =
+        //         this.filterDataBaseOnEquivalentDescription(
+        //           filteredData,
+        //           'Partially delivered agreed individual goal commitment'
+        //         );
+        //       const filterDeliveredAgreedIgc =
+        //         this.filterDataBaseOnEquivalentDescription(
+        //           filteredData,
+        //           'Delivered agreed individual goal commitment'
+        //         );
+        //       const filterExceededOrDeliveredIgc =
+        //         this.filterDataBaseOnEquivalentDescription(
+        //           filteredData,
+        //           'Exceeded or Delivered beyond individual goal commitment'
+        //         );
+        //       this.overallAverageDescriptionMap =
+        //         this.mapEquivalentDescription(filteredData);
+        //       this.dataSourceForFailedDeliveredAgreedIgc.data =
+        //         filteredFailedDeliveredAgreedIgc;
+        //       this.dataSourceForPartiallyDeliveredAgreedIgc.data =
+        //         filteredPartiallyDeliveredAgreedIgc;
+        //       this.dataSourceForDeliveredAgreedIgc.data =
+        //         filterDeliveredAgreedIgc;
+        //       this.dataSourceForExceededOrDeliveredAgreedIgc.data =
+        //         filterExceededOrDeliveredIgc;
+        //       // Now equivalentDescriptionMap contains the desired mapping of equivalent descriptions to counts
+        //     },
+        //   });
+        // }
       },
     });
   }
@@ -314,8 +310,8 @@ export class ReportsComponent implements OnInit, AfterViewInit {
     this.dataSourceForSubmissionHistory.paginator = this.paginator;
     this.dataSourceForSubmissionHistory.sort = this.sort;
 
-    this.dataSourceForNotRatedIgcf.paginator = this.paginator;
-    this.dataSourceForNotRatedIgcf.sort = this.sort;
+    this.dataSourceForRatedIgcf.paginator = this.paginator;
+    this.dataSourceForRatedIgcf.sort = this.sort;
 
     this.dataSourceForFailedDeliveredAgreedIgc.paginator = this.paginator;
     this.dataSourceForFailedDeliveredAgreedIgc.sort = this.sort;
@@ -333,8 +329,8 @@ export class ReportsComponent implements OnInit, AfterViewInit {
   applySubmissionHistoryFilter(event: Event) {
     this.applyFilter(event, this.dataSourceForSubmissionHistory);
   }
-  applyFilterInNotRatedIgcf(event: Event) {
-    this.applyFilter(event, this.dataSourceForNotRatedIgcf);
+  applyFilterInRatedIgcf(event: Event) {
+    this.applyFilter(event, this.dataSourceForRatedIgcf);
   }
 
   applyFilterForDeliveredAgreedIgc(event: Event) {
@@ -390,7 +386,7 @@ export class ReportsComponent implements OnInit, AfterViewInit {
     this.dataSourceForSubmissionHistory.data = filteredData;
     this.numberOfSubmittedIgcfByDept = filteredData.length;
 
-    const filterNotRatedIgcf = filteredData.filter(
+    const filterRatedIgcf = filteredData.filter(
       (submission: any) => !submission.rate_date
     );
 
@@ -425,8 +421,8 @@ export class ReportsComponent implements OnInit, AfterViewInit {
         'Exceeded or Delivered beyond individual goal commitment'
       );
 
-    this.numberOfNotRatedIgcfByDept = filterNotRatedIgcf.length;
-    this.dataSourceForNotRatedIgcf.data = filterNotRatedIgcf;
+    this.numberOfDoneRatingIgcByDept = filterRatedIgcf.length;
+    this.dataSourceForRatedIgcf.data = filterRatedIgcf;
 
     this.dataSourceForPartiallyDeliveredAgreedIgc.data =
       filteredPartiallyDeliveredAgreedIgc;
@@ -521,7 +517,9 @@ export class ReportsComponent implements OnInit, AfterViewInit {
   //   });
   // }
 
-  generatePDF() {
+  generatePDF(event: MouseEvent) {
+    event.stopPropagation();
+
     // Filter out entries with null rate_date
     const submissionHistory = this.dataSourceForSubmissionHistory.data.filter(
       (entry: any) => entry.rate_date !== null
@@ -590,9 +588,8 @@ export class ReportsComponent implements OnInit, AfterViewInit {
     });
   }
   createDocumentDefinition(logoDataURL: string, data: any): any {
-    const { fullname, emp_position, emp_number, emp_dept } =
+    const { fullname, emp_position, emp_number, emp_dept, completion_date } =
       data.igcfInformation;
-    console.log(data.igcfPartTwo);
 
     return {
       content: [
@@ -767,7 +764,8 @@ export class ReportsComponent implements OnInit, AfterViewInit {
             tableHeader: { fillColor: '#CCCCCC', color: '#000000', bold: true },
           },
         },
-        this.generatePartTwo(data.igcfPartTwo, fullname),
+
+        this.generatePartTwo(data.igcfPartTwo, fullname, completion_date),
       ],
       styles: {
         tableHeader: {
@@ -830,7 +828,11 @@ export class ReportsComponent implements OnInit, AfterViewInit {
     });
   }
 
-  generatePartTwo(igcfPartTwo: any, rater_fullname: string) {
+  generatePartTwo(
+    igcfPartTwo: any,
+    rater_fullname: string,
+    completion_date: string
+  ) {
     const {
       overall_weighted_average_rating,
       ratee_fullname,
@@ -891,7 +893,7 @@ export class ReportsComponent implements OnInit, AfterViewInit {
                         stack: [
                           rater_fullname,
                           {
-                            text: rater_completion_date,
+                            text: completion_date,
                           },
                         ],
                         alignment: 'left',
@@ -980,9 +982,7 @@ export class ReportsComponent implements OnInit, AfterViewInit {
       content: [
         {
           margin: [0, 20, 0, 0],
-          stack: [
-            { text: title, bold: true, fontSize: 16 },
-          ],
+          stack: [{ text: title, bold: true, fontSize: 16 }],
           alignment: 'center',
         },
         {

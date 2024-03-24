@@ -58,7 +58,7 @@ const routes: Routes = [
         canDeactivate: [canExit],
       },
       {
-        path: 'view-igcf/:id/:ratingStatus/:name/:date',
+        path: 'view-igcf/:id',
         component: ViewIgcfComponent,
         outlet: 'dashboardContent',
       },

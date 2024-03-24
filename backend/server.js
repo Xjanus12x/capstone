@@ -12,9 +12,12 @@ const saltRounds = 10;
 // Established the database connection
 const db = mysql.createConnection({
   host: "localhost",
+  // host: "118.139.176.23",
   user: "root",
   password: "",
-  database: "tbl_hau_commit",
+  // password: "hau_commit",
+  database: "db_hau_commit",
+  // database: "i9792195_twvu1",
 });
 
 db.connect(function (error) {
@@ -817,19 +820,27 @@ server.post("/api/add/kpi-and-action-plans", (req, res) => {
   const sqlValues = [];
 
   // Iterate over each KPI object and push its values to the SQL values array
+  //   kpi_title: kpiTitle,
+  // plan,
+  // responsibles,
+  // startDateFormatted,
+  // dueDateFormatted,
+  // targets: JSON.stringify(targetObj),
   kpiAndActionPlans.forEach((kpiAndActionPlan) => {
     sqlValues.push([
-      kpiAndActionPlan.title,
-      kpiAndActionPlan.actionPlan,
-      kpiAndActionPlan.target,
-      kpiAndActionPlan.timeFrame,
-      kpiAndActionPlan.responsible,
+      kpiAndActionPlan.kpi_title,
+      kpiAndActionPlan.plan,
+      kpiAndActionPlan.startDateFormatted,
+      kpiAndActionPlan.dueDateFormatted,
+      kpiAndActionPlan.targets,
+      kpiAndActionPlan.responsibles,
+      kpiAndActionPlan.dept,
     ]);
   });
 
   // SQL query to insert the KPIs into tbl_kpis
   const sql =
-    "INSERT INTO tbl_kpi_and_action_plans (kpi_title, action_plan, target, timeframe, responsible) VALUES ?";
+    "INSERT INTO tbl_kpi_and_action_plans (kpi_title, action_plan, start_date, due_date, targets, responsibles, dept) VALUES ?";
 
   // Execute the SQL query with the SQL values array for bulk insertion
   db.query(sql, [sqlValues], (error, result) => {
@@ -844,15 +855,15 @@ server.post("/api/add/kpi-and-action-plans", (req, res) => {
 });
 
 server.get("/api/get/kpi-and-action-plans", (req, res) => {
-  // const { dept } = req.query; // Assuming department is passed as a query parameter
+  const { dept } = req.query; // Assuming department is passed as a query parameter
   // Execute the SQL query to retrieve data from both tables based on department
   const sqlQuery = `
         SELECT  *
-        FROM tbl_kpi_and_action_plans
+        FROM tbl_kpi_and_action_plans WHERE dept = ?
     `;
 
   // Execute the query with department as a parameter
-  db.query(sqlQuery, (err, result) => {
+  db.query(sqlQuery, [dept], (err, result) => {
     if (err) {
       console.error("Error executing SQL query:", err);
       res
@@ -917,7 +928,6 @@ server.post("/api/submit-igcf", (req, res) => {
     // Initialize an array to store the SQL values for bulk insertion
     const sqlValues = [];
 
-    // Iterate over each KPI object and push its values to the SQL values array
     formData.forEach((kpi) => {
       sqlValues.push([
         igcfSubmissionHistoryId,
@@ -927,11 +937,10 @@ server.post("/api/submit-igcf", (req, res) => {
         kpi.initiatives,
         kpi.personalMeasures,
         kpi.weight,
-        completion_date,
       ]);
     });
     const submittedIgcfDetailsQuery =
-      "INSERT INTO tbl_submitted_igcf_details (tbl_igcf_submission_history_id, selected_kpi, selected_plan ,selected_plan_weight, initiatives, personal_measures_kpi ,weight, completion_date) VALUES ?";
+      "INSERT INTO tbl_submitted_igcf_details (tbl_igcf_submission_history_id, selected_kpi, selected_plan ,selected_plan_weight, initiatives, personal_measures_kpi ,weight) VALUES ?";
 
     // Execute the SQL query with the SQL values array for bulk insertion
     db.query(submittedIgcfDetailsQuery, [sqlValues], (err, result) => {
@@ -1025,12 +1034,56 @@ server.get("/api/get/igcf-submission-history-every-dept", (req, res) => {
   });
 });
 
+server.delete("/api/del/submitted-igcf/:id", (req, res) => {
+  const id = req.params.id;
+
+  // Define the SQL query string
+  let deleteSubmissionHistory =
+    "DELETE FROM tbl_igcf_submission_history WHERE id = ?";
+
+  let deleteSubmittedIgcfDetails =
+    "DELETE FROM tbl_submitted_igcf_details WHERE tbl_igcf_submission_history_id = ?";
+
+  let deletePartTwoIgcf =
+    "DELETE FROM tbl_part_two_igcf WHERE tbl_submitted_igcf_details_id = ?";
+
+  // Delete from tbl_igcf_submission_history
+  db.query(deleteSubmissionHistory, [id], (err1, result1) => {
+    if (err1) {
+      console.error("Error deleting submission history:", err1);
+      res.status(500).json({ error: "Error deleting submission history" });
+      return;
+    }
+
+    // Delete from tbl_submitted_igcf_details
+    db.query(deleteSubmittedIgcfDetails, [id], (err2, result2) => {
+      if (err2) {
+        console.error("Error deleting submitted IGCF details:", err2);
+        res
+          .status(500)
+          .json({ error: "Error deleting submitted IGCF details" });
+        return;
+      }
+
+      // Delete from tbl_part_two_igcf
+      db.query(deletePartTwoIgcf, [id], (err3, result3) => {
+        if (err3) {
+          console.error("Error deleting part two IGCF:", err3);
+          res.status(500).json({ error: "Error deleting part two IGCF" });
+          return;
+        }
+
+        console.log("Submitted IGCF deleted successfully.");
+        res
+          .status(200)
+          .json({ message: "Submitted IGCF deleted successfully." });
+      });
+    });
+  });
+});
+
 // server.delete("/api/del/submitted-igcf/:id", (req, res) => {
 //   const id = req.params.id;
-
-//   // Get completion date from submission history
-//   let getCompletionDate =
-//     "SELECT completion_date FROM tbl_igcf_submission_history WHERE id = ?";
 
 //   // Perform the DELETE operation in your database
 //   let deleteSubmissionHistory =
@@ -1039,96 +1092,56 @@ server.get("/api/get/igcf-submission-history-every-dept", (req, res) => {
 //   let deleteSubmittedIgcfDetails =
 //     "DELETE FROM tbl_submitted_igcf_details WHERE tbl_igcf_submission_history_id = ?";
 
-//   // Delete from tbl_igcf_submission_history
-//   db.query(deleteSubmissionHistory, id, (err1, result1) => {
-//     if (err1) {
-//       console.error("Error deleting submission history:", err1);
-//       res.status(500).json({ error: "Error deleting submission history" });
+//   let deletePartTwoIgcf =
+//     "DELETE FROM tbl_part_two_igcf WHERE tbl_submitted_igcf_details_id = ?";
+
+//   // Get completion date
+//   db.query(id, (err, result) => {
+//     if (err) {
+//       console.error("Error getting completion date:", err);
+//       res.status(500).json({ error: "Error getting completion date" });
 //       return;
 //     }
 
-//     // Delete from tbl_submitted_igcf_details
-//     db.query(deleteSubmittedIgcfDetails, id, (err2, result2) => {
-//       if (err2) {
-//         console.error("Error deleting submitted IGCF details:", err2);
-//         res
-//           .status(500)
-//           .json({ error: "Error deleting submitted IGCF details" });
+//     // Delete from tbl_igcf_submission_history
+//     db.query(deleteSubmissionHistory, [id], (err1, result1) => {
+//       if (err1) {
+//         console.error("Error deleting submission history:", err1);
+//         res.status(500).json({ error: "Error deleting submission history" });
 //         return;
 //       }
 
-//       console.log("Submitted IGCF deleted successfully.");
-//       res.status(200).json({ message: "Submitted IGCF deleted successfully." });
+//       // Delete from tbl_submitted_igcf_details
+//       db.query(
+//         deleteSubmittedIgcfDetails,
+//         [id],
+//         (err2, result2) => {
+//           if (err2) {
+//             console.error("Error deleting submitted IGCF details:", err2);
+//             res
+//               .status(500)
+//               .json({ error: "Error deleting submitted IGCF details" });
+//             return;
+//           }
+
+//           // Delete from tbl_part_two_igcf
+//           db.query(deletePartTwoIgcf, [id], (err3, result3) => {
+//             if (err3) {
+//               console.error("Error deleting part two IGCF:", err3);
+//               res.status(500).json({ error: "Error deleting part two IGCF" });
+//               return;
+//             }
+
+//             console.log("Submitted IGCF deleted successfully.");
+//             res
+//               .status(200)
+//               .json({ message: "Submitted IGCF deleted successfully." });
+//           });
+//         }
+//       );
 //     });
 //   });
 // });
-
-server.delete("/api/del/submitted-igcf/:id", (req, res) => {
-  const id = req.params.id;
-
-  // Get completion date from submission history
-  let getCompletionDate =
-    "SELECT completion_date FROM tbl_igcf_submission_history WHERE id = ?";
-
-  // Perform the DELETE operation in your database
-  let deleteSubmissionHistory =
-    "DELETE FROM tbl_igcf_submission_history WHERE id = ? AND completion_date = ?";
-
-  let deleteSubmittedIgcfDetails =
-    "DELETE FROM tbl_submitted_igcf_details WHERE tbl_igcf_submission_history_id = ? AND completion_date = ?";
-
-  let deletePartTwoIgcf =
-    "DELETE FROM tbl_part_two_igcf WHERE tbl_submitted_igcf_details_id = ? AND rater_completion_date = ?";
-
-  // Get completion date
-  db.query(getCompletionDate, id, (err, result) => {
-    if (err) {
-      console.error("Error getting completion date:", err);
-      res.status(500).json({ error: "Error getting completion date" });
-      return;
-    }
-
-    const completionDate = result[0].completion_date;
-
-    // Delete from tbl_igcf_submission_history
-    db.query(deleteSubmissionHistory, [id, completionDate], (err1, result1) => {
-      if (err1) {
-        console.error("Error deleting submission history:", err1);
-        res.status(500).json({ error: "Error deleting submission history" });
-        return;
-      }
-
-      // Delete from tbl_submitted_igcf_details
-      db.query(
-        deleteSubmittedIgcfDetails,
-        [id, completionDate],
-        (err2, result2) => {
-          if (err2) {
-            console.error("Error deleting submitted IGCF details:", err2);
-            res
-              .status(500)
-              .json({ error: "Error deleting submitted IGCF details" });
-            return;
-          }
-
-          // Delete from tbl_part_two_igcf
-          db.query(deletePartTwoIgcf, [id, completionDate], (err3, result3) => {
-            if (err3) {
-              console.error("Error deleting part two IGCF:", err3);
-              res.status(500).json({ error: "Error deleting part two IGCF" });
-              return;
-            }
-
-            console.log("Submitted IGCF deleted successfully.");
-            res
-              .status(200)
-              .json({ message: "Submitted IGCF deleted successfully." });
-          });
-        }
-      );
-    });
-  });
-});
 
 server.get("/api/get/submitted-igcf-details", (req, res) => {
   const { id } = req.query;
@@ -1170,7 +1183,6 @@ server.post("/api/update/rate-igcf", (req, res) => {
     step4,
     step5,
     rate_date,
-    rater_completion_date,
   } = req.body;
 
   // Iterate over each rate and execute a parameterized update query
@@ -1192,7 +1204,7 @@ server.post("/api/update/rate-igcf", (req, res) => {
 
   // Construct the SQL query to insert into tbl_part_two_igcf
   const insertQuery =
-    "INSERT INTO tbl_part_two_igcf (tbl_submitted_igcf_details_id, ratee_fullname ,overall_weighted_average_rating, equivalent_description, top_three_least_agc, top_three_highly_agc, top_three_competencies_improvement, top_three_competency_strengths, top_three_training_development_suggestion, rater_completion_date ,rate_date) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
+    "INSERT INTO tbl_part_two_igcf (tbl_submitted_igcf_details_id, ratee_fullname ,overall_weighted_average_rating, equivalent_description, top_three_least_agc, top_three_highly_agc, top_three_competencies_improvement, top_three_competency_strengths, top_three_training_development_suggestion ,rate_date) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
 
   // Execute the insert query with the array of values
   db.query(
@@ -1207,7 +1219,6 @@ server.post("/api/update/rate-igcf", (req, res) => {
       step3,
       step4,
       step5,
-      rater_completion_date,
       rate_date,
     ],
     (err, result) => {

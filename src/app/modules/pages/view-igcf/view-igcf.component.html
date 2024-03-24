@@ -1,14 +1,8 @@
 <div class="relative p-4 text-black">
-    <ng-container *ngIf="isLoadingResults || isRatingPending; else table">
+    <ng-container *ngIf="isLoadingResults; else table">
         <div class="grid min-h-[40rem] place-content-center">
-            <ng-container *ngIf="isLoadingResults; else pending">
-                <mat-spinner class="mx-auto"></mat-spinner>
-                <span class="mt-4">Loading results...</span>
-            </ng-container>
-            <ng-template #pending>
-                <mat-spinner class="mx-auto"></mat-spinner>
-                <span class="mt-4">Admin is still processing the rating...</span>
-            </ng-template>
+            <mat-spinner class="mx-auto"></mat-spinner>
+            <span class="mt-4">Loading results...</span>
         </div>
     </ng-container>>
     <ng-template #table>
@@ -69,19 +63,17 @@
         rate_date
         :
         "2024-03-11" -->
-        <div class="flex p-4 justify-evenly" *ngFor="let submittedInfo of submittedInfos;">
+        <div class="flex p-4 justify-evenly" *ngFor="let info of raterInfos;">
             <div>
                 <p class="font-bold">
-                    Employee Name: <span class="font-semibold underline">{{submittedInfo.fullname}}</span>
+                    Employee Name: <span class="font-semibold underline">{{info.fullname}}</span>
                 </p>
-                <p class="font-bold">Position: <span
-                        class="font-semibold underline">{{submittedInfo.emp_position}}</span></p>
+                <p class="font-bold">Position: <span class="font-semibold underline">{{info.emp_position}}</span></p>
 
             </div>
             <div>
-                <p class="font-bold">Employee No. <span
-                        class="font-semibold underline">{{submittedInfo.emp_number}}</span></p>
-                <p class="font-bold">Dept./Unit: <Span class="font-semibold underline">{{submittedInfo.emp_dept}}</Span>
+                <p class="font-bold">Employee No. <span class="font-semibold underline">{{info.emp_number}}</span></p>
+                <p class="font-bold">Dept./Unit: <Span class="font-semibold underline">{{info.emp_dept}}</Span>
                 </p>
 
             </div>
@@ -167,30 +159,27 @@
         </table>
 
         <div class="grid gap-8 p-4 place-content-center">
-            <!-- <div class="space-y-4">
+            <div class="space-y-4">
                 <p class="font-bold">Overall Weighted Average Rating: <span
-                        class="font-semibold underline">{{submittedPartTwoIgcf[0].overall_weighted_average_rating}}</span></p>
-                <p class="font-bold ">Equivalent Description: <Span
-                        class="font-semibold underline">{{submittedPartTwoIgcf[0].equivalent_description}}</Span>
-                </p>
-            </div> -->
-
-
-            <div class="space-y-4" *ngIf="submittedPartTwoIgcf.length > 0">
-                <p class="font-bold">Overall Weighted Average Rating: <span
-                        class="font-semibold underline">{{submittedPartTwoIgcf[0]?.overall_weighted_average_rating}}</span>
+                        class="font-semibold underline">{{submittedPartTwoIgcf.overall_weighted_average_rating ||
+                        ''}}</span>
                 </p>
                 <p class="font-bold ">Equivalent Description: <Span
-                        class="font-semibold underline">{{submittedPartTwoIgcf[0]?.equivalent_description}}</Span></p>
+                        class="font-semibold underline">{{submittedPartTwoIgcf.equivalent_description || ''}}</Span>
+                </p>
             </div>
 
 
-            <div *ngFor="let question of partTwoQuestions">
-                <h2 class="font-bold">{{question}}</h2>
-                <ul class="pl-8 list-disc" *ngFor="let value of submittedPartTwoIgcf; let i = index">
-                    <li *ngFor="let answer of getPartTwoAnswers('question'+(i+1))">{{answer}}</li>
+            <div *ngFor="let question of partTwoQuestions; let i = index">
+                <h2 class="font-bold">{{ question }}</h2>
+                <ul class="pl-8 list-disc">
+                    <li *ngFor="let answer of getAnswers(i)">
+                        {{ answer }}
+                    </li>
                 </ul>
             </div>
+
+
 
             <h2 class="italic font-semibold max-w-[60ch] text-center">This is to certify that above ratings and
                 comments were
@@ -205,8 +194,9 @@
                 </div>
                 <div class="text-center">
 
-                    <h2 class="font-bold underline">Ratee Name: </h2>
-                    <h3 class="font-bold underline">Rated On: </h3>
+                    <h2 class="font-bold underline">Ratee Name: {{submittedPartTwoIgcf.ratee_fullname || 'Pending'}}
+                    </h2>
+                    <h3 class="font-bold underline">Rated On: {{submittedPartTwoIgcf.rate_date || 'Pending'}}</h3>
 
                 </div>
             </div>
@@ -216,12 +206,12 @@
 
                 <button
                     class="grid p-4 text-white transition duration-300 ease-in-out bg-red-800 rounded-full place-content-center hover:bg-red-600 "
-                    matTooltip="Previous IGCF" matTooltipPosition="above">
+                    matTooltip="Previous IGCF" matTooltipPosition="above" (click)="handleClick('prev')">
                     <mat-icon>keyboard_arrow_left</mat-icon>
                 </button>
                 <button
                     class="grid p-4 text-white transition duration-300 ease-in-out bg-red-800 rounded-full place-content-center hover:bg-red-600"
-                    matTooltip="Next IGCF" matTooltipPosition="above">
+                    matTooltip="Next IGCF" matTooltipPosition="above" (click)="handleClick('next')">
                     <mat-icon>keyboard_arrow_right</mat-icon>
                 </button>
             </div>

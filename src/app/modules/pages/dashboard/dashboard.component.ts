@@ -1,10 +1,16 @@
-import { Component, ElementRef, OnInit, ViewChild } from '@angular/core';
+import {
+  Component,
+  ElementRef,
+  OnDestroy,
+  OnInit,
+  ViewChild,
+} from '@angular/core';
 import { RouterService } from '../../services/router-service.service';
 import { MatPaginator } from '@angular/material/paginator';
 import { MatTableDataSource } from '@angular/material/table';
 import { SelectionModel } from '@angular/cdk/collections';
 import { BackendService } from 'src/app/core/services/backend.service';
-import { Observable, filter } from 'rxjs';
+import { Observable, Subject, filter, takeUntil } from 'rxjs';
 import { ISubmittedIGCF } from 'src/app/core/models/SubmittedIgcf';
 import { AuthService } from 'src/app/core/services/auth.service';
 import { NavigationEnd, Router } from '@angular/router';
@@ -15,7 +21,7 @@ import { MatSort } from '@angular/material/sort';
   templateUrl: './dashboard.component.html',
   styleUrls: ['./dashboard.component.css'],
 })
-export class DashboardComponent implements OnInit {
+export class DashboardComponent implements OnInit, OnDestroy {
   submissionHistory$!: Observable<any>;
   originalSubmissionHistory: any[] = [];
   dataToDisplay: any[] = [];
@@ -41,9 +47,11 @@ export class DashboardComponent implements OnInit {
   currentUserRole: string = '';
   isLoadingResults = false;
   deadlineYears: any[] = [];
-
+  submittedIgcfIdList: number[] = [];
   @ViewChild(MatPaginator) paginator!: MatPaginator;
   @ViewChild(MatSort) sort!: MatSort;
+  // Create a Subject to handle unsubscribing
+  private unsubscribe$ = new Subject<void>();
   constructor(
     private routerService: RouterService,
     private backendService: BackendService,
@@ -69,7 +77,11 @@ export class DashboardComponent implements OnInit {
   ngAfterViewInit() {
     this.updateDataSource();
   }
-
+  ngOnDestroy(): void {
+    // Unsubscribe from observables to prevent memory leaks
+    this.unsubscribe$.next();
+    this.unsubscribe$.complete();
+  }
   filterSubmittedIgcf(year: string) {
     // Convert date to number
     const selectedYear = Number(year);
@@ -92,16 +104,14 @@ export class DashboardComponent implements OnInit {
       this.routerService.isRouteActive('submitted-form/:id/:completionDate') ||
       this.routerService.isRouteActive('set-percentages') ||
       this.routerService.isRouteActive('fill-up') ||
-      this.routerService.isRouteActive(
-        'view-igcf/:id/:ratingStatus/:name/:date'
-      ) ||
+      this.routerService.isRouteActive('view-igcf/:id') ||
       this.routerService.isRouteActive('user-list') ||
       this.routerService.isRouteActive('reports') ||
       this.routerService.isRouteActive('percentages-list') ||
       this.routerService.isRouteActive('pending-user-list') ||
       this.routerService.isRouteActive('input-kpis') ||
       this.routerService.isRouteActive('action-plans') ||
-      this.routerService.isRouteActive('obj-and-action-plan-list') 
+      this.routerService.isRouteActive('obj-and-action-plan-list')
     );
   }
 
@@ -149,48 +159,66 @@ export class DashboardComponent implements OnInit {
     });
   }
 
+  // handleDataSubscription(currentYear: number) {
+  //   this.submissionHistory$.subscribe({
+  //     next: (data) => {
+  //       const modifiedData = data.map((submissionDetails: any) => {
+  //         this.submittedIgcfIdList.push(submissionDetails.id);
+  //         return {
+  //           ...submissionDetails,
+  //           rating_status: !!submissionDetails.rate_date ? 'Done' : 'Pending',
+  //         };
+  //       });
+  //       this.deadlineYears = this.extractYears(modifiedData);
+  //       this.originalSubmissionHistory = modifiedData;
+  //       const result = modifiedData.filter((submissionDetails: any) => {
+  //         const yearOfCompletion = new Date(
+  //           submissionDetails.completion_date
+  //         ).getFullYear();
+  //         return yearOfCompletion === currentYear;
+  //       });
+  //       this.routerService.setSubmittedIgcIdList(
+  //         Array.from(new Set(this.submittedIgcfIdList))
+  //       );
+  //       this.dataToDisplay = result;
+  //       this.updateDataSource();
+  //     },
+  //     error: (error) => {
+  //       this.handleError(error);
+  //     },
+  //   });
+  // }
   handleDataSubscription(currentYear: number) {
-    this.submissionHistory$.subscribe({
-      next: (data) => {
-        // this.originalSubmissionHistory = data;
-        // this.deadlineYears = this.extractYears(this.originalSubmissionHistory);
-        // const result = data.filter((submissionDetails: any) => {
-        //   const yearOfCompletion = new Date(
-        //     submissionDetails.completion_date
-        //   ).getFullYear();
-        //   return yearOfCompletion === currentYear;
-        // });
-        // .map((submissionDetails: any) => {
-        //   return {
-        //     ...submissionDetails,
-        //     rating_status: submissionDetails.rate_date.length > 0,
-        //   };
-        // });
-
-        const modifiedData = data.map((submissionDetails: any) => {
-          return {
-            ...submissionDetails,
-            rating_status: !!submissionDetails.rate_date,
-          };
-        });
-        this.deadlineYears = this.extractYears(modifiedData);
-        this.originalSubmissionHistory = modifiedData;
-        const result = modifiedData.filter((submissionDetails: any) => {
-          const yearOfCompletion = new Date(
-            submissionDetails.completion_date
-          ).getFullYear();
-          return yearOfCompletion === currentYear;
-        });
-
-        this.dataToDisplay = result;
-        this.updateDataSource();
-      },
-      error: (error) => {
-        this.handleError(error);
-      },
-    });
+    this.submissionHistory$
+      .pipe(takeUntil(this.unsubscribe$)) // Unsubscribe when component is destroyed
+      .subscribe({
+        next: (data) => {
+          const modifiedData = data.map((submissionDetails: any) => {
+            this.submittedIgcfIdList.push(submissionDetails.id);
+            return {
+              ...submissionDetails,
+              rating_status: !!submissionDetails.rate_date ? 'Done' : 'Pending',
+            };
+          });
+          this.deadlineYears = this.extractYears(modifiedData);
+          this.originalSubmissionHistory = modifiedData;
+          const result = modifiedData.filter((submissionDetails: any) => {
+            const yearOfCompletion = new Date(
+              submissionDetails.completion_date
+            ).getFullYear();
+            return yearOfCompletion === currentYear;
+          });
+          this.routerService.setSubmittedIgcIdList(
+            Array.from(new Set(this.submittedIgcfIdList))
+          );
+          this.dataToDisplay = result;
+          this.updateDataSource();
+        },
+        error: (error) => {
+          this.handleError(error);
+        },
+      });
   }
-
   updateDataSource() {
     setTimeout(() => {
       this.dataSource = new MatTableDataSource(this.dataToDisplay);

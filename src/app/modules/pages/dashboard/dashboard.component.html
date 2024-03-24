@@ -56,9 +56,9 @@
                                         </mat-header-cell>
                                         <mat-cell mat-cell *matCellDef="let element">
                                             <span
-                                                [ngClass]="{'bg-green-200': element.rating_status,'bg-red-200':!element.rating_status}"
+                                                [ngClass]="{'bg-green-200': element.rating_status === 'Done','bg-red-200':element.rating_status === 'Pending'}"
                                                 class="p-1 font-extrabold rounded-md">
-                                                {{element.rating_status? 'Done': 'Pending'}}
+                                                {{element.rating_status}}
                                             </span>
                                         </mat-cell>
                                     </ng-container>
@@ -66,27 +66,31 @@
                                     <!-- Manually define the "actions" column -->
                                     <ng-container matColumnDef="actions" *ngIf="userRole$ | async as role">
                                         <mat-header-cell mat-header-cell *matHeaderCellDef> Actions </mat-header-cell>
-                                        <mat-cell class="flex flex-wrap" mat-cell *matCellDef="let element">
-                                            <ng-container *ngIf="role === 'Admin'">
-                                                <button mat-icon-button matTooltip="Rate IGCF" [routerLink]="['/dashboard', { 
+                                        <mat-cell mat-cell *matCellDef="let element">
+                                            <div class="flex flex-col flex-wrap gap-3 py-4">
+                                                <ng-container *ngIf="role === 'Admin'">
+                                                    <button mat-raised-button color="primary" matTooltip="Rate IGCF"
+                                                        [routerLink]="['/dashboard', { 
                                                         outlets: { 
                                                             dashboardContent: ['submitted-form', element.id, element.completion_date ]
                                                         }
                                                     }]" [queryParams]="{ rateDate: element.rate_date }">
-                                                    <mat-icon>star</mat-icon>
-                                                </button>
+                                                        rate
+                                                    </button>
 
-                                            </ng-container>
-                                            <button mat-icon-button color="primary" matTooltip="View IGCF"
-                                                [routerLink]="['/dashboard', { outlets: { dashboardContent: ['view-igcf',  element.id, element.rating_status, element.fullname, element.completion_date]} }]">
-                                                <mat-icon>visibility</mat-icon>
-                                            </button>
-                                            <ng-container *ngIf="role === 'Admin' || role === 'Faculty'">
-                                                <button mat-icon-button color="warn" matTooltip="Delete row"
-                                                    (click)="deleteSubmittedIgcf(element.id)">
-                                                    <mat-icon>delete</mat-icon>
+                                                </ng-container>
+                                                <button mat-raised-button color="accent" matTooltip="View IGCF"
+                                                    [routerLink]="['/dashboard', { outlets: { dashboardContent: ['view-igcf',  element.id]} }]">
+                                                    view
                                                 </button>
-                                            </ng-container>
+                                                <ng-container *ngIf="role === 'Admin' || role === 'Faculty'">
+                                                    <button mat-raised-button color="warn" matTooltip="Delete row"
+                                                        (click)="deleteSubmittedIgcf(element.id)">
+                                                        delete
+                                                    </button>
+                                                </ng-container>
+                                            </div>
+
                                         </mat-cell>
                                     </ng-container>
 

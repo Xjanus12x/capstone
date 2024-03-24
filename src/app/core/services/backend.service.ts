@@ -17,6 +17,8 @@ import { IIGCFSubmission } from '../models/IGCFSubmission';
 export class BackendService {
   // Define the base API URL
   private apiBaseUrl = 'http://localhost:8085/api';
+  // private apiBaseUrl: string = 'https://haucommit.com/api';
+
   private details!: IEmployeeDetails;
   private accountDetails!: IUserAccount;
   private unconfirmedEmail: string = '';
@@ -125,9 +127,11 @@ export class BackendService {
       });
   }
 
-  getKpisAndActionPlans(): Observable<any> {
-    // /api/get/obj-and-action-plans
-    return this.http.get<any[]>(`${this.apiBaseUrl}/get/kpi-and-action-plans`);
+  getKpisAndActionPlans(dept: string): Observable<any> {
+    const params = new HttpParams().set('dept', dept); // Convert id to string
+    return this.http.get<any[]>(`${this.apiBaseUrl}/get/kpi-and-action-plans`, {
+      params,
+    });
   }
 
   deleteKPIAndActionPlan(id: number) {

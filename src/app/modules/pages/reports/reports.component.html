@@ -27,9 +27,7 @@
                 </mat-option>
             </mat-select>
         </mat-form-field>
-        <button mat-icon-button (click)="generatePDF()" matTooltip="Generate IGC PDF">
-            <mat-icon>picture_as_pdf</mat-icon>
-        </button>
+
     </div>
 
 </div>
@@ -42,7 +40,8 @@
             <mat-panel-description>
                 Total Count: {{numberOfSubmittedIgcfByDept}}
             </mat-panel-description>
-            <button mat-icon-button (click)="generateReport($event,dataSourceForSubmissionHistory.data,'Submitted Individual Goal Commitment Forms (IGCFs) List')"
+            <button mat-icon-button
+                (click)="generateReport($event,dataSourceForSubmissionHistory.data,'Submitted Individual Goal Commitment Forms (IGCFs) List')"
                 matTooltip="Generate PDF">
                 <mat-icon>picture_as_pdf</mat-icon>
             </button>
@@ -102,15 +101,25 @@
     <mat-expansion-panel>
         <mat-expansion-panel-header>
             <mat-panel-title>
-                Pending Rating Individual Goal Commitment Forms (IGCFs)
+                Done Rating Individual Goal Commitment Forms (IGCFs)
             </mat-panel-title>
             <mat-panel-description>
-                Total Count: {{ numberOfNotRatedIgcfByDept }}
+                Total Count: {{ numberOfDoneRatingIgcByDept }}
             </mat-panel-description>
-            <button mat-icon-button (click)="generateReport($event,dataSourceForNotRatedIgcf.data,'Pending rating IGC list')"
-                matTooltip="Generate PDF">
-                <mat-icon>picture_as_pdf</mat-icon>
-            </button>
+
+            <div class="space-x-4">
+                <button mat-raised-button color="primary" (click)="generatePDF($event)" matTooltip="Generate PDF">
+                    Generate IGC PDF
+                </button>
+                <button mat-raised-button color="accent"
+                    (click)="generateReport($event,dataSourceForRatedIgcf.data,'Done Rating IGC List')"
+                    matTooltip="Generate PDF">
+                    Generate List PDF
+                </button>
+            </div>
+
+
+
         </mat-expansion-panel-header>
 
 
@@ -119,13 +128,13 @@
                 <div class="grid col-span-5">
                     <mat-form-field>
                         <mat-label>Filter</mat-label>
-                        <input matInput (input)="applyFilterInNotRatedIgcf($event)" placeholder="Ex. Hello"
+                        <input matInput (input)="applyFilterInRatedIgcf($event)" placeholder="Ex. Hello"
                             #inputForNotRatedIgcf>
                     </mat-form-field>
                 </div>
             </div>
             <div class="bg-white">
-                <table mat-table [dataSource]="dataSourceForNotRatedIgcf" matSort>
+                <table mat-table [dataSource]="dataSourceForRatedIgcf" matSort>
                     <!-- Manually define column headers -->
                     <ng-container *ngFor="let column of displayedColumnsForNotRatedIgcf; let i = index"
                         [matColumnDef]="column">

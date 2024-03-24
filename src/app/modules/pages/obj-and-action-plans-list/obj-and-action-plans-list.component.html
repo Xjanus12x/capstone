@@ -1,9 +1,21 @@
 <div class="pt-8 space-y-4">
-    <div class="grid bg-white">
-        <mat-form-field>
-            <mat-label>Filter</mat-label>
-            <input matInput (input)="applyFilter($event)" placeholder="Ex. Hello" #input>
-        </mat-form-field>
+    <div class="grid grid-cols-6 bg-white">
+        <div class="grid col-span-5">
+            <mat-form-field>
+                <mat-label>Filter</mat-label>
+                <input matInput (input)="applyFilter($event)" placeholder="Ex. Hello" #input>
+            </mat-form-field>
+        </div>
+        <div class="grid">
+            <mat-form-field class="mx-auto">
+                <mat-label>Select Target Year</mat-label>
+                <mat-select (valueChange)="filterSubmittedIgcf($event)">
+                    <mat-option *ngFor="let year of targetYears" [value]="year">
+                        {{ year }} - Target
+                    </mat-option>
+                </mat-select>
+            </mat-form-field>
+        </div>
     </div>
     <div class="bg-white">
         <table mat-table [dataSource]="dataSource" matSort id="temp">
@@ -13,42 +25,10 @@
                     {{ displayedHeader[i] }}
                 </mat-header-cell>
                 <mat-cell mat-cell *matCellDef="let element">
-                    <ng-container *ngIf="column === 'target' || column === 'timeframe'; else normal">
-                        <div class='grid'>
-                            <span *ngFor="let data of element[column].split(',')">
-                                {{data}}
-                            </span>
-                        </div>
-
-                    </ng-container>
-                    <ng-template #normal>
-                        {{ element[column] }}
-                    </ng-template>
+                    {{element[column]}}
                 </mat-cell>
             </ng-container>
 
-            <!-- <ng-container matColumnDef="target">
-                <th mat-header-cell *matHeaderCellDef>Target</th>
-                <td mat-cell *matCellDef="let actionPlan">{{ actionPlan.target }}
-                    <div class="grid">
-                        <span *ngFor="let target of actionPlan.target.split(',')">
-                            {{target}}
-                        </span>
-                    </div>
-            
-                </td>
-            </ng-container>
-            
-            <ng-container matColumnDef="timeFrame">
-                <th mat-header-cell *matHeaderCellDef>Time Frame</th>
-                <td mat-cell *matCellDef="let actionPlan">
-                    <div class="grid">
-                        <span *ngFor="let timeFrame of actionPlan.timeFrame.split(',')">
-                            {{timeFrame}}
-                        </span>
-                    </div>
-                </td>
-            </ng-container> -->
 
             <!-- Manually define the "actions" column -->
             <ng-container matColumnDef="actions">
@@ -59,11 +39,11 @@
                         (click)="deleteKPIAndActionPlan(element.id)">
                         <mat-icon>close</mat-icon>
                     </button>
-                    <!-- Add update button here -->
+
                     <!-- <button mat-icon-button color="accent" matTooltip="Update Pending User"
-                            (click)="updateUser(element)">
-                            <mat-icon>edit</mat-icon>
-                        </button> -->
+                        (click)="updateKpi(element)">
+                        <mat-icon>edit</mat-icon>
+                    </button> -->
                 </mat-cell>
             </ng-container>
 

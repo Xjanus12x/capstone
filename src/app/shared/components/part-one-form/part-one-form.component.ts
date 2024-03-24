@@ -6,16 +6,12 @@ import {
   FormControl,
   FormGroup,
   Validators,
-  isFormGroup,
 } from '@angular/forms';
 import { FormContentService } from '../../services/form-content.service';
 import { AuthService } from 'src/app/core/services/auth.service';
 import { BackendService } from 'src/app/core/services/backend.service';
-import { Observable, tap } from 'rxjs';
-import { ISubmittedIGCF } from 'src/app/core/models/SubmittedIgcf';
 import { RouterService } from 'src/app/modules/services/router-service.service';
 import { ActivatedRoute } from '@angular/router';
-import { ChangeDetectorRef } from '@angular/core';
 
 @Component({
   selector: 'app-part-one-form',
@@ -23,7 +19,6 @@ import { ChangeDetectorRef } from '@angular/core';
   styleUrls: ['./part-one-form.component.css'],
 })
 export class PartOneFormComponent implements OnInit {
-  @Input() kpis: any[] = [];
   formGroup!: FormGroup;
   step = 0;
   isAdmin: boolean = false;
@@ -34,8 +29,28 @@ export class PartOneFormComponent implements OnInit {
   stepLabels: string[] = [];
   overallAverageRating: number = 0;
   isDoneRating: boolean = false;
+  igcHeaders: string[] = [
+    'Personal Objective',
+    'Personal Measures (KPI)',
+    'Target',
+    'Initiatives',
+    'Weight',
+    'Achieved',
+    'Rating (1 - 4)',
+  ];
+  @Input() kpis: any[] = [];
   @Input() responsible: string = '';
   @Input() isFillingUp: boolean = false;
+
+  toppingList: string[] = [
+    'Extra cheese',
+    'Mushroom',
+    'Onion',
+    'Pepperoni',
+    'Sausage',
+    'Tomato',
+  ];
+
   constructor(
     private formContentService: FormContentService,
     private authService: AuthService,
@@ -46,6 +61,23 @@ export class PartOneFormComponent implements OnInit {
   ) {
     this.formGroup = this.fb.group({});
   }
+
+  // Function to get the selectedActionPlans control
+  getSelectedActionPlansControl(index: number): FormControl | null {
+    const formArray = this.formGroup.get(
+      this.getLabel(this.stepLabels[index])
+    ) as FormArray;
+    return formArray
+      ? (formArray.get('selectedActionPlans') as FormControl)
+      : null;
+  }
+
+  // getSelectedActionPlansCtrl(groupName: string): FormControl {
+  //   return this.formGroup
+  //     ?.get(groupName)
+  //     ?.get('selectedActionPlans') as FormControl;
+  // }
+
   ngOnInit() {
     this.authService.getUserRole().subscribe({
       next: (role) => {
@@ -60,20 +92,20 @@ export class PartOneFormComponent implements OnInit {
     this.activatedRoute.queryParamMap.subscribe((params) => {
       this.isDoneRating = !!params.get('rateDate');
     });
-    // Create FormArrays dynamically based on step labels
+
     if (this.isFillingUp) {
-      console.log(1);
-      
       this.stepLabels = this.formContentService.getStepLabels();
       this.stepLabels.forEach((label: string) => {
+        const stepLabel = this.getLabel(label).trim();
         this.formGroup.addControl(
-          this.getLabel(label).trim(),
-          this.fb.array([this.createFormGroupForFaculty()])
+          stepLabel,
+          this.fb.group({
+            selectedActionPlans: [[], [Validators.required]],
+            [stepLabel]: this.fb.array([]),
+          })
         );
       });
     } else if (this.isAdminRating()) {
-      console.log(2);
-      
       const selectedKpiMap = new Map<string, number>();
       this.activatedRoute.paramMap.subscribe((params) => {
         const id = params.get('id');
@@ -82,14 +114,12 @@ export class PartOneFormComponent implements OnInit {
             igcfDetails.forEach((elem: any) => {
               const { selected_kpi, weight } = elem;
               if (selectedKpiMap.has(selected_kpi)) {
-                // Key already exists in map
                 const currentWeight = selectedKpiMap.get(selected_kpi)!;
                 selectedKpiMap.set(
                   selected_kpi,
                   currentWeight + parseInt(weight)
                 );
               } else {
-                // Key does not exist in map
                 selectedKpiMap.set(selected_kpi, parseInt(weight));
               }
             });
@@ -100,65 +130,101 @@ export class PartOneFormComponent implements OnInit {
             this.stepLabels.forEach((label: string) => {
               this.formGroup.addControl(
                 this.getLabel(label).trim(),
-                this.fb.array([])
+                this.fb.group({
+                  selectedActionPlans: [[], [Validators.required]],
+                  [this.getLabel(label).trim()]: this.fb.array([]),
+                })
               );
             });
 
-            igcfDetails.forEach((elem: any) => {
+            const selectedPlans: any = {};
+            igcfDetails.forEach((elem: any, i: number) => {
+              // Check if the selected_kpi already exists as a key in selectedPlans
+              if (!(elem.selected_kpi in selectedPlans)) {
+                // If not, initialize it as an empty array
+                selectedPlans[elem.selected_kpi] = [];
+              }
+
+              // Push the selected_plan into the array under the corresponding selected_kpi key
+              selectedPlans[elem.selected_kpi].push(elem.selected_plan);
+
               this.addFormGroupForAdmin(elem.selected_kpi, elem);
             });
+
+            for (const key in selectedPlans) {
+              if (selectedPlans.hasOwnProperty(key)) {
+                const value = selectedPlans[key];
+                // Get the form group corresponding to the selected_kpi
+                const formGroup = this.formGroup.get(key) as FormGroup;
+
+                // Set the value of selectedActionPlans control
+                const selectedActionPlansControl =
+                  this.getSelectedActionPlansControlForAdmin(key);
+                if (selectedActionPlansControl) {
+                  selectedActionPlansControl.setValue(value);
+                }
+              }
+            }
           },
           error: (error: any) => {
             console.error('Error fetching IGCF details:', error);
-            // Handle error
           },
         });
       });
     }
   }
 
+  // Function to get the selectedActionPlans control
+  getSelectedActionPlansControlForAdmin(key: string): FormControl | null {
+    const formArray = this.formGroup.get(key) as FormArray;
+    return formArray
+      ? (formArray.get('selectedActionPlans') as FormControl)
+      : null;
+  }
+
   addFormGroupForAdmin(formArrayName: string, values: any) {
-    const formArray = this.formGroup.get(formArrayName) as FormArray;
+    const formArray = this.formGroup
+      .get(formArrayName)
+      ?.get(formArrayName) as FormArray;
     formArray.push(this.createFormGroupForAdmin(values));
   }
 
   createFormGroupForAdmin(values: any): FormGroup {
+    const selectedPlanWeight: string = values.selected_plan_weight;
+
     return this.fb.group({
-      uniqueId: [{ value: values.id, disabled: true }],
+      uniqueId: [values.id],
       personalObject: [
-        { value: values.selected_plan, disabled: this.isAdmin },
+        { value: values.selected_plan, disabled: true },
         Validators.required,
       ],
       personalMeasures: [
-        { value: values.personal_measures_kpi, disabled: this.isAdmin },
-        Validators.required,
-      ],
-      target: [
         {
-          value: values.selected_plan_weight,
-          disabled: this.isFaculty || this.isAdmin,
+          value: values.personal_measures_kpi,
+          disabled: true,
         },
         Validators.required,
       ],
+      target: [
+        { value: selectedPlanWeight, disabled: true },
+        Validators.required,
+      ],
       initiatives: [
-        { value: values.initiatives, disabled: this.isAdmin },
+        { value: values.initiatives, disabled: true },
         Validators.required,
       ],
-      weight: [
-        { value: values.weight, disabled: this.isAdmin },
-        Validators.required,
-      ],
+      weight: [{ value: values.weight, disabled: true }, Validators.required],
       achieved: [
         {
           value: values.achieved || '',
-          disabled: this.isFaculty || this.isDoneRating,
+          disabled: this.isDoneRating,
         },
         Validators.required,
       ],
       rating: [
         {
           value: values.rating || '',
-          disabled: this.isFaculty || this.isDoneRating,
+          disabled: this.isDoneRating,
         },
         Validators.required,
       ],
@@ -173,85 +239,81 @@ export class PartOneFormComponent implements OnInit {
   }
 
   getActionPlans(label: string): string[] {
-    const actionPlans = this.kpis.filter((kpi) => {
-      const responsibles = kpi.responsible.split(',');
-      return kpi.kpi_title === label && responsibles.includes(this.responsible);
-    });
+    const actionPlans = this.kpis.filter(
+      (kpi: any) => kpi.kpi_title.trim() === this.getLabel(label)
+    );
     return actionPlans.map((kpi) => kpi.action_plan);
   }
 
-  onActionPlanSelectionChange(value: string, label: string, index: number) {
-    // Filter kpis array to find the selected plan
-    const selectedPlan = this.kpis.find((kpi) => {
-      return kpi.kpi_title === label && kpi.action_plan === value;
-    });
-    // Set the target control value to the selected plan's weight percentage
-    if (selectedPlan) {      
-      const targetControl = this.formGroup.get(
-        `${label}.${index}.target`
-      ) as FormControl;
-      targetControl.setValue(`${selectedPlan.target}`);
-    }
-  }
+  // onActionPlanSelectionChange(value: string, label: string, index: number) {
+  //   // Filter kpis array to find the selected plan
+  //   const selectedPlan = this.kpis.find((kpi) => {
+  //     return kpi.kpi_title === label && kpi.action_plan === value;
+  //   });
+  //   // Set the target control value to the selected plan's weight percentage
+  //   if (selectedPlan) {
+  //     const targetControl = this.formGroup.get(
+  //       `${label}.${index}.target`
+  //     ) as FormControl;
+  //     targetControl.setValue(`${selectedPlan.target}`);
+  //   }
+  // }
 
   getValues() {
+    const values: any = this.formGroup.value;
     if (this.isFillingUp) {
-      const values = this.formGroup.getRawValue() as {
-        [key: string]: {
-          personalObject: string;
-          personalMeasures: string;
-          initiatives: string;
-          weight: string;
-          target: string;
-        }[];
-      };
-
       const igcfInputs: any[] = [];
       // Loop through each key-value pair
-      Object.entries(values).forEach(([key, value]) => {
-        value.forEach((item, index) => {
-          igcfInputs.push({ selected_kpi: key, ...item });
-        });
-      });
-      return igcfInputs;
-    } else {
-      const values = this.formGroup.getRawValue() as {
-        [key: string]: { uniqueId: string; achieved: string; rating: string }[];
-      };
+      Object.entries(values).forEach(([key, value]: [string, any]) => {
+        // Here, 'key' represents the form group name and 'value' represents the form group object
 
-      let totalRating = 0;
-      let totalRatingsEncountered = 0;
+        // Now you can access the properties of the form group object directly
+        const selectedActionPlans = value.selectedActionPlans;
+        const inputs = value[key];
 
-      // Loop through each key-value pair
-      Object.entries(values).forEach(([key, value]) => {
-        value.forEach((item, index) => {
-          // Convert the rating to a number and add it to the totalRating
-          totalRating += parseInt(item.rating);
-          // Increment the totalRatingsEncountered
-          totalRatingsEncountered++;
-        });
-      });
-      let averageRating = 0;
-
-      // Calculate the average rating
-      if (totalRatingsEncountered !== 0) {
-        averageRating = totalRating / totalRatingsEncountered;
-        this.setOverallAverageRating(averageRating);
-      }
-
-      const adminInputs: any[] = [];
-      // Loop through each key-value pair
-      Object.entries(values).forEach(([key, value]) => {
-        value.forEach((item, index) => {
-          adminInputs.push({
-            uniqueId: item.uniqueId,
-            achieved: item.achieved,
-            rating: item.rating,
+        selectedActionPlans.forEach((plan: string, i: number) => {
+          igcfInputs.push({
+            selected_kpi: key,
+            ...inputs[i],
           });
         });
       });
-      return adminInputs;
+      return igcfInputs;
     }
+
+    let totalRating = 0;
+    let totalRatingsEncountered = 0;
+
+    // Loop through each key-value pair
+    Object.entries(values).forEach(([key, value]: [string, any]) => {
+      value[key].forEach((item: any, index: number) => {
+        // Convert the rating to a number and add it to the totalRating
+        totalRating += parseInt(item.rating);
+        // Increment the totalRatingsEncountered
+        totalRatingsEncountered++;
+      });
+    });
+
+    let averageRating = 0;
+
+    // Calculate the average rating
+    if (totalRatingsEncountered !== 0) {
+      averageRating = totalRating / totalRatingsEncountered;
+      this.setOverallAverageRating(averageRating);
+    }
+
+    const adminInputs: any[] = [];
+    // Loop through each key-value pair
+    Object.entries(values).forEach(([key, value]: [string, any]) => {
+      value[key].forEach((item: any) => {
+        adminInputs.push({
+          uniqueId: item.uniqueId,
+          achieved: item.achieved,
+          rating: item.rating,
+        });
+      });
+    });
+    return adminInputs;
   }
 
   setOverallAverageRating(overallAverage: number) {
@@ -279,7 +341,7 @@ export class PartOneFormComponent implements OnInit {
       // Loop through each key (which corresponds to a form array)
       formGroupKeys.forEach((key: string) => {
         // Get the form array using the key
-        const formArray = this.formGroup.get(key) as FormArray;
+        const formArray = this.formGroup.get(key)?.get(key) as FormArray;
 
         // Calculate the total weight for the current form array
         const totalWeight = this.calculateTotalWeight(formArray);
@@ -317,7 +379,7 @@ export class PartOneFormComponent implements OnInit {
         }
       }
 
-      return true; // Return true if all checks pass
+      // return true; // Return true if all checks pass
     }
     return this.formGroup.valid;
   }
@@ -348,10 +410,13 @@ export class PartOneFormComponent implements OnInit {
   trackByIndex(index: number, item: any): number {
     return index; // Or return item.id if you have unique identifiers
   }
-  createFormGroupForFaculty(): FormGroup {
+  createFormGroupForFaculty(
+    personaObjective: string,
+    target: string
+  ): FormGroup {
     return this.fb.group({
       personalObject: [
-        { value: '', disabled: !this.isFillingUp },
+        { value: personaObjective, disabled: !this.isFillingUp },
         Validators.required,
       ],
       personalMeasures: [
@@ -359,7 +424,7 @@ export class PartOneFormComponent implements OnInit {
         Validators.required,
       ],
       target: [
-        { value: 'None', disabled: this.isAdmin || this.isFaculty },
+        { value: target, disabled: !this.isFillingUp },
         Validators.required,
       ],
       initiatives: [
@@ -394,10 +459,43 @@ export class PartOneFormComponent implements OnInit {
     return formArray.length;
   }
 
-  addFormGroup(formArrayName: string) {
-    const formArray = this.formGroup.get(formArrayName) as FormArray;
-    formArray.push(this.createFormGroupForFaculty());
+  onSelectionChange(selectedValues: any[], formArrayName: string) {
+    const formArray = this.formGroup
+      .get(formArrayName)
+      ?.get(formArrayName) as FormArray;
+
+    // Get the currently selected values in the form array
+    const currentValues = formArray.value.map(
+      (item: any) => item.personalObject
+    );
+
+    // Find the values that were unselected
+    const unselectedValues = currentValues.filter(
+      (value: any) => !selectedValues.includes(value)
+    );
+
+    // Remove form groups corresponding to unselected values
+    unselectedValues.forEach((value: any) => {
+      const index = formArray.value.findIndex(
+        (item: any) => item.personalObject === value
+      );
+      if (index !== -1) {
+        formArray.removeAt(index);
+      }
+    });
+
+    // Add form groups for newly selected values
+    selectedValues.forEach((value) => {
+      if (!currentValues.includes(value)) {
+        this.kpis.forEach((kpi: any) => {
+          if (kpi.action_plan === value) {
+            formArray.push(this.createFormGroupForFaculty(value, kpi.target));
+          }
+        });
+      }
+    });
   }
+
   getLabel(label: string) {
     // Split the label by space and remove the last part
     const parts = label.split(' ').slice(0, -1);
@@ -405,8 +503,31 @@ export class PartOneFormComponent implements OnInit {
     return parts.join(' ');
   }
 
+  getFormArrayName(label: string) {
+    return this.getLabel(label);
+  }
+  getFormGroupName(label: string) {
+    return this.getLabel(label);
+  }
+  getSelectedPlanValue(i: number, j: number) {
+    return this.getSelectedActionPlansControl(i)?.value[j];
+  }
+
+  // Inside your component class
+  getControlValue(
+    formArrayName: string,
+    index: number,
+    controlName: string
+  ): string {
+    const formArray = this.formGroup
+      .get(formArrayName)
+      ?.get(formArrayName) as FormArray;
+    const control = formArray.controls[index].get(controlName);
+    return control ? control.value : '';
+  }
+
   getFormArrayControls(arrayName: string): FormArray {
-    return this.formGroup.get(arrayName) as FormArray;
+    return this.formGroup.get(arrayName)?.get(arrayName) as FormArray;
   }
 
   igcControls(): FormArray {

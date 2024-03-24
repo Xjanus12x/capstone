@@ -7,7 +7,7 @@ import { filter } from 'rxjs';
 })
 export class RouterService {
   private currentRoute: string = '';
-
+  private submittedIgcIdList: number[] = [];
   constructor(private router: Router, private activeRoute: ActivatedRoute) {
     // Subscribe to router events to update currentRoute
     this.router.events
@@ -30,5 +30,16 @@ export class RouterService {
   routeTo(route: string) {
     this.router.navigate([route]);
   }
-
+  navigateToViewIgcf(id: number) {
+    this.router.navigate([
+      'dashboard',
+      { outlets: { dashboardContent: ['view-igcf', id] } },
+    ]);
+  }
+  setSubmittedIgcIdList(idList: number[]) {
+    this.submittedIgcIdList = idList;
+  }
+  getSubmittedIgcIdList(): number[] {
+    return this.submittedIgcIdList;
+  }
 }

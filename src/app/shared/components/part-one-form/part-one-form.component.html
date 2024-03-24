@@ -75,128 +75,159 @@
 </mat-stepper> -->
 
 
+<!-- <div class="mt-4 space-x-4">
+                            <label class="text-lg font-bold">Select Action Plans</label>
+                            <mat-form-field class="w-80">
+                                <mat-label>Action Plans</mat-label>
+                                <mat-select formControlName="selectedActionPlans" multiple>
+                                    <mat-select-trigger>
+                                        <ng-container
+                                            *ngIf="getSelectedActionPlansControl(i)?.value &&  getSelectedActionPlansControl(i)?.value.length === 1;else moreThanOne">
+                                            <span>
+                                                {{
+                                                getSelectedActionPlansControl(i)?.value
+                                                }}
+                                            </span>
+                                        </ng-container>
+
+                                        <ng-template #moreThanOne>
+                                            <span *ngIf="getSelectedActionPlansControl(i)?.value.length > 1">
+                                                (+{{ getSelectedActionPlansControl(i)?.value.length - 1 }} {{
+                                                getSelectedActionPlansControl(i)?.value.length
+                                                === 2 ? 'other' : 'others' }})
+                                            </span>
+                                        </ng-template>
+
+
+                                    </mat-select-trigger>
+
+                                    <mat-option *ngFor="let obj of getActionPlans(label)" [value]="obj">{{
+                                        obj
+                                        }}</mat-option>
+                                </mat-select>
+                            </mat-form-field>
+                        </div> -->
+
 <mat-tab-group>
     <mat-tab *ngFor="let label of stepLabels; let i = index; trackBy: trackByIndex" [label]="'KPI ' + (i+1) ">
         <mat-accordion>
-            <mat-expansion-panel hideToggle>
+            <mat-expansion-panel hideToggle expanded>
                 <mat-expansion-panel-header>
                     <mat-panel-title class="p-4 font-extrabold bg-yellow-500 rounded-sm">
                         Department Objective: {{label | uppercase}}
                     </mat-panel-title>
                 </mat-expansion-panel-header>
+                <form class="overflow-auto" [formGroup]="formGroup">
+                    <div [formGroupName]="getFormGroupName(label)">
+                        <div class="mt-4 space-x-4" *ngIf="!isAdminRating()">
+                            <label class="text-lg font-bold">Select Action Plans</label>
+                            <mat-form-field class="w-80">
+                                <mat-label>Action Plans</mat-label>
+                                <mat-select formControlName="selectedActionPlans" multiple
+                                    (selectionChange)="onSelectionChange($event.value, getFormArrayName(label))">
+                                    <mat-select-trigger>
+                                        <ng-container
+                                            *ngIf="getSelectedActionPlansControl(i)?.value && getSelectedActionPlansControl(i)?.value.length === 1; else moreThanOne">
+                                            <span>{{ getSelectedActionPlansControl(i)?.value }}</span>
+                                        </ng-container>
 
-                <form [formGroup]="formGroup">
-                    <div [formArrayName]="getLabel(label)">
-                        <div *ngFor="let group of getFormArrayControls(getLabel(label)).controls; let j = index"
-                            [formGroupName]="j">
-                            <h2 class="mt-4 font-extrabold">KPI {{j+1}}. {{getLabel(label)}}</h2>
-                            <table class="grid min-w-full gap-2" style="border-collapse: collapse;">
-                                <tr class='grid grid-cols-4 gap-2'>
-                                    <td class="border border-black">
+                                        <ng-template #moreThanOne>
+                                            <span *ngIf="getSelectedActionPlansControl(i)?.value.length > 1">
+                                                (+{{ getSelectedActionPlansControl(i)?.value.length - 1 }} {{
+                                                getSelectedActionPlansControl(i)?.value.length === 2 ? 'other' :
+                                                'others' }})
+                                            </span>
+                                        </ng-template>
+                                    </mat-select-trigger>
 
-                                        <div class="grid">
-                                            <ng-container *ngIf="!isFillingUp; else dropDown">
+                                    <mat-option *ngFor="let obj of getActionPlans(label)" [value]="obj">{{ obj
+                                        }}</mat-option>
+                                </mat-select>
+                            </mat-form-field>
+                        </div>
 
-                                                <mat-form-field>
+                        <div [formArrayName]="getFormArrayName(label)"
+                            *ngIf="getSelectedActionPlansControl(i)?.value?.length > 0">
+                            <div>
+                                <!-- <div>  -->
+                                <table class="overflow-y-auto border border-collapse border-black">
+                                    <!-- Table content -->
+                                    <tr>
+                                        <th class="p-2 border border-collapse border-black"
+                                            *ngFor='let header of igcHeaders'>
+                                            {{header}}
+                                        </th>
+                                    </tr>
+                                    <ng-container
+                                        *ngFor="let control of getFormArrayControls(getFormArrayName(label)).controls; let j = index">
+                                        <tr [formGroupName]="j">
+                                            <td
+                                                class="max-w-[60ch] border border-collapse border-black p-2 font-semibold">
+                                                {{j+1}}. {{getSelectedPlanValue(i,j)}}
+                                            </td>
+                                            <td class="p-2 border border-collapse border-black">
+                                                <mat-form-field *ngIf="isFillingUp; else personalMeasures">
                                                     <mat-label
                                                         [ngClass]='{"font-extranbold text-red-500 text-xl":!isFillingUp}'>Personal
-                                                        Objective</mat-label>
+                                                        Measures (KPI)</mat-label>
                                                     <textarea
                                                         class="disabled:font-extrabold disabled:text-red-500 min-h-[8rem]"
-                                                        matInput formControlName="personalObject"></textarea>
+                                                        matInput formControlName="personalMeasures"></textarea>
                                                 </mat-form-field>
+                                                <ng-template #personalMeasures>
+                                                    <span class="font-bold">
+                                                        {{ getControlValue(getFormArrayName(label), j,
+                                                        'personalMeasures')}}
+                                                    </span>
 
-
-                                            </ng-container>
-                                            <ng-template #dropDown>
-                                                <mat-form-field>
-                                                    <mat-label>Select Action Plan</mat-label>
-                                                    <mat-select class="disabled:font-extrabold disabled:text-red-500"
-                                                        formControlName="personalObject"
-                                                        (selectionChange)="onActionPlanSelectionChange($event.value,getLabel(label),j)">
-                                                        <mat-option *ngFor="let obj of getActionPlans(getLabel(label))"
-                                                            [value]="obj">{{ obj
-                                                            }}</mat-option>
-                                                    </mat-select>
-                                                </mat-form-field>
-                                            </ng-template>
-
-
-                                        </div>
-
-                                    </td>
-
-                                    <td class="border border-black">
-                                        <div class="grid">
-                                            <mat-form-field>
-                                                <mat-label
-                                                    [ngClass]='{"font-extranbold text-red-500 text-xl":isAdmin}'>Target</mat-label>
-                                                <textarea class="disabled:font-extrabold disabled:text-red-500 min-h-[8rem]" matInput
-                                                    formControlName="target"> </textarea>
-                                            </mat-form-field>
-                                        </div>
-                                    </td>
-
-                                    <td class="border border-black">
-                                        <div class="grid">
-                                            <mat-form-field>
-                                                <mat-label
-                                                    [ngClass]='{"font-extranbold text-red-500 text-xl":!isFillingUp}'>Initiatives</mat-label>
-                                                <textarea
-                                                    class="disabled:font-extrabold disabled:text-red-500 min-h-[8rem]"
-                                                    matInput formControlName="initiatives"></textarea>
-                                            </mat-form-field>
-                                        </div>
-                                    </td>
-
-
-
-                                    <td class="border border-black">
-
-                                        <div class="grid">
-                                            <mat-form-field>
-                                                <mat-label
-                                                    [ngClass]='{"font-extranbold text-red-500 text-xl":!isFillingUp}'>Personal
-                                                    Measures (KPI)</mat-label>
-                                                <textarea
-                                                    class="disabled:font-extrabold disabled:text-red-500 min-h-[8rem]"
-                                                    matInput formControlName="personalMeasures"></textarea>
-                                            </mat-form-field>
-                                        </div>
-
-                                    </td>
-                                </tr>
-                                <tr class="grid grid-cols-4 gap-2">
-                                    <td class="border border-black">
-                                        <div class="grid">
-                                            <mat-form-field>
-                                                <mat-label
-                                                    [ngClass]='{"font-extranbold text-red-500 text-xl":!isFillingUp}'>Weight</mat-label>
-                                                <input class="disabled:font-extrabold disabled:text-red-500" matInput
-                                                    formControlName="weight">
-                                            </mat-form-field>
-                                        </div>
-
-                                    </td>
-
-                                    <td class="border border-black">
-                                        <div class="grid">
-                                            <mat-form-field>
-                                                <mat-label
-                                                    [ngClass]='{"font-extranbold text-red-500 text-xl":isFaculty || isDoneRating, }'>Achieved</mat-label>
-                                                <input class="disabled:font-extrabold disabled:text-red-500" matInput
-                                                    formControlName="achieved">
-                                            </mat-form-field>
-                                        </div>
-                                    </td>
-
-                                    <td class="border border-black">
-                                        <div class="grid">
-                                            <ng-container *ngIf="!isDoneRating;else done">
-                                                <mat-form-field>
+                                                </ng-template>
+                                            </td>
+                                            <td class="p-2 font-semibold border border-collapse border-black">
+                                                {{ getControlValue(getFormArrayName(label), j, 'target')}}
+                                            </td>
+                                            <td class="p-2 border border-collapse border-black">
+                                                <mat-form-field *ngIf="isFillingUp; else initiaves">
                                                     <mat-label
-                                                        [ngClass]='{"font-extranbold text-red-500 text-xl":isFaculty || isDoneRating}'>Rating
-                                                        ( 1 - 4 )</mat-label>
+                                                        [ngClass]='{"font-extranbold text-red-500 text-xl":!isFillingUp}'>Initiatives</mat-label>
+                                                    <textarea
+                                                        class="disabled:font-extrabold disabled:text-red-500 min-h-[8rem]"
+                                                        matInput formControlName="initiatives"></textarea>
+                                                </mat-form-field>
+                                                <ng-template #initiaves>
+                                                    <span class="font-bold">
+                                                        {{ getControlValue(getFormArrayName(label), j, 'initiatives')}}
+                                                    </span>
+                                                </ng-template>
+                                            </td>
+                                            <td class="p-2 border border-collapse border-black">
+                                                <mat-form-field class="w-24" *ngIf="isFillingUp; else weight">
+                                                    <mat-label
+                                                        [ngClass]='{"font-extranbold text-red-500 text-xl":!isFillingUp}'>Weight</mat-label>
+                                                    <input class=" disabled:font-extrabold disabled:text-red-500"
+                                                        matInput formControlName="weight">
+                                                </mat-form-field>
+                                                <ng-template #weight>
+                                                    <span class="font-bold">
+                                                        {{ getControlValue(getFormArrayName(label), j, 'weight')}}%
+                                                    </span>
+                                                </ng-template>
+                                            </td>
+                                            <td class="p-2 border border-collapse border-black">
+                                                <mat-form-field class="w-28" *ngIf="!isDoneRating else achieved">
+                                                    <mat-label>Achieved</mat-label>
+                                                    <input class="disabled:font-extrabold disabled:text-red-500"
+                                                        matInput formControlName="achieved">
+                                                </mat-form-field>
+                                                <ng-template #achieved>
+                                                    <span class="font-bold">
+                                                        {{ getControlValue(getFormArrayName(label), j, 'achieved')}}
+                                                    </span>
+                                                </ng-template>
+                                            </td>
+                                            <td class="p-2 border border-collapse border-black">
+
+                                                <mat-form-field class="w-28" *ngIf="!isDoneRating;else rating">
+                                                    <mat-label>Rating</mat-label>
                                                     <mat-select formControlName="rating">
                                                         <mat-option>
                                                             --None--
@@ -215,35 +246,26 @@
                                                         </mat-option>
                                                     </mat-select>
                                                 </mat-form-field>
-                                            </ng-container>
-                                            <ng-template #done>
-                                                <mat-form-field>
-                                                    <mat-label
-                                                        [ngClass]='{"font-extranbold text-red-500 text-xl":isFaculty || isDoneRating}'>Rating
-                                                        ( 1 - 4 )</mat-label>
-                                                    <input class="disabled:font-extrabold disabled:text-red-500"
-                                                        matInput formControlName="rating">
-                                                </mat-form-field>
-                                            </ng-template>
-                                        </div>
-                                    </td>
 
-                                    <div class="grid items-center justify-start">
-                                        <button mat-icon-button color="warn" matTooltip="Remove"
-                                            (click)="removeIGCControl(getLabel(label),i)"
-                                            [disabled]="getFormArrayLength(getLabel(label)) === 1"
-                                            *ngIf="currentUserRole === 'Faculty'">
-                                            <mat-icon>cancel</mat-icon>
-                                        </button>
-                                    </div>
 
-                                </tr>
-                            </table>
+                                                <ng-template #rating>
+                                                    <span class="font-bold">
+                                                        {{ getControlValue(getFormArrayName(label), j, 'rating')}}
+                                                    </span>
+                                                </ng-template>
+
+                                            </td>
+                                        </tr>
+                                    </ng-container>
+
+                                </table>
+                                <!-- </div> -->
+                            </div>
                         </div>
                     </div>
-                    <button class="mt-4" type="button" mat-raised-button color="primary"
-                        (click)="addFormGroup(getLabel(label))" *ngIf="currentUserRole === 'Faculty'">Add
-                        another</button>
+                    <!-- <button class="mt-4" type="button" mat-raised-button color="primary"
+                        (click)="addFormGroup(getLabel(label))" *ngIf="isFillingUp">Add
+                        another</button> -->
 
                 </form>
             </mat-expansion-panel>

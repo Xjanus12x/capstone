@@ -1,6 +1,6 @@
 <div class="mt-4 bg-white">
-    <mat-tab-group (selectedTabChange)="onTabChange($event)" dynamicHeight #tabGroup>
-        <mat-tab label="CHOOSE KPI" *ngIf="!isAdminRating()">
+    <mat-tab-group dynamicHeight #tabGroup>
+        <mat-tab label="CHOOSE KPI" *ngIf="!isAdminRating()" [disabled]="isValid">
             <div class="grid p-4">
                 <mat-form-field>
                     <mat-label>Select KPI's</mat-label>
@@ -20,34 +20,47 @@
                 <ng-container *ngIf="getKpiDropdownLength() > 0">
                     <ul>
                         <li class="grid" *ngFor="let kpiTitle of kpiTitlesDropdown?.value; let i = index">
-                            <mat-form-field>
-                                <mat-label>{{kpiTitle}} Weight %</mat-label>
-                                <input matInput type="number" [formControl]="getWeightFormControl(kpiTitle)">
-                                <mat-error class="font-extrabold" *ngIf="getWeightFormControl(kpiTitle).hasError('min')
+                            <div class="space-x-4">
+                                <label class="font-bold">{{kpiTitle}}</label>
+                                <mat-form-field>
+                                    <mat-label> Weight % </mat-label>
+                                    <input matInput type="number" [formControl]="getWeightFormControl(kpiTitle)">
+                                    <mat-error class="font-extrabold" *ngIf="getWeightFormControl(kpiTitle).hasError('min')
                                             && getWeightFormControl(kpiTitle).invalid 
                                             && getWeightFormControl(kpiTitle).touched 
                                             && !getWeightFormControl(kpiTitle).hasError('required')
                                             && !getWeightFormControl(kpiTitle).hasError('max')">
-                                    Minimum value is 1.
-                                </mat-error>
-                                <mat-error class="font-extrabold" *ngIf="getWeightFormControl(kpiTitle).hasError('max')
+                                        Minimum value is 1.
+                                    </mat-error>
+                                    <mat-error class="font-extrabold" *ngIf="getWeightFormControl(kpiTitle).hasError('max')
                                             && getWeightFormControl(kpiTitle).invalid 
                                             && getWeightFormControl(kpiTitle).touched 
                                             && !getWeightFormControl(kpiTitle).hasError('required')
                                             && !getWeightFormControl(kpiTitle).hasError('min')">
-                                    Maximum value is 100.
-                                </mat-error>
-                                <mat-error class="font-extrabold" *ngIf="getWeightFormControl(kpiTitle).hasError('required')
+                                        Maximum value is 100.
+                                    </mat-error>
+                                    <mat-error class="font-extrabold" *ngIf="getWeightFormControl(kpiTitle).hasError('required')
                                             && getWeightFormControl(kpiTitle).invalid 
                                             && getWeightFormControl(kpiTitle).touched 
                                             && !getWeightFormControl(kpiTitle).hasError('min')
                                             && !getWeightFormControl(kpiTitle).hasError('max')">
-                                    Weight is required.
-                                </mat-error>
-                            </mat-form-field>
-
+                                        Weight is required.
+                                    </mat-error>
+                                </mat-form-field>
+                            </div>
                         </li>
-                        <li>
+                        <li class="space-x-3">
+                            <label class="font-bold">Select IGCF Year</label>
+                            <mat-form-field>
+                                <mat-label>Select IGCF Year</mat-label>
+                                <mat-select [formControl]="selectedTargetYear">
+                                    <mat-option *ngFor="let targetYear of targetYears"
+                                        [value]="targetYear">{{targetYear}}</mat-option>
+                                </mat-select>
+                            </mat-form-field>
+                        </li>
+                        <li class="space-x-3">
+                            <label class="font-bold">Select Role</label>
                             <mat-form-field>
                                 <mat-label>Role</mat-label>
                                 <mat-select [formControl]="responsibleRole">
@@ -59,7 +72,7 @@
                     </ul>
                 </ng-container>
             </div>
-            <button class="mx-4" mat-raised-button color="primary" (click)="confirm()">Confirm</button>
+            <button class="mx-4" mat-raised-button color="primary" (click)="confirm()" [disabled]="isValid">Confirm</button>
 
         </mat-tab>
 
@@ -93,7 +106,7 @@
                         </li>
                     </ol>
                 </div>
-                <app-part-one-form [kpis]="kpis" [responsible]="responsibleRole.value!" [isFillingUp]="isFillingUp()">
+                <app-part-one-form [kpis]="kpis" [responsible]="responsibleRole.getRawValue()!" [isFillingUp]="isFillingUp()">
                 </app-part-one-form>
 
             </div>
@@ -109,8 +122,8 @@
     <div class="grid gap-4 p-4" [ngClass]="{'grid-cols-2':!isDoneRating,'grid-cols-1':isDoneRating}">
         <ng-container *ngIf="!isDoneRating">
             <button type="button"
-                class="px-4 py-2 text-white transition-colors duration-500 ease-in-out bg-black rounded-md hover:bg-green-700"
-                (click)="submit()">{{isFillingUp()? 'Submit':'Rate'}}</button>
+                class="px-4 py-2 text-white transition-colors duration-500 ease-in-out bg-black rounded-md hover:bg-green-700 disabled:bg-gray-500"
+                (click)="submit()" [disabled]="">Done</button>
         </ng-container>
         <button routerLink="/dashboard" type="button"
             class="px-4 py-2 text-white transition-colors duration-500 ease-in-out bg-black rounded-md hover:bg-red-500">Exit</button>

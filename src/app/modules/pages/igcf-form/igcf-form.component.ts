@@ -42,10 +42,23 @@ export class IgcfFormComponent implements OnInit, IDeactivateComponent {
   kpis: any[] = [];
   details!: any;
   currentUserId: string = '';
-  completionDate: string = '';
   isDoneRating: boolean = false;
+  isPartOneFormValid: boolean = false;
   responsibleRole = new FormControl('');
-  responsibles: string[] = ['Dean', 'Chair', 'Faculty'];
+  selectedTargetYear = new FormControl('');
+  responsibles: string[] = [
+    'Dean',
+    'Chair',
+    'Faculty',
+    'CEB',
+    'Organizations',
+    'Lab',
+    'Staff',
+    'GPC',
+    'OBE Facilitator',
+  ];
+  targetYears: string[] = [];
+
   constructor(
     private backendService: BackendService,
     private authService: AuthService,
@@ -63,7 +76,7 @@ export class IgcfFormComponent implements OnInit, IDeactivateComponent {
         selectedKPIs.forEach((kpiTitle: string, i: number) => {
           this.formGroup.addControl(
             kpiTitle,
-            new FormControl('', [
+            new FormControl(100, [
               Validators.required,
               Validators.min(1),
               Validators.max(100),
@@ -76,19 +89,27 @@ export class IgcfFormComponent implements OnInit, IDeactivateComponent {
 
   ngOnInit() {
     this.partTwoStepLabel = formData.partTwoForm.stepLabel;
-    this.backendService.getKpisAndActionPlans().subscribe({
-      next: (data) => {
-        this.kpiTitleList = Array.from(
-          new Set(data.map((kpi: any) => kpi.kpi_title))
-        );
-        this.kpis = data;
-      },
-    });
+
     this.authService.getEmployeeNumber().subscribe({
       next: (empNumber: string) => {
         this.authService.getEmployeeDetails(empNumber).subscribe({
           next: (response: any) => {
             this.details = response.data;
+            this.backendService
+              .getKpisAndActionPlans(this.details.emp_dept)
+              .subscribe({
+                next: (data: any[]) => {
+                  if (data.length > 0) {
+                    this.kpiTitleList = Array.from(
+                      new Set(data.map((kpi: any) => kpi.kpi_title.trim()))
+                    );
+                    this.targetYears = Object.keys(
+                      JSON.parse(data[0]['targets'])
+                    );
+                    this.kpis = data;
+                  }
+                },
+              });
           },
         });
       },
@@ -98,27 +119,21 @@ export class IgcfFormComponent implements OnInit, IDeactivateComponent {
         this.currentUserRole = role;
       },
     });
+
     this.activatedRoute.paramMap.subscribe((params) => {
       this.currentUserId = params.get('id')!;
-      this.completionDate = params.get('completionDate')!;
     });
     this.activatedRoute.queryParamMap.subscribe((params) => {
       this.isDoneRating = !!params.get('rateDate');
     });
   }
-  onTabChange(event: MatTabChangeEvent) {
-    // Check if the user is going back to the first tab
-    if (event.index === 0) {
-      // Set isValid to false
-      this.isValid = false;
-    }
-  }
+
   confirm() {
+    // Check total weight and form validity
     const totalWeight = Object.values(this.formGroup.value).reduce(
       (acc: number, currentValue: any) => acc + (currentValue || 0),
       0
     );
-
     const isFormValid = this.formGroup.valid && this.kpiTitlesDropdown.valid;
 
     if (totalWeight !== 100 || !isFormValid) {
@@ -130,7 +145,9 @@ export class IgcfFormComponent implements OnInit, IDeactivateComponent {
       this.isValid = false;
       return;
     }
-    if (this.responsibleRole.value === '') {
+
+    // Check if responsible role is selected
+    if (!this.responsibleRole.value) {
       this.authService.openSnackBar(
         'Responsible role is required.',
         'close',
@@ -140,6 +157,18 @@ export class IgcfFormComponent implements OnInit, IDeactivateComponent {
       return;
     }
 
+    // Check if IGCF year is selected
+    if (!this.selectedTargetYear.value) {
+      this.authService.openSnackBar(
+        'IGCF year is required.',
+        'close',
+        'bottom'
+      );
+      this.isValid = false;
+      return;
+    }
+
+    // If the form is being filled up, set step labels
     if (this.isFillingUp()) {
       const stepLabels = Object.keys(this.formGroup.value).map((key) => {
         const weight = this.formGroup.get(key)?.value;
@@ -148,7 +177,57 @@ export class IgcfFormComponent implements OnInit, IDeactivateComponent {
       this.formContentService.setStepLabels(stepLabels);
     }
 
-    this.isValid = true;
+    // Open confirmation dialog
+    const dialogBoxData: IDialogBox = {
+      title: 'Confirm Selection',
+      content:
+        'Are you sure you want to confirm your selected KPIs? Once confirmed, you cannot go back to selecting KPIs again.',
+      buttons: [
+        {
+          isVisible: true,
+          matDialogCloseValue: false,
+          content: 'No',
+        },
+        {
+          isVisible: true,
+          matDialogCloseValue: true,
+          content: 'Yes, Confirm Selection',
+        },
+      ],
+    };
+
+    const dialogRef = this.dialog.open(DialogBoxComponent, {
+      ...dialogBoxConfig,
+      data: dialogBoxData,
+    });
+
+    // Subscribe to dialog close event
+    dialogRef.afterClosed().subscribe({
+      next: (result) => {
+        this.isValid = result;
+        if (result) {
+          this.kpis = this.kpis
+            .map((data: any) => {
+              const parseTargets = JSON.parse(data.targets);
+              const selectedYear: any = this.selectedTargetYear.value;
+              const target = parseTargets[selectedYear];
+              return {
+                ...data,
+                target: target,
+              };
+            })
+            .filter((kpi: any) => {
+              const responsibles = kpi.responsibles.split(',');
+              const selectedResponsible = this.responsibleRole.value;
+              return responsibles.includes(selectedResponsible);
+            });
+          this.kpiTitlesDropdown.disable();
+          this.formGroup.disable();
+          this.selectedTargetYear.disable();
+          this.responsibleRole.disable();
+        }
+      },
+    });
   }
 
   getKpiDropdownLength(): number {
@@ -252,10 +331,9 @@ export class IgcfFormComponent implements OnInit, IDeactivateComponent {
         this.partOneForm.validateFormGroup() &&
         this.partTwoForm.validateFormGroup()
       ) {
-        console.log(1);
-
         const currentDate = new Date();
         const rateDate = this.datePipe.transform(currentDate, 'yyyy-MM-dd');
+
         this.backendService
           .rateIgcf({
             id: this.currentUserId,
@@ -269,7 +347,6 @@ export class IgcfFormComponent implements OnInit, IDeactivateComponent {
             ),
             ...this.partTwoForm.getValues(),
             rate_date: rateDate,
-            rater_completion_date: this.completionDate,
           })
           .subscribe({
             next: () => {
@@ -277,8 +354,6 @@ export class IgcfFormComponent implements OnInit, IDeactivateComponent {
               this.routerService.routeTo('dashboard');
             },
           });
-
-
       }
     }
   }

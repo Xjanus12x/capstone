@@ -26,53 +26,60 @@ export class ObjAndActionPlansListComponent {
   displayedHeader: string[] = [
     'KPI Title',
     'Action PLan',
+    'Start Date',
+    'Due Date',
     'Target',
-    'Time Frame',
-    'Responsible',
+    'Responsibles',
   ];
-
-  // action_plan: 'j212112';
-  // id: 22;
-  // kpi_title: '11111';
-  // responsible: 'Organizations,Lab';
-  // target: '34 (03-21-2024 to 04-20-2024)';
-  // timeframe: '03-21-2024 - 04-20-2024';
   displayedColumns: string[] = [
     'kpi_title',
     'action_plan',
+    'start_date',
+    'due_date',
     'target',
-    'timeframe',
-    'responsible',
+    'responsibles',
   ];
   isLoadingResults = true;
   currentUserEmpNumber: string = '';
+  currentUserDept: string = '';
+  targetsObj: any = {};
+  targetYears: string[] = [];
+  originalData: any[] = [];
   @ViewChild(MatPaginator) paginator!: MatPaginator;
   @ViewChild(MatSort) sort!: MatSort;
 
   ngOnInit(): void {
+    this.authService.getEmployeeDepartment().subscribe({
+      next: (dept: string) => {
+        this.currentUserDept = dept;
+      },
+    });
     this.loadData();
   }
-  // action_plan_id: 1;
-  // action_plan_weight_percentage: '2';
-  // dept: 'SCHOOL OF COMPUTING';
-  // dept_obj_title: 'wared';
-  // kpi_id: 9;
-  // kpi_title: 'testst';
-  // kpi_weight_percentage: 32;
 
   loadData() {
     this.isLoadingResults = true;
-    this.objAndActionPlans$ = this.backendService.getKpisAndActionPlans();
+    this.objAndActionPlans$ = this.backendService.getKpisAndActionPlans(
+      this.currentUserDept
+    );
     this.handleDataSubscription();
   }
 
   handleDataSubscription() {
     this.objAndActionPlans$.subscribe({
-      next: (data: any) => {
-        console.log(data);
-
-        this.dataToDisplay = data;
-        this.updateDataSource();
+      next: (data: any[]) => {
+        if (data.length > 0) {
+          this.targetYears = Object.keys(JSON.parse(data.at(0)['targets']));
+          const modifiedData = data.map((data: any) => {
+            return {
+              ...data,
+              target: JSON.parse(data.targets)[this.targetYears[0]],
+            };
+          });
+          this.originalData = data;
+          this.dataToDisplay = modifiedData;
+          this.updateDataSource();
+        }
       },
       error: (error) => {
         console.error('Error:', error);
@@ -124,7 +131,14 @@ export class ObjAndActionPlansListComponent {
       },
     });
   }
+  getYearTarget(targets: any, selectedYear: string) {
+    console.log(targets);
+    console.log(selectedYear);
 
+    console.log(targets[selectedYear]);
+
+    return targets[selectedYear];
+  }
   // rejectUser(id: number) {
   //   const indexToRemove = this.dataToDisplay.findIndex(
   //     (item) => item.id === id
@@ -221,4 +235,15 @@ export class ObjAndActionPlansListComponent {
   //     });
   //   });
   // }
+
+  filterSubmittedIgcf(year: string) {
+    const modifiedData = this.originalData.map((data: any) => {
+      return {
+        ...data,
+        target: JSON.parse(data.targets)[year],
+      };
+    });
+    this.dataToDisplay = modifiedData;
+    this.updateDataSource();
+  }
 }

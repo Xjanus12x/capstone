@@ -15,9 +15,12 @@ import { IIGCFSubmission } from '../models/IGCFSubmission';
   providedIn: 'root',
 })
 export class BackendService {
-  // Define the base API URL
+  // prod
   private apiBaseUrl = 'http://localhost:8085/api';
-  // private apiBaseUrl: string = 'https://haucommit.com/api';
+  // live
+  // private apiBaseUrl: string = 'https://haucommit.com/login/api'; 
+  // test
+  // private apiBaseUrl = 'http://localhost:20/api';
 
   private details!: IEmployeeDetails;
   private accountDetails!: IUserAccount;

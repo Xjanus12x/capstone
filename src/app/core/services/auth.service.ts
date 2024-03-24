@@ -13,8 +13,12 @@ import { IUserList } from '../models/UsersList';
   providedIn: 'root',
 })
 export class AuthService {
+  //prod
   private apiBaseUrl = 'http://localhost:8085/api';
-  // private apiBaseUrl: string = 'https://haucommit.com/api';
+  //live
+  // private apiBaseUrl: string = 'https://haucommit.com/login/api';
+  // test
+  // private apiBaseUrl = 'http://localhost:20/api';
   private email: string = '';
   private password: string = '';
   private empDeptSubject = new BehaviorSubject<string>('');

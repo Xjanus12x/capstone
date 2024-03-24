@@ -9,16 +9,22 @@ server.use(cors());
 // number of iterations or rounds for generating salt
 const saltRounds = 10;
 
-// Established the database connection
+//prod
+// // Established the database connection
 const db = mysql.createConnection({
   host: "localhost",
-  // host: "118.139.176.23",
   user: "root",
   password: "",
-  // password: "hau_commit",
   database: "db_hau_commit",
-  // database: "i9792195_twvu1",
 });
+
+// live
+// const db = mysql.createConnection({
+//   host: "localhost",
+//   user: "hau_commit",
+//   password: "hau_commit",
+//   database: "i9792195_twvu1",
+// });
 
 db.connect(function (error) {
   if (error) console.log("Error Connecting to DB");
@@ -38,11 +44,14 @@ server.use((req, res, next) => {
   next();
 });
 
+// prod
 // Establish the Port
 server.listen(8085, function check(error) {
   if (error) console.log("Error...");
   else console.log("Started... 8085");
 });
+
+
 
 // Add new user
 server.post("/api/user/register", async (req, res) => {

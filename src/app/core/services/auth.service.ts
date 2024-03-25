@@ -16,7 +16,7 @@ export class AuthService {
   //prod
   // private apiBaseUrl = 'sql6.freesqldatabase.com:3306/api';
   //live
-  private apiBaseUrl: string = 'https://icommit.netlify.app/api';
+  private apiBaseUrl: string = 'https://haucommit.com/api';
   // test
   // private apiBaseUrl = 'sql.freedb.tech/api';
   private email: string = '';

@@ -19,7 +19,7 @@ export class BackendService {
   // private apiBaseUrl =
   //   'jdbc:mysql://sql6.freesqldatabase.com:3306/sql6694132/api';
   // live
-  private apiBaseUrl: string = 'https://icommit.netlify.app/api';
+  private apiBaseUrl: string = 'https://haucommit.com/api';
   // test
   // private apiBaseUrl = 'http://localhost/api';
 

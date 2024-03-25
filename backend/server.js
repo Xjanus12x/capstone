@@ -11,47 +11,53 @@ const saltRounds = 10;
 
 //prod
 // // Established the database connection
-const db = mysql.createConnection({
-  host: "localhost",
-  user: "root",
-  password: "",
-  database: "db_hau_commit",
-});
-
-// live
 // const db = mysql.createConnection({
 //   host: "localhost",
-//   user: "hau_commit",
-//   password: "hau_commit",
-//   database: "i9792195_twvu1",
+//   user: "root",
+//   password: "",
+//   database: "db_hau_commit",
 // });
+
+// live
+const db = mysql.createConnection({
+  host: "sql6.freesqldatabase.com",
+  user: "sql6694132",
+  password: "kUqhFtp5KE",
+  database: "sql6694132",
+});
 
 db.connect(function (error) {
   if (error) console.log("Error Connecting to DB");
   else console.log("Successfully Connected to DB");
 });
 
-server.use((req, res, next) => {
-  res.header("Access-Control-Allow-Origin", "*");
-  res.header(
-    "Access-Control-Allow-Methods",
-    "GET, POST, OPTIONS, PUT, PATCH, DELETE"
-  );
-  res.header(
-    "Access-Control-Allow-Headers",
-    "Origin, X-Requested-With, Content-Type, Accept"
-  );
-  next();
-});
+// CORS headers
+server.use(cors());
+
+// server.use((req, res, next) => {
+//   res.header("Access-Control-Allow-Origin", "*");
+//   res.header(
+//     "Access-Control-Allow-Methods",
+//     "GET, POST, OPTIONS, PUT, PATCH, DELETE"
+//   );
+//   res.header(
+//     "Access-Control-Allow-Headers",
+//     "Origin, X-Requested-With, Content-Type, Accept"
+//   );
+//   next();
+// });
 
 // prod
 // Establish the Port
-server.listen(8085, function check(error) {
+// server.listen(8085, function check(error) {
+//   if (error) console.log("Error...");
+//   else console.log("Started... 8085");
+// });
+// live
+server.listen(3000, function check(error) {
   if (error) console.log("Error...");
   else console.log("Started... 8085");
 });
-
-
 
 // Add new user
 server.post("/api/user/register", async (req, res) => {

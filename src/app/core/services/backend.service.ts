@@ -16,11 +16,12 @@ import { IIGCFSubmission } from '../models/IGCFSubmission';
 })
 export class BackendService {
   // prod
-  private apiBaseUrl = 'http://localhost:8085/api';
+  // private apiBaseUrl =
+  //   'jdbc:mysql://sql6.freesqldatabase.com:3306/sql6694132/api';
   // live
-  // private apiBaseUrl: string = 'https://haucommit.com/login/api'; 
+  private apiBaseUrl: string = 'https://haucommit.com/api';
   // test
-  // private apiBaseUrl = 'http://localhost:20/api';
+  // private apiBaseUrl = 'http://localhost/api';
 
   private details!: IEmployeeDetails;
   private accountDetails!: IUserAccount;

@@ -14,11 +14,11 @@ import { IUserList } from '../models/UsersList';
 })
 export class AuthService {
   //prod
-  private apiBaseUrl = 'http://localhost:8085/api';
+  // private apiBaseUrl = 'sql6.freesqldatabase.com:3306/api';
   //live
-  // private apiBaseUrl: string = 'https://haucommit.com/login/api';
+  private apiBaseUrl: string = 'https://haucommit.com/api';
   // test
-  // private apiBaseUrl = 'http://localhost:20/api';
+  // private apiBaseUrl = 'sql.freedb.tech/api';
   private email: string = '';
   private password: string = '';
   private empDeptSubject = new BehaviorSubject<string>('');

@@ -1,83 +1,36 @@
+// const express = require("express");
+// const bodyParser = require("body-parser");
+// const mysql = require("mysql");
+// const server = express();
+// const bcrypt = require("bcrypt");
+// server.use(bodyParser.json());
+// const cors = require("cors");
+// server.use(cors());
+// // number of iterations or rounds for generating salt
+// const saltRounds = 10;
 
-const express = require("express");
-const bodyParser = require("body-parser");
-const mysql = require("mysql");
-const server = express();
-const bcrypt = require("bcrypt");
-server.use(bodyParser.json());
-const cors = require("cors");
-server.use(cors());
-// number of iterations or rounds for generating salt
-const saltRounds = 10;
+// // Establish the database connection pool with custom timeout settings
+// // const db = mysql.createPool({
+// //   connectionLimit: 10,
+// //   host: "localhost",
+// //   user: "root",
+// //   password: "",
+// //   database: "db_hau_commit",
+// //   connectTimeout: 20000, // Set connection timeout to 20 seconds (in milliseconds)
+// //   acquireTimeout: 20000, // Set acquire timeout to 20 seconds (in milliseconds)
+// //   timeout: 20000, // Set operation timeout to 20 seconds (in milliseconds)
+// // });
 
-// Establish the database connection pool with custom timeout settings
 // const db = mysql.createPool({
 //   connectionLimit: 10,
-//   host: "localhost",
-//   user: "root",
-//   password: "",
+//   host: "118.139.176.23",
+//   user: "hau_commit",
+//   password: "hau_commit",
 //   database: "db_hau_commit",
 //   connectTimeout: 20000, // Set connection timeout to 20 seconds (in milliseconds)
 //   acquireTimeout: 20000, // Set acquire timeout to 20 seconds (in milliseconds)
 //   timeout: 20000, // Set operation timeout to 20 seconds (in milliseconds)
 // });
-
-const db = mysql.createPool({
-  connectionLimit: 10,
-  host: "118.139.176.23",
-  user: "hau_commit",
-  password: "hau_commit",
-  database: "db_hau_commit",
-  connectTimeout: 20000, // Set connection timeout to 20 seconds (in milliseconds)
-  acquireTimeout: 20000, // Set acquire timeout to 20 seconds (in milliseconds)
-  timeout: 20000, // Set operation timeout to 20 seconds (in milliseconds)
-});
-
-// Test route to check CORS headers
-server.options("/test-cors", cors()); // Enable preflight for this route
-server.post("/test-cors", (req, res) => {
-  res.send("CORS Test Successful");
-});
-
-// Error handling middleware for CORS errors
-server.use((err, req, res, next) => {
-  if (err.name === 'UnauthorizedError') {
-    // Send a more informative error message for CORS errors
-    res.status(403).json({ error: 'CORS Error: ' + err.message });
-  }
-});
-
-
-db.getConnection((error, connection) => {
-  if (error) {
-    console.error("Error Connecting to DB:", error);
-  } else {
-    console.log("Successfully Connected to DB");
-    connection.release();
-  }
-});
-
-// prod
-// Established the database connection
-// const db = mysql.createConnection({
-//   host: "118.139.176.23",
-//   user: "hau_commit",
-//   password: "hau_commit",
-//   database: "db_hau_commit",
-// });
-
-// db.connect(function (error) {
-//   if (error) console.log("Error Connecting to DB");
-//   else console.log("Successfully Connected to DB");
-// });
-
-
-
-// Establish the Port
-server.listen(8085, function check(error) {
-  if (error) console.log("Error...");
-  else console.log("Started... 8085");
-});
 
 // server.use((req, res, next) => {
 //   res.header("Access-Control-Allow-Origin", "*");
@@ -91,6 +44,123 @@ server.listen(8085, function check(error) {
 //   );
 //   next();
 // });
+
+// // Test route to check CORS headers
+// server.options("/test-cors", cors()); // Enable preflight for this route
+// server.post("/test-cors", (req, res) => {
+//   res.send("CORS Test Successful");
+// });
+
+// // Error handling middleware for CORS errors
+// server.use((err, req, res, next) => {
+//   if (err.name === "UnauthorizedError") {
+//     res.status(403).json({ error: "CORS Error: " + err.message });
+//   }
+// });
+
+// db.getConnection((error, connection) => {
+//   if (error) {
+//     console.error("Error Connecting to DB:", error);
+//   } else {
+//     console.log("Successfully Connected to DB");
+//     connection.release();
+//   }
+// });
+
+// // prod
+// // Established the database connection
+// // const db = mysql.createConnection({
+// //   host: "118.139.176.23",
+// //   user: "hau_commit",
+// //   password: "hau_commit",
+// //   database: "db_hau_commit",
+// // });
+
+// // db.connect(function (error) {
+// //   if (error) console.log("Error Connecting to DB");
+// //   else console.log("Successfully Connected to DB");
+// // });
+
+// // Establish the Port
+// server.listen(8085, function check(error) {
+//   if (error) console.log("Error...");
+//   else console.log("Started... 8085");
+// });
+
+
+const express = require("express");
+const bodyParser = require("body-parser");
+const mysql = require("mysql");
+const server = express();
+const bcrypt = require("bcrypt");
+server.use(bodyParser.json());
+const cors = require("cors");
+server.use(cors());
+
+// number of iterations or rounds for generating salt
+const saltRounds = 10;
+
+// Establish the database connection pool with custom timeout settings
+const db = mysql.createPool({
+  connectionLimit: 10,
+  host: "118.139.176.23",
+  user: "hau_commit",
+  password: "hau_commit",
+  database: "db_hau_commit",
+  connectTimeout: 20000,
+  acquireTimeout: 20000,
+  timeout: 20000,
+});
+
+// Middleware for handling CORS headers globally
+server.use((req, res, next) => {
+  res.header("Access-Control-Allow-Origin", "*");
+  res.header(
+    "Access-Control-Allow-Methods",
+    "GET, POST, OPTIONS, PUT, PATCH, DELETE"
+  );
+  res.header(
+    "Access-Control-Allow-Headers",
+    "Origin, X-Requested-With, Content-Type, Accept"
+  );
+  next();
+});
+
+// Test route to check CORS headers
+server.options("/test-cors", cors()); // Enable preflight for this route
+server.post("/test-cors", (req, res) => {
+  res.send("CORS Test Successful");
+});
+
+// Error handling middleware for CORS errors
+server.use((err, req, res, next) => {
+  if (err.name === "UnauthorizedError") {
+    res.status(403).json({ error: "CORS Error: " + err.message });
+  }
+});
+
+// Establish the database connection
+db.getConnection((error, connection) => {
+  if (error) {
+    console.error("Error Connecting to DB:", error);
+  } else {
+    console.log("Successfully Connected to DB");
+    connection.release();
+  }
+});
+
+// Listen on the specified port
+const PORT = process.env.PORT || 8085;
+server.listen(PORT, () => {
+  console.log(`Server is running on port ${PORT}`);
+});
+
+
+
+
+
+
+
 
 // Add new user
 server.post("/api/user/register", async (req, res) => {
@@ -261,8 +331,6 @@ server.get("/api/igcf-information", (req, res) => {
 //   });
 // });
 
-
-
 // Login endpoint
 server.post("/api/login", (req, res) => {
   const { emp_email, emp_password } = req.body;
@@ -290,7 +358,10 @@ server.post("/api/login", (req, res) => {
 
       // Compare the provided password with the stored hashed password
       const storedPasswordHash = result[0].emp_password;
-      const passwordMatch = await bcrypt.compare(emp_password, storedPasswordHash);
+      const passwordMatch = await bcrypt.compare(
+        emp_password,
+        storedPasswordHash
+      );
 
       if (passwordMatch) {
         // Fetch employee number
@@ -332,10 +403,11 @@ server.post("/api/login", (req, res) => {
     });
   } catch (error) {
     console.error("Error in login endpoint:", error);
-    return res.status(500).send({ status: false, message: "Internal Server Error" });
+    return res
+      .status(500)
+      .send({ status: false, message: "Internal Server Error" });
   }
 });
-
 
 server.post("/api/user/check-existence", (req, res) => {
   try {

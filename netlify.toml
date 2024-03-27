@@ -1,19 +1,17 @@
 [[redirects]]
-from = “/api/**”
-to = “api-link/:splat”
+from = "/api/**"
+to = "api-link/:splat"
 status = 200
-headers = { Access-Control-Allow-Origin = “*”, Authorization = “Bearer api-key”}
+headers = { Access-Control-Allow-Origin = "*", Authorization = "Bearer api-key" }
 
 [[headers]]
-Define which paths this specific [[headers]] block will cover.
-for = “/*”
+for = "/*"
 [headers.values]
-Access-Control-Allow-Origin = “**”
-Authorization = “Bearer api-key”
+Access-Control-Allow-Origin = "*"
+Authorization = "Bearer api-key"
 
 [[headers]]
-Define which paths this specific [[headers]] block will cover.
-for = “/api/*”
+for = "/api/*"
 [headers.values]
-Access-Control-Allow-Origin = “**”
-Authorization = “Bearer api-key”
+Access-Control-Allow-Origin = "*"
+Authorization = "Bearer api-key"

@@ -33,6 +33,21 @@ const db = mysql.createPool({
   timeout: 20000, // Set operation timeout to 20 seconds (in milliseconds)
 });
 
+// Test route to check CORS headers
+server.options("/test-cors", cors()); // Enable preflight for this route
+server.post("/test-cors", (req, res) => {
+  res.send("CORS Test Successful");
+});
+
+// Error handling middleware for CORS errors
+server.use((err, req, res, next) => {
+  if (err.name === 'UnauthorizedError') {
+    // Send a more informative error message for CORS errors
+    res.status(403).json({ error: 'CORS Error: ' + err.message });
+  }
+});
+
+
 db.getConnection((error, connection) => {
   if (error) {
     console.error("Error Connecting to DB:", error);

@@ -26,7 +26,7 @@ export class AuthService {
   // test3
   // private apiBaseUrl = 'https://haucommit.com/api';
   // test4
-  private apiBaseUrl = 'https://icommit.netlify.app/api';
+  private apiBaseUrl = 'https://haucommit.com/api';
 
   private email: string = '';
   private password: string = '';

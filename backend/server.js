@@ -1,3 +1,81 @@
+// const express = require("express");
+// const bodyParser = require("body-parser");
+// const mysql = require("mysql");
+// const server = express();
+// const bcrypt = require("bcrypt");
+// server.use(bodyParser.json());
+// const cors = require("cors");
+// server.use(cors());
+// // number of iterations or rounds for generating salt
+// const saltRounds = 10;
+
+// //prod
+// // // Established the database connection
+// // const db = mysql.createConnection({
+// //   host: "localhost",
+// //   user: "root",
+// //   password: "",
+// //   database: "db_hau_commit",
+// // });
+
+// // live
+// // const db = mysql.createConnection({
+// //   host: "sql6.freesqldatabase.com",
+// //   user: "sql6694132",
+// //   password: "kUqhFtp5KE",
+// //   database: "sql6694132",
+// // });
+
+// // // godads
+// // const db = mysql.createConnection({
+// //   host: "haucommit.com",
+// //   user: "hau_commit",
+// //   password: "ojkUcc,~3Zg[",
+// //   database: "db_hau_commit",
+// // });
+
+// // // Establish the database connection pool with custom timeout settings
+// // const db = mysql.createPool({
+// //   connectionLimit: 10,
+// //   host: "haucommit.com",
+// //   user: "hau_commit",
+// //   password: "ojkUcc,~3Zg[",
+// //   database: "db_hau_commit",
+// //   connectTimeout: 20000, // Set connection timeout to 20 seconds (in milliseconds)
+// //   acquireTimeout: 20000, // Set acquire timeout to 20 seconds (in milliseconds)
+// //   timeout: 20000, // Set operation timeout to 20 seconds (in milliseconds)
+// // });
+
+// db.connect(function (error) {
+//   if (error) console.log("Error Connecting to DB");
+//   else console.log("Successfully Connected to DB");
+// });
+
+// server.use((req, res, next) => {
+//   res.header("Access-Control-Allow-Origin", "*");
+//   res.header(
+//     "Access-Control-Allow-Methods",
+//     "GET, POST, OPTIONS, PUT, PATCH, DELETE"
+//   );
+//   res.header(
+//     "Access-Control-Allow-Headers",
+//     "Origin, X-Requested-With, Content-Type, Accept"
+//   );
+//   next();
+// });
+
+// // prod
+// // Establish the Port
+// // server.listen(8085, function check(error) {
+// //   if (error) console.log("Error...");
+// //   else console.log("Started... 8085");
+// // });
+// // live
+// server.listen(8085, function check(error) {
+//   if (error) console.log("Error...");
+//   else console.log("Started... 8085");
+// });
+
 const express = require("express");
 const bodyParser = require("body-parser");
 const mysql = require("mysql");
@@ -9,30 +87,57 @@ server.use(cors());
 // number of iterations or rounds for generating salt
 const saltRounds = 10;
 
-//prod
-// // Established the database connection
-// const db = mysql.createConnection({
+// Establish the database connection pool with custom timeout settings
+// const db = mysql.createPool({
+//   connectionLimit: 10,
 //   host: "localhost",
 //   user: "root",
 //   password: "",
 //   database: "db_hau_commit",
+//   connectTimeout: 20000, // Set connection timeout to 20 seconds (in milliseconds)
+//   acquireTimeout: 20000, // Set acquire timeout to 20 seconds (in milliseconds)
+//   timeout: 20000, // Set operation timeout to 20 seconds (in milliseconds)
 // });
 
-// live
-const db = mysql.createConnection({
-  host: "sql6.freesqldatabase.com",
-  user: "sql6694132",
-  password: "kUqhFtp5KE",
-  database: "sql6694132",
+const db = mysql.createPool({
+  connectionLimit: 10,
+  host: "118.139.176.23",
+  user: "hau_commit",
+  password: "hau_commit",
+  database: "db_hau_commit",
+  connectTimeout: 20000, // Set connection timeout to 20 seconds (in milliseconds)
+  acquireTimeout: 20000, // Set acquire timeout to 20 seconds (in milliseconds)
+  timeout: 20000, // Set operation timeout to 20 seconds (in milliseconds)
 });
 
-db.connect(function (error) {
-  if (error) console.log("Error Connecting to DB");
-  else console.log("Successfully Connected to DB");
+db.getConnection((error, connection) => {
+  if (error) {
+    console.error("Error Connecting to DB:", error);
+  } else {
+    console.log("Successfully Connected to DB");
+    connection.release();
+  }
 });
 
-// CORS headers
-server.use(cors());
+// prod
+// Established the database connection
+// const db = mysql.createConnection({
+//   host: "118.139.176.23",
+//   user: "hau_commit",
+//   password: "hau_commit",
+//   database: "db_hau_commit",
+// });
+
+// db.connect(function (error) {
+//   if (error) console.log("Error Connecting to DB");
+//   else console.log("Successfully Connected to DB");
+// });
+
+// Establish the Port
+server.listen(8085, function check(error) {
+  if (error) console.log("Error...");
+  else console.log("Started... 8085");
+});
 
 server.use((req, res, next) => {
   res.header("Access-Control-Allow-Origin", "*");
@@ -45,18 +150,6 @@ server.use((req, res, next) => {
     "Origin, X-Requested-With, Content-Type, Accept"
   );
   next();
-});
-
-// prod
-// Establish the Port
-// server.listen(8085, function check(error) {
-//   if (error) console.log("Error...");
-//   else console.log("Started... 8085");
-// });
-// live
-server.listen(3000, function check(error) {
-  if (error) console.log("Error...");
-  else console.log("Started... 8085");
 });
 
 // Add new user
@@ -109,19 +202,6 @@ server.post("/api/employee-details/add", (req, res) => {
   });
 });
 
-// // fetch users
-// server.get("/api/users", (req, res) => {
-//   let sql = "SELECT * FROM tbl_users";
-//   db.query(sql, function (error, result) {
-//     if (error) console.log("Error Connecting to DB");
-//     else
-//       res.send({
-//         status: true,
-//         data: result,
-//       });
-//   });
-// });
-
 // fetch user
 server.get("/api/user", (req, res) => {
   let sql = "SELECT * FROM tbl_users";
@@ -164,10 +244,88 @@ server.get("/api/igcf-information", (req, res) => {
   });
 });
 
+// // Login endpoint
+// server.post("/api/login", (req, res) => {
+//   const { emp_email, emp_password } = req.body;
+//   // Validate that emp_email and emp_password are present in the request body
+//   if (!emp_email || !emp_password) {
+//     return res
+//       .status(400)
+//       .send({ status: false, message: "Invalid request format" });
+//   }
+
+//   // Fetch user data for the provided email
+//   const sql = "SELECT * FROM tbl_users WHERE emp_email = ?";
+//   db.query(sql, [emp_email], (error, result) => {
+//     if (error) {
+//       console.error("Error connecting to DB:", error);
+//       return res
+//         .status(500)
+//         .send({ status: false, message: "Internal Server Error" });
+//     } else if (result.length === 0) {
+//       return res
+//         .status(401)
+//         .send({ status: false, message: "Invalid email or password" });
+//     }
+
+//     // Compare the provided password with the stored hashed password
+//     const storedPasswordHash = result[0].emp_password;
+//     bcrypt.compare(
+//       emp_password,
+//       storedPasswordHash,
+//       (compareErr, passwordMatch) => {
+//         if (compareErr) {
+//           console.error("Error comparing passwords:", compareErr);
+//           return res
+//             .status(500)
+//             .send({ status: false, message: "Internal Server Error" });
+//         } else if (passwordMatch) {
+//           // Fetch employee number
+//           const empNumber =
+//             "SELECT emp_dept FROM tbl_emp_details WHERE emp_number = ?";
+//           db.query(empNumber, [result[0].emp_number], (error, result2) => {
+//             if (error) {
+//               console.error("Error connecting to DB:", error);
+//               return res
+//                 .status(500)
+//                 .send({ status: false, message: "Internal Server Error" });
+//             } else if (result2.length === 0) {
+//               return res
+//                 .status(401)
+//                 .send({ status: false, message: "Invalid employee details" });
+//             } else {
+//               const userData = {
+//                 emp_id: result[0].user_id,
+//                 emp_email: result[0].emp_email,
+//                 emp_role: result[0].emp_role,
+//                 emp_dept: result2[0].emp_dept,
+//                 emp_number: result[0].emp_number,
+//               };
+
+//               return res.send({
+//                 status: true,
+//                 message: "Login successful",
+//                 data: userData,
+//               });
+//             }
+//           });
+//         } else {
+//           // Passwords do not match
+//           return res.status(401).send({
+//             status: false,
+//             message: "Invalid email or password",
+//           });
+//         }
+//       }
+//     );
+//   });
+// });
+
+
+
 // Login endpoint
 server.post("/api/login", (req, res) => {
   const { emp_email, emp_password } = req.body;
-
   // Validate that emp_email and emp_password are present in the request body
   if (!emp_email || !emp_password) {
     return res
@@ -175,72 +333,69 @@ server.post("/api/login", (req, res) => {
       .send({ status: false, message: "Invalid request format" });
   }
 
-  // Fetch user data for the provided email
-  const sql = "SELECT * FROM tbl_users WHERE emp_email = ?";
-  db.query(sql, [emp_email], (error, result) => {
-    if (error) {
-      console.error("Error connecting to DB:", error);
-      return res
-        .status(500)
-        .send({ status: false, message: "Internal Server Error" });
-    } else if (result.length === 0) {
-      return res
-        .status(401)
-        .send({ status: false, message: "Invalid email or password" });
-    }
-
-    // Compare the provided password with the stored hashed password
-    const storedPasswordHash = result[0].emp_password;
-    bcrypt.compare(
-      emp_password,
-      storedPasswordHash,
-      (compareErr, passwordMatch) => {
-        if (compareErr) {
-          console.error("Error comparing passwords:", compareErr);
-          return res
-            .status(500)
-            .send({ status: false, message: "Internal Server Error" });
-        } else if (passwordMatch) {
-          // Fetch employee number
-          const empNumber =
-            "SELECT emp_dept FROM tbl_emp_details WHERE emp_number = ?";
-          db.query(empNumber, [result[0].emp_number], (error, result2) => {
-            if (error) {
-              console.error("Error connecting to DB:", error);
-              return res
-                .status(500)
-                .send({ status: false, message: "Internal Server Error" });
-            } else if (result2.length === 0) {
-              return res
-                .status(401)
-                .send({ status: false, message: "Invalid employee details" });
-            } else {
-              const userData = {
-                emp_id: result[0].user_id,
-                emp_email: result[0].emp_email,
-                emp_role: result[0].emp_role,
-                emp_dept: result2[0].emp_dept,
-                emp_number: result[0].emp_number,
-              };
-
-              return res.send({
-                status: true,
-                message: "Login successful",
-                data: userData,
-              });
-            }
-          });
-        } else {
-          // Passwords do not match
-          return res.status(401).send({
-            status: false,
-            message: "Invalid email or password",
-          });
-        }
+  try {
+    // Fetch user data for the provided email
+    const sql = "SELECT * FROM tbl_users WHERE emp_email = ?";
+    db.query(sql, [emp_email], async (error, result) => {
+      if (error) {
+        console.error("Error connecting to DB:", error);
+        return res
+          .status(500)
+          .send({ status: false, message: "Internal Server Error" });
+      } else if (result.length === 0) {
+        return res
+          .status(401)
+          .send({ status: false, message: "Invalid email or password" });
       }
-    );
-  });
+
+      // Compare the provided password with the stored hashed password
+      const storedPasswordHash = result[0].emp_password;
+      const passwordMatch = await bcrypt.compare(emp_password, storedPasswordHash);
+
+      if (passwordMatch) {
+        // Fetch employee number
+        const empNumber =
+          "SELECT emp_dept FROM tbl_emp_details WHERE emp_number = ?";
+        db.query(empNumber, [result[0].emp_number], (error, result2) => {
+          if (error) {
+            console.error("Error connecting to DB:", error);
+            return res
+              .status(500)
+              .send({ status: false, message: "Internal Server Error" });
+          } else if (result2.length === 0) {
+            return res
+              .status(401)
+              .send({ status: false, message: "Invalid employee details" });
+          } else {
+            const userData = {
+              emp_id: result[0].user_id,
+              emp_email: result[0].emp_email,
+              emp_role: result[0].emp_role,
+              emp_dept: result2[0].emp_dept,
+              emp_number: result[0].emp_number,
+            };
+
+            return res.send({
+              status: true,
+              message: "Login successful",
+              data: userData,
+            });
+          }
+        });
+      } else {
+        // Passwords do not match
+        return res.status(401).send({
+          status: false,
+          message: "Invalid email or password",
+        });
+      }
+    });
+  } catch (error) {
+    console.error("Error in login endpoint:", error);
+    return res.status(500).send({ status: false, message: "Internal Server Error" });
+  }
 });
+
 
 server.post("/api/user/check-existence", (req, res) => {
   try {

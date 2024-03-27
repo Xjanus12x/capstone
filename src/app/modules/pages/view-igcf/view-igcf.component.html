@@ -63,17 +63,18 @@
         rate_date
         :
         "2024-03-11" -->
-        <div class="flex p-4 justify-evenly" *ngFor="let info of raterInfos;">
+        <div class="flex p-4 justify-evenly">
+
             <div>
                 <p class="font-bold">
-                    Employee Name: <span class="font-semibold underline">{{info.fullname}}</span>
+                    Employee Name: <span class="font-semibold underline">{{raterInfos.fullname}}</span>
                 </p>
-                <p class="font-bold">Position: <span class="font-semibold underline">{{info.emp_position}}</span></p>
+                <p class="font-bold">Position: <span class="font-semibold underline">{{raterInfos.emp_position}}</span></p>
 
             </div>
             <div>
-                <p class="font-bold">Employee No. <span class="font-semibold underline">{{info.emp_number}}</span></p>
-                <p class="font-bold">Dept./Unit: <Span class="font-semibold underline">{{info.emp_dept}}</Span>
+                <p class="font-bold">Employee No. <span class="font-semibold underline">{{raterInfos.emp_number}}</span></p>
+                <p class="font-bold">Dept./Unit: <Span class="font-semibold underline">{{raterInfos.emp_dept}}</Span>
                 </p>
 
             </div>

@@ -27,16 +27,19 @@ export class LoginComponent implements OnDestroy {
 
   login(): void {
     if (this.loginFormGroup.invalid) return;
-
     const { email, password } = this.loginFormGroup.value;
-
     this.authService.setEmailAddress(email);
     this.authService.setPassword(password);
-
     this.authService.isAuthenticated$
       .pipe(takeUntil(this.unsubscribe$))
-      .subscribe(() => {
-        this.router.navigate(['dashboard']);
+      .subscribe({
+        next: (t) => {          
+          this.router.navigate(['dashboard']);
+        },
+        error: (err) => {
+          console.log(err);
+          
+        },
       });
 
     this.authService.authenticate();

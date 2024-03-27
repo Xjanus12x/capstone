@@ -24,7 +24,7 @@ export class ViewIgcfComponent implements OnInit {
     'e. Top three training and development suggestions based on previous items',
   ];
   deadline: Date | undefined = undefined;
-  raterInfos!: any;
+  raterInfos: any = {};
   submittedPartOneIgcf: any[] = [];
   submittedPartTwoIgcf: any = {};
   kpiPercentagesMap = new Map<string, number>();
@@ -69,7 +69,11 @@ export class ViewIgcfComponent implements OnInit {
               submittedIgcfDetails,
               submittedIgcfPartTwo,
             }) => {
-              this.raterInfos = submissionHistory;
+              (submissionHistory as any[]).forEach((history: any) => {
+                if (history.id === Number(id)) {
+                  this.raterInfos = history;
+                }
+              });
 
               (submittedIgcfDetails as any[]).forEach((detail: any) => {
                 // Ensure detail is not already included

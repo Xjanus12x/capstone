@@ -51,7 +51,7 @@ export class SidenavComponent {
       label: 'Form',
       children: [
         {
-          label: 'Fill Up',
+          label: 'Fill Out',
           link: 'fill-up',
           outlet: 'dashboardContent',
           canAccess: ['Faculty', 'Admin'],

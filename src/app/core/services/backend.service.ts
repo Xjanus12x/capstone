@@ -21,7 +21,7 @@ export class BackendService {
   // live
   // private apiBaseUrl: string = '118.139.176.23/api';
   // test
-  private apiBaseUrl = 'http://localhost:8085/api';
+  // private apiBaseUrl = 'http://localhost:8085/api';
   //   // test2
   // private apiBaseUrl = '118.139.176.23/api';
   // test3

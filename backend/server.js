@@ -87,6 +87,7 @@
 //   else console.log("Started... 8085");
 // });
 
+
 const express = require("express");
 const bodyParser = require("body-parser");
 const mysql = require("mysql");
@@ -154,9 +155,11 @@ server.listen(PORT, () => {
   console.log(`Server is running on port ${PORT}`);
 });
 
-server.post("/api/test", (req, res) => {
-  res.send("hello");
-});
+
+
+
+
+
 
 // Add new user
 server.post("/api/user/register", async (req, res) => {

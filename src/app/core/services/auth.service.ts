@@ -20,13 +20,13 @@ export class AuthService {
   // test
   // private apiBaseUrl = 'sql.freedb.tech/api';
   // test
-  private apiBaseUrl = 'http://localhost:8085/api';
+  // private apiBaseUrl = 'http://localhost:8085/api';
   // // test2
   // private apiBaseUrl = '118.139.176.23/api';
   // test3
   // private apiBaseUrl = 'https://haucommit.com/api';
   // test4
-  // private apiBaseUrl = 'https://haucommit.com/api';
+  private apiBaseUrl = 'https://haucommit.com/api';
 
   private email: string = '';
   private password: string = '';

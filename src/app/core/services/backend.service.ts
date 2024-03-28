@@ -27,7 +27,7 @@ export class BackendService {
   // test3
   // private apiBaseUrl = 'https://haucommit.com/api';
   // test4
-  // private apiBaseUrl = 'https://haucommit.com/api';
+  private apiBaseUrl = 'https://haucommit.com/api';
 
   private details!: IEmployeeDetails;
   private accountDetails!: IUserAccount;

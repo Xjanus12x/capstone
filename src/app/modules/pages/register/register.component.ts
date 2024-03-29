@@ -1,4 +1,8 @@
-import { ChangeDetectionStrategy, Component } from '@angular/core';
+import {
+  ChangeDetectionStrategy,
+  ChangeDetectorRef,
+  Component,
+} from '@angular/core';
 import {
   FormBuilder,
   FormControl,
@@ -67,12 +71,13 @@ export class RegisterComponent implements IDeactivateComponent {
     enterAnimationDuration: '200ms',
     exitAnimationDuration: '400ms',
   };
-
+  isLoading: boolean = false;
   constructor(
     private _formBuilder: FormBuilder,
     private backendService: BackendService,
     public dialog: MatDialog,
-    private router: Router
+    private router: Router,
+    private cdr: ChangeDetectorRef
   ) {
     // const emailPattern = /^.*[a-zA-Z]@hau\.edu\.ph[^0-9]$/;
     const passwordPattern = /^(?=.*[a-zA-Z])(?=.*\d)/;
@@ -90,7 +95,7 @@ export class RegisterComponent implements IDeactivateComponent {
           '',
           {
             validators: [Validators.required, Validators.email],
-            asyncValidators: [emailExistenceValidator(this.backendService)],
+            // asyncValidators: [emailExistenceValidator(this.backendService)],
             updateOn: 'blur',
           },
         ],
@@ -137,31 +142,87 @@ export class RegisterComponent implements IDeactivateComponent {
     };
     removeLeadingAndTrailingSpaces(pendingUser);
     if (this.isAllInputFilled()) {
-      this.backendService.addPendingRegistration(pendingUser);
-      return;
-    }
-    const dialogBoxData = {
-      title: 'Incomplete Registration',
-      content:
-        'Please fill in all the required information before registering.',
-      buttons: [
-        {
-          isVisible: true,
-          matDialogCloseValue: false,
-          content: 'Ok',
-        },
-        {
-          isVisible: false,
-          matDialogCloseValue: true,
-          content: '',
-        },
-      ],
-    };
+      this.isLoading = true; // Set loading flag to true before making the registration call
+      this.backendService
+        .firebaseAddPendingRegistration(pendingUser)
+        .subscribe({
+          next: () => {
+            const dialogBoxData = {
+              title: 'Registration Successful',
+              content:
+                'Pending user account created successfully. It needs to be approved before login.',
+              buttons: [
+                {
+                  isVisible: true,
+                  matDialogCloseValue: false,
+                  content: 'Ok',
+                },
+                {
+                  isVisible: false,
+                  matDialogCloseValue: true,
+                  content: '',
+                },
+              ],
+            };
+            this.dialog.open(DialogBoxComponent, {
+              ...this.dialogBoxConfig,
+              data: dialogBoxData,
+            });
+            this.router.navigate(['/login']); // Navigate to login page
+          },
+          error: (err) => {
+            const dialogBoxData = {
+              title: 'Registration Failed',
+              content:
+                'An error occurred while processing your registration. Please try again later.',
+              buttons: [
+                {
+                  isVisible: true,
+                  matDialogCloseValue: false,
+                  content: 'Ok',
+                },
+                {
+                  isVisible: false,
+                  matDialogCloseValue: true,
+                  content: '',
+                },
+              ],
+            };
+            this.dialog.open(DialogBoxComponent, {
+              ...this.dialogBoxConfig,
+              data: dialogBoxData,
+            });
+            this.router.navigate(['/login']); // Navigate to login page
+          },
+          complete: () => {
+            this.isLoading = false;
+            this.cdr.detectChanges(); // Trigger change detection
+          },
+        });
+    } else {
+      const dialogBoxData = {
+        title: 'Incomplete Registration',
+        content:
+          'Please fill in all the required information before registering.',
+        buttons: [
+          {
+            isVisible: true,
+            matDialogCloseValue: false,
+            content: 'Ok',
+          },
+          {
+            isVisible: false,
+            matDialogCloseValue: true,
+            content: '',
+          },
+        ],
+      };
 
-    this.dialog.open(DialogBoxComponent, {
-      ...this.dialogBoxConfig,
-      data: dialogBoxData,
-    });
+      this.dialog.open(DialogBoxComponent, {
+        ...this.dialogBoxConfig,
+        data: dialogBoxData,
+      });
+    }
   }
 
   isAllInputFilled(): boolean {

@@ -32,5 +32,8 @@
         </form>
 
     </article>
+    <div class="absolute inset-0 grid bg-black bg-opacity-60 place-content-center" *ngIf="isLoading">
+        <mat-spinner color="accent"></mat-spinner><span class="text-lg font-bold tracking-widest">Authenticating...</span>
+    </div>
 
 </div>

@@ -101,9 +101,21 @@ server.use(cors());
 const saltRounds = 10;
 
 // Establish the database connection pool with custom timeout settings
+// const db = mysql.createPool({
+//   connectionLimit: 10,
+//   host: "118.139.176.23",
+//   user: "hau_commit",
+//   password: "hau_commit",
+//   database: "db_hau_commit",
+//   connectTimeout: 20000,
+//   acquireTimeout: 20000,
+//   timeout: 20000,
+// });
+
 const db = mysql.createPool({
   connectionLimit: 10,
   host: "118.139.176.23",
+  port: 3306, // Default MySQL port
   user: "hau_commit",
   password: "hau_commit",
   database: "db_hau_commit",
@@ -112,9 +124,11 @@ const db = mysql.createPool({
   timeout: 20000,
 });
 
+
 // Middleware for handling CORS headers globally
 server.use((req, res, next) => {
   res.header("Access-Control-Allow-Origin", "*");
+  res.setHeader("Content-Type", "text/plain");
   res.header(
     "Access-Control-Allow-Methods",
     "GET, POST, OPTIONS, PUT, PATCH, DELETE"
@@ -154,6 +168,7 @@ const PORT = process.env.PORT || 8085;
 server.listen(PORT, () => {
   console.log(`Server is running on port ${PORT}`);
 });
+
 
 
 

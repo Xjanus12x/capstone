@@ -1,6 +1,6 @@
 import { Injectable } from '@angular/core';
 import { HttpClient, HttpParams } from '@angular/common/http';
-import { BehaviorSubject, Observable } from 'rxjs';
+import { BehaviorSubject, Observable, map } from 'rxjs';
 import { MatDialog } from '@angular/material/dialog';
 import { DialogBoxComponent } from 'src/app/modules/components/dialog-box/dialog-box.component';
 import {
@@ -9,6 +9,14 @@ import {
   MatSnackBarVerticalPosition,
 } from '@angular/material/snack-bar';
 import { IUserList } from '../models/UsersList';
+import {
+  Firestore,
+  collection,
+  query,
+  where,
+  getDocs,
+} from '@angular/fire/firestore';
+
 @Injectable({
   providedIn: 'root',
 })
@@ -20,13 +28,13 @@ export class AuthService {
   // test
   // private apiBaseUrl = 'sql.freedb.tech/api';
   // test
-  // private apiBaseUrl = 'http://localhost:8085/api';
+  private apiBaseUrl = 'http://haucommit.com/api';
   // // test2
   // private apiBaseUrl = '118.139.176.23/api';
   // test3
   // private apiBaseUrl = 'https://haucommit.com/api';
   // test4
-  private apiBaseUrl = 'https://haucommit.com/api';
+  // private apiBaseUrl = 'https://haucommit.com/api';
 
   private email: string = '';
   private password: string = '';
@@ -43,7 +51,8 @@ export class AuthService {
   constructor(
     private http: HttpClient,
     public dialog: MatDialog,
-    private snackBar: MatSnackBar
+    private snackBar: MatSnackBar,
+    private fs: Firestore
   ) {}
 
   private setUpdateStatus(status: boolean): void {
@@ -171,5 +180,21 @@ export class AuthService {
     };
 
     this.snackBar.open(message, action, config);
+  }
+  async fireBaseLogin(email: string, password: string): Promise<boolean> {
+    try {
+      const usersCollection = collection(this.fs, 'users');
+      const q = query(
+        usersCollection,
+        where('email', '==', email),
+        where('password', '==', password)
+      );
+      const querySnapshot = await getDocs(q);
+      this.setIsLogged(!querySnapshot.empty);
+      return !querySnapshot.empty;
+    } catch (error) {
+      console.error('Error logging in:', error);
+      throw error;
+    }
   }
 }

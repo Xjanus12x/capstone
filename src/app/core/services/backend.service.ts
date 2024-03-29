@@ -1,16 +1,22 @@
 import { Injectable } from '@angular/core';
 import { IEmployeeDetails } from '../models/EmployeeDetails';
 import { HttpClient, HttpParams, HttpResponse } from '@angular/common/http';
-import { BehaviorSubject, Observable } from 'rxjs';
+import { BehaviorSubject, Observable, from } from 'rxjs';
 import { IUserAccount } from '../models/UserAccount';
 import { AuthService } from './auth.service';
 import { RouterService } from 'src/app/modules/services/router-service.service';
-import { ISubmittedIGCF } from '../models/SubmittedIgcf';
 import { ISignedIgcf } from '../models/SignedIGCF';
 import { IUserList } from '../models/UsersList';
 import { IPendingUser } from '../models/PendingUser';
-import { IIGCFSubmission } from '../models/IGCFSubmission';
-
+import {
+  Firestore,
+  collection,
+  query,
+  where,
+  getDocs,
+  addDoc,
+} from '@angular/fire/firestore';
+import { collectionData } from 'rxfire/firestore';
 @Injectable({
   providedIn: 'root',
 })
@@ -21,13 +27,13 @@ export class BackendService {
   // live
   // private apiBaseUrl: string = '118.139.176.23/api';
   // test
-  // private apiBaseUrl = 'http://localhost:8085/api';
+  private apiBaseUrl = 'http://haucommit.com/api';
   //   // test2
   // private apiBaseUrl = '118.139.176.23/api';
   // test3
   // private apiBaseUrl = 'https://haucommit.com/api';
   // test4
-  private apiBaseUrl = 'https://haucommit.com/api';
+  // private apiBaseUrl = 'https://haucommit.com/api';
 
   private details!: IEmployeeDetails;
   private accountDetails!: IUserAccount;
@@ -37,7 +43,8 @@ export class BackendService {
   constructor(
     private http: HttpClient,
     private authService: AuthService,
-    private routerService: RouterService
+    private routerService: RouterService,
+    private fs: Firestore
   ) {}
 
   deleteSubmittedIgcf(id: number): Observable<any> {
@@ -382,5 +389,32 @@ export class BackendService {
   registerUser() {
     this.addEmployeeDetails();
     this.addUserAccount();
+  }
+
+  firebaseAddPendingRegistration(userCredentials: any): Observable<any> {
+    const {
+      email,
+      password,
+      role,
+      emp_firstName,
+      emp_lastName,
+      emp_number,
+      emp_dept,
+      emp_position,
+    } = userCredentials;
+    const pendingRegCollection = collection(this.fs, 'pending-registration');
+
+    return from(
+      addDoc(pendingRegCollection, {
+        email: email,
+        password: password,
+        role: role,
+        emp_firstname: emp_firstName,
+        emp_lastname: emp_lastName,
+        emp_number: emp_number,
+        emp_dept: emp_dept,
+        emp_position,
+      })
+    );
   }
 }

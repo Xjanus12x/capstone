@@ -39,7 +39,7 @@
                             <div class="bg-white">
                                 <table mat-table [dataSource]="dataSource" matSort>
                                     <!-- Manually define column headers -->
-                                    <ng-container *ngFor="let column of displayedColumns; let i = index"
+                                     <ng-container *ngFor="let column of displayedColumns; let i = index"
                                         [matColumnDef]="column">
                                         <mat-header-cell mat-header-cell *matHeaderCellDef mat-sort-header>{{
                                             displayedHeader[i]
@@ -61,14 +61,14 @@
                                                 {{element.rating_status}}
                                             </span>
                                         </mat-cell>
-                                    </ng-container>
+                                    </ng-container> 
 
-                                    <!-- Manually define the "actions" column -->
-                                    <ng-container matColumnDef="actions" *ngIf="userRole$ | async as role">
+                                     <!-- Manually define the "actions" column  -->
+                                     <ng-container matColumnDef="actions" >
                                         <mat-header-cell mat-header-cell *matHeaderCellDef> Actions </mat-header-cell>
                                         <mat-cell mat-cell *matCellDef="let element">
                                             <div class="flex flex-col flex-wrap gap-3 py-4">
-                                                <ng-container *ngIf="role === 'Admin'">
+                                                <ng-container *ngIf="currentUserRole === 'Admin'">
                                                     <button mat-raised-button color="primary" matTooltip="Rate IGCF"
                                                         [routerLink]="['/dashboard', { 
                                                         outlets: { 
@@ -83,7 +83,7 @@
                                                     [routerLink]="['/dashboard', { outlets: { dashboardContent: ['view-igcf',  element.id]} }]">
                                                     view
                                                 </button>
-                                                <ng-container *ngIf="role === 'Admin' || role === 'Faculty'">
+                                                <ng-container *ngIf="currentUserRole === 'Admin' || currentUserRole === 'Faculty'">
                                                     <button mat-raised-button color="warn" matTooltip="Delete row"
                                                         (click)="deleteSubmittedIgcf(element.id)">
                                                         delete
@@ -98,10 +98,10 @@
                                     <mat-header-row
                                         *matHeaderRowDef="concatColumns('rating_status','actions')"></mat-header-row>
                                     <mat-row matRipple
-                                        *matRowDef=" let row; columns: concatColumns('rating_status','actions')"></mat-row>
+                                        *matRowDef=" let row; columns: concatColumns('rating_status','actions')"></mat-row> -->
 
                                     <!-- Row shown when there is no matching data. -->
-                                    <tr class="text-lg text-center" *matNoDataRow>
+                                     <tr class="text-lg text-center" *matNoDataRow>
                                         <ng-container *ngIf="input.value === '';else noSubmitted ">
                                             <td class="p-4" colspan="4">
                                                 No one has submitted IGCF yet.
@@ -116,14 +116,14 @@
                                     </tr>
 
                                 </table>
-
+ 
                                 <!-- Add paginator if needed -->
-                                <mat-paginator [pageSizeOptions]="[5, 10, 25]" showFirstLastButtons></mat-paginator>
+                                 <mat-paginator [pageSizeOptions]="[5, 10, 25]" showFirstLastButtons></mat-paginator>
                             </div>
                         </div>
                     </ng-template>
-                </ng-container>
-            </ng-container>
+                </ng-container> 
+            </ng-container> 
 
             <ng-template #outlet>
                 <div class="mt-4">

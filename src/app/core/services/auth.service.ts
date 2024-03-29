@@ -48,6 +48,10 @@ export class AuthService {
   empDept$: Observable<string> = this.empDeptSubject.asObservable();
   empNumber$: Observable<string> = this.empNumberSubject.asObservable();
   updateStatus$: Observable<boolean> = this.updateStatusSubject.asObservable();
+
+  // firebase
+  userRoleFirebase: string = '';
+
   constructor(
     private http: HttpClient,
     public dialog: MatDialog,
@@ -181,6 +185,7 @@ export class AuthService {
 
     this.snackBar.open(message, action, config);
   }
+
   async fireBaseLogin(email: string, password: string): Promise<boolean> {
     try {
       const usersCollection = collection(this.fs, 'users');
@@ -191,10 +196,22 @@ export class AuthService {
       );
       const querySnapshot = await getDocs(q);
       this.setIsLogged(!querySnapshot.empty);
+      if (!querySnapshot.empty) {
+        const userData: any = querySnapshot.docs[0].data();
+        delete userData.password;
+        this.setUserRoleFirebase(userData.role);
+      }
       return !querySnapshot.empty;
     } catch (error) {
       console.error('Error logging in:', error);
       throw error;
     }
+  }
+  setUserRoleFirebase(role: string): void {
+    this.userRoleFirebase = role;
+  }
+
+  getUserRoleFirebase(): string {
+    return this.userRoleFirebase;
   }
 }

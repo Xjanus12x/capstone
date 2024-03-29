@@ -15,6 +15,7 @@ import {
   where,
   getDocs,
   addDoc,
+  QuerySnapshot,
 } from '@angular/fire/firestore';
 import { collectionData } from 'rxfire/firestore';
 @Injectable({
@@ -416,5 +417,88 @@ export class BackendService {
         emp_position,
       })
     );
+  }
+
+  // async checkEmailExistenceFirebase(email: string): Promise<boolean> {
+  //   try {
+  //     // Reference the 'users' collection
+  //     const usersCollection = collection(this.fs, 'users');
+
+  //     // Create a query to find documents with matching email in the 'users' collection
+  //     const usersQuery = query(usersCollection, where('email', '==', email));
+
+  //     // Get the documents that match the query in the 'users' collection
+  //     const usersSnapshot = await getDocs(usersQuery);
+
+  //     // Check if any documents were found in the 'users' collection
+  //     if (!usersSnapshot.empty) {
+  //       return true; // Email found in 'users' collection
+  //     }
+
+  //     // Reference the 'pending-registration' collection
+  //     const pendingRegCollection = collection(this.fs, 'pending-registration');
+
+  //     // Create a query to find documents with matching email in the 'pending-registration' collection
+  //     const pendingRegQuery = query(
+  //       pendingRegCollection,
+  //       where('email', '==', email)
+  //     );
+
+  //     // Get the documents that match the query in the 'pending-registration' collection
+  //     const pendingRegSnapshot = await getDocs(pendingRegQuery);
+
+  //     // Check if any documents were found in the 'pending-registration' collection
+  //     return !pendingRegSnapshot.empty; // Email found in 'pending-registration' collection
+  //   } catch (error) {
+  //     console.error('Error checking email existence:', error);
+  //     throw error;
+  //   }
+  // }
+
+  async checkEmailExistenceFirebase(email: string): Promise<boolean> {
+    try {
+      // Reference both the 'users' and 'pending-registration' collections
+      const usersCollection = collection(this.fs, 'users');
+      const pendingRegCollection = collection(this.fs, 'pending-registration');
+
+      // Create a query to find documents with matching email in the 'users' collection
+      const usersQuery = query(usersCollection, where('email', '==', email));
+
+      // Get the documents that match the query in the 'users' collection
+      const usersSnapshot = await getDocs(usersQuery);
+
+      // If email exists in 'users' collection, return true
+      if (!usersSnapshot.empty) {
+        return true;
+      }
+
+      // Create a query to find documents with matching email in the 'pending-registration' collection
+      const pendingRegQuery = query(
+        pendingRegCollection,
+        where('email', '==', email)
+      );
+
+      // Get the documents that match the query in the 'pending-registration' collection
+      const pendingRegSnapshot = await getDocs(pendingRegQuery);
+
+      // Return true if email exists in 'pending-registration' collection, false otherwise
+      return !pendingRegSnapshot.empty;
+    } catch (error) {
+      console.error('Error checking email existence:', error);
+      throw error;
+    }
+  }
+
+  getPendingUsersFirebase(dept: string): Observable<any> {
+    const pendingRegistrationCollection = collection(
+      this.fs,
+      'pending-registration'
+    );
+    const q = query(
+      pendingRegistrationCollection,
+      where('emp_dept', '==', dept)
+    );
+
+    return collectionData(q);
   }
 }

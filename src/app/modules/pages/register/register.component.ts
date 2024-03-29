@@ -18,13 +18,14 @@ import { BackendService } from 'src/app/core/services/backend.service';
 import { MatDialog } from '@angular/material/dialog';
 import { DialogBoxComponent } from '../../components/dialog-box/dialog-box.component';
 import { IDeactivateComponent } from 'src/app/core/models/DeactivateComponent';
-import { Observable, map } from 'rxjs';
+import { Observable, debounceTime, map } from 'rxjs';
 import { removeLeadingAndTrailingSpaces } from 'src/app/shared/utils/removeLeadingAndTrailingSpaces';
 import { Router } from '@angular/router';
 import { emailExistenceValidator } from 'src/app/core/Validators/emailExistenceValidator';
 import { IDialogBox } from 'src/app/core/models/DialogBox';
 import { departmentNamesMap } from 'src/app/core/constants/DepartmentData';
 import { IPendingUser } from 'src/app/core/models/PendingUser';
+import { confirmPasswordValidator } from 'src/app/core/Validators/confirmPasswordValidator';
 
 @Component({
   selector: 'app-register',
@@ -72,6 +73,7 @@ export class RegisterComponent implements IDeactivateComponent {
     exitAnimationDuration: '400ms',
   };
   isLoading: boolean = false;
+  isSamePassword: boolean = false;
   constructor(
     private _formBuilder: FormBuilder,
     private backendService: BackendService,
@@ -95,8 +97,8 @@ export class RegisterComponent implements IDeactivateComponent {
           '',
           {
             validators: [Validators.required, Validators.email],
-            // asyncValidators: [emailExistenceValidator(this.backendService)],
-            updateOn: 'blur',
+            asyncValidators: [emailExistenceValidator(this.backendService)],
+            updateOn: 'change',
           },
         ],
         password: [
@@ -107,9 +109,29 @@ export class RegisterComponent implements IDeactivateComponent {
             Validators.pattern(passwordPattern),
           ],
         ],
+        // confirm_password: ['', [Validators.required]],
         role: ['', Validators.required],
       }),
     });
+
+    // const confirmPasswordControl = this.getFormControl(
+    //   'userAccountFormGroup',
+    //   'confirm_password'
+    // );
+
+    // confirmPasswordControl.valueChanges
+    //   .pipe(
+    //     debounceTime(300) // Add a delay of 500 milliseconds
+    //   )
+    //   .subscribe((value) => {
+    //     const password = this.getFormControl(
+    //       'userAccountFormGroup',
+    //       'password'
+    //     ).value;
+    //     this.isSamePassword = !(password === value);
+    //     console.log(!(password === value));
+    //     console.log(password, value);
+    //   });
   }
 
   getFormGroup(formGroup: string) {
@@ -226,6 +248,7 @@ export class RegisterComponent implements IDeactivateComponent {
   }
 
   isAllInputFilled(): boolean {
+    // return this.registrationFormGroup.valid && this.isSamePassword;
     return this.registrationFormGroup.valid;
   }
 

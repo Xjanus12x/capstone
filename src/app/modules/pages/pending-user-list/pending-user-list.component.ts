@@ -1,5 +1,5 @@
 import { SelectionModel } from '@angular/cdk/collections';
-import { Component, ViewChild } from '@angular/core';
+import { ChangeDetectorRef, Component, ViewChild } from '@angular/core';
 import { MatDialog } from '@angular/material/dialog';
 import { MatPaginator } from '@angular/material/paginator';
 import { MatSort } from '@angular/material/sort';
@@ -21,7 +21,8 @@ export class PendingUserListComponent {
   constructor(
     private backendService: BackendService,
     private authService: AuthService,
-    public dialog: MatDialog
+    public dialog: MatDialog,
+    private cdr: ChangeDetectorRef
   ) {}
   pendingUserList$!: Observable<IPendingUser[]>;
   dataToDisplay: IPendingUser[] = [];
@@ -45,45 +46,90 @@ export class PendingUserListComponent {
     'emp_dept',
     'emp_position',
   ];
-  isLoadingResults = true;
+  isLoading = true;
   currentUserEmpNumber: string = '';
   @ViewChild(MatPaginator) paginator!: MatPaginator;
   @ViewChild(MatSort) sort!: MatSort;
+  test: any[] = [];
 
   ngOnInit(): void {
-    this.loadData();
+    this.isLoading = true;
+    // this.loadData();
+    this.backendService
+      .getPendingUsersFirebase('SCHOOL OF COMPUTING')
+      .subscribe({
+        next: (data) => {
+          this.dataSource.data = data;
+          this.isLoading = false;
+          this.cdr.detectChanges(); // Trigger change detection
+        },
+        error: (error) => {
+          console.error('Error fetching pending users:', error);
+        },
+      });
   }
+
+  // loadData() {
+  //   this.isLoading = true;
+  //   // this.authService.getEmployeeDepartment().subscribe({
+  //   //   next: (dept: string) => {
+  //   //     this.pendingUserList$ = this.backendService.getPendingUsers(dept);
+  //   //     this.handleDataSubscription();
+  //   //   },
+  //   //   error: (error) => this.handleError(error),
+  //   // });
+
+  //   this.backendService
+  //     .getPendingUsersFirebase('SCHOOL OF COMPUTING')
+  //     .subscribe({
+  //       next: (data) => {
+  //         console.log(data);
+
+  //         this.dataToDisplay = data;
+  //         this.updateDataSource();
+  //       },
+  //     });
+
+  //   // this.handleDataSubscription();
+  // }
 
   loadData() {
-    this.isLoadingResults = true;
-    this.authService.getEmployeeDepartment().subscribe({
-      next: (dept: string) => {
-        this.pendingUserList$ = this.backendService.getPendingUsers(dept);
-        this.handleDataSubscription();
-      },
-      error: (error) => this.handleError(error),
-    });
+    // this.isLoading = true;
+    // this.backendService
+    //   .getPendingUsersFirebase('SCHOOL OF COMPUTING')
+    //   .subscribe({
+    //     next: (data) => {
+    //       this.dataSource.data = data;
+    //       // this.isLoading = false;
+    //     },
+    //     error: (error) => {
+    //       console.error('Error fetching pending users:', error);
+    //     },
+    //   });
   }
 
-  handleDataSubscription() {
-    this.pendingUserList$.subscribe({
-      next: (data: IPendingUser[]) => {
-        this.dataToDisplay = data;
-        this.updateDataSource();
-      },
-      error: (error) => {
-        console.error('Error:', error);
-        // Handle error here (e.g., display error message)
-        this.isLoadingResults = false;
-      },
-    });
-  }
+  ngAfterViewInit() {}
+  // handleDataSubscription() {
+  //   this.pendingUserList$.subscribe({
+  //     next: (data: any[]) => {
+  //       console.log(data);
+
+  //       this.dataToDisplay = data;
+  //       this.updateDataSource();
+  //     },
+  //     error: (error) => {
+  //       console.error('Error:', error);
+  //       // Handle error here (e.g., display error message)
+  //       this.isLoading = false;
+  //     },
+  //   });
+  // }
 
   updateDataSource() {
     this.dataSource = new MatTableDataSource(this.dataToDisplay);
     this.dataSource.paginator = this.paginator; // Set paginator after data is loaded
     this.dataSource.sort = this.sort;
-    this.isLoadingResults = false;
+    // this.isLoading = false;
   }
 
   handleError(error: any) {
@@ -132,29 +178,36 @@ export class PendingUserListComponent {
     });
   }
   acceptUser(element: IPendingUser) {
-    this.backendService.acceptPendingUser(element).subscribe({
-      next: () => {
-        this.authService.openSnackBar(
-          'Pending user accepted successfully',
-          'Close',
-          'bottom'
-        );
-        const id = element.id;
-        const indexToRemove = this.dataToDisplay.findIndex(
-          (item) => item.id === id
-        );
-        // If the item is found, remove it from the array
-        if (indexToRemove === -1) return;
-        this.backendService.deletePendingUser(id!).subscribe({
-          next: () => {
-            this.dataToDisplay.splice(indexToRemove, 1);
-            this.dataSource.data = this.dataToDisplay;
-            this.updateDataSource();
-          },
-        });
-      },
-      error: (error) => this.handleError(error),
-    });
+    console.log(element);
+
+    // this.backendService.acceptPendingUser(element).subscribe({
+    //   next: () => {
+    //     this.authService.openSnackBar(
+    //       'Pending user accepted successfully',
+    //       'Close',
+    //       'bottom'
+    //     );
+    //     const id = element.id;
+    //     const indexToRemove = this.dataToDisplay.findIndex(
+    //       (item) => item.id === id
+    //     );
+    //     // If the item is found, remove it from the array
+    //     if (indexToRemove === -1) return;
+    //     this.backendService.deletePendingUser(id!).subscribe({
+    //       next: () => {
+    //         this.dataToDisplay.splice(indexToRemove, 1);
+    //         this.dataSource.data = this.dataToDisplay;
+    //         this.updateDataSource();
+    //       },
+    //     });
+    //   },
+    //   error: (error) => this.handleError(error),
+    // });
+
+
+
+    
+
   }
 
   updateUser(pendingUser: IPendingUser) {
@@ -194,7 +247,7 @@ export class PendingUserListComponent {
             'close',
             'bottom'
           );
-          this.handleDataSubscription();
+          // this.handleDataSubscription();
         },
       });
     });

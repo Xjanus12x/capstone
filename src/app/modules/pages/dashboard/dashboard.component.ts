@@ -21,7 +21,7 @@ import { MatSort } from '@angular/material/sort';
   templateUrl: './dashboard.component.html',
   styleUrls: ['./dashboard.component.css'],
 })
-export class DashboardComponent implements OnInit, OnDestroy {
+export class DashboardComponent {
   submissionHistory$!: Observable<any>;
   originalSubmissionHistory: any[] = [];
   dataToDisplay: any[] = [];
@@ -43,7 +43,6 @@ export class DashboardComponent implements OnInit, OnDestroy {
     'completion_date',
     'rate_date',
   ];
-  userRole$!: Observable<string>;
   currentUserRole: string = '';
   isLoadingResults = false;
   deadlineYears: any[] = [];
@@ -58,10 +57,11 @@ export class DashboardComponent implements OnInit, OnDestroy {
     private authService: AuthService,
     private router: Router
   ) {}
-  ngOnInit(): void {
-    this.userRole$ = this.authService.getUserRole();
-    this.loadData();
 
+  ngOnInit(): void {
+    // this.userRole$ = this.authService.getUserRole();
+    this.currentUserRole = this.authService.getUserRoleFirebase();
+    this.loadData();
     // Subscribe to router events
     this.router.events
       .pipe(filter((event) => event instanceof NavigationEnd))

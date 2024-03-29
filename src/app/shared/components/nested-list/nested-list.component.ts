@@ -1,5 +1,5 @@
 import { Component, Input, OnInit } from '@angular/core';
-import {  Router } from '@angular/router';
+import { Router } from '@angular/router';
 import { NavItem } from 'src/app/core/models/NavItems';
 import { AuthService } from 'src/app/core/services/auth.service';
 
@@ -14,13 +14,13 @@ export class NestedListComponent implements OnInit {
   toggleItem(item: NavItem): void {
     item.collapsed = !item.collapsed;
   }
-  constructor(
-    private authService: AuthService,
-  ) {}
+  constructor(private authService: AuthService) {}
   ngOnInit(): void {
-    this.authService.userRole$.subscribe((role: string) => {
-      this.role = role;
-    });
+    // this.authService.userRole$.subscribe((role: string) => {
+    //   this.role = role;
+    // });
+
+    this.role = this.authService.getUserRoleFirebase();
   }
   getRouterLink(item: NavItem): any {
     if (item.outlet) return [{ outlets: { [item.outlet!]: [item.link!] } }];

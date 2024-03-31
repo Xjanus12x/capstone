@@ -1,7 +1,17 @@
 import { Injectable } from '@angular/core';
 import { IEmployeeDetails } from '../models/EmployeeDetails';
 import { HttpClient, HttpParams, HttpResponse } from '@angular/common/http';
-import { BehaviorSubject, Observable, from } from 'rxjs';
+import {
+  BehaviorSubject,
+  Observable,
+  catchError,
+  combineLatest,
+  forkJoin,
+  from,
+  map,
+  switchMap,
+  tap,
+} from 'rxjs';
 import { IUserAccount } from '../models/UserAccount';
 import { AuthService } from './auth.service';
 import { RouterService } from 'src/app/modules/services/router-service.service';
@@ -16,8 +26,12 @@ import {
   getDocs,
   addDoc,
   QuerySnapshot,
+  DocumentData,
+  deleteDoc,
+  getDoc,
+  updateDoc,
 } from '@angular/fire/firestore';
-import { collectionData } from 'rxfire/firestore';
+import { collectionData, doc } from 'rxfire/firestore';
 @Injectable({
   providedIn: 'root',
 })
@@ -28,7 +42,7 @@ export class BackendService {
   // live
   // private apiBaseUrl: string = '118.139.176.23/api';
   // test
-  private apiBaseUrl = 'http://haucommit.com/api';
+  private apiBaseUrl = 'http://localhost:8085/api';
   //   // test2
   // private apiBaseUrl = '118.139.176.23/api';
   // test3
@@ -41,6 +55,8 @@ export class BackendService {
   private unconfirmedEmail: string = '';
   private igcfValues!: any;
   private currentIgcfId!: number;
+  private yearOfCompletions: string[] = [];
+
   constructor(
     private http: HttpClient,
     private authService: AuthService,
@@ -489,7 +505,20 @@ export class BackendService {
     }
   }
 
-  getPendingUsersFirebase(dept: string): Observable<any> {
+  // getPendingUsersFirebase(dept: string): Observable<any> {
+  //   const pendingRegistrationCollection = collection(
+  //     this.fs,
+  //     'pending-registration'
+  //   );
+  //   const q = query(
+  //     pendingRegistrationCollection,
+  //     where('emp_dept', '==', dept)
+  //   );
+
+  //   return collectionData(q);
+  // }
+
+  getPendingUsersFirebase(dept: string): Observable<any[]> {
     const pendingRegistrationCollection = collection(
       this.fs,
       'pending-registration'
@@ -499,6 +528,304 @@ export class BackendService {
       where('emp_dept', '==', dept)
     );
 
-    return collectionData(q);
+    return from(getDocs(q)).pipe(
+      map((snapshot: QuerySnapshot<DocumentData>) => {
+        return snapshot.docs.map((doc) => {
+          const data = doc.data();
+          return { id: doc.id, ...data };
+        });
+      })
+    );
+  }
+
+  acceptPendingUserFirebase(pendingUserCredentials: any): Observable<void> {
+    const {
+      emp_firstname,
+      emp_lastname,
+      emp_number,
+      emp_dept,
+      emp_position,
+      email,
+      password,
+      role,
+    } = pendingUserCredentials;
+
+    const empDetailsCollection = collection(this.fs, 'employee-details');
+    const userCollection = collection(this.fs, 'users');
+
+    // Create observables for adding documents to 'employee-details' collection
+    const addEmployeeDetails$ = from(
+      addDoc(empDetailsCollection, {
+        firstname: emp_firstname,
+        lastname: emp_lastname,
+        emp_number,
+        department: emp_dept,
+        position: emp_position,
+      })
+    );
+
+    const addUser$ = from(
+      addDoc(userCollection, {
+        email,
+        emp_number,
+        password,
+        role,
+      })
+    );
+
+    // Use forkJoin to run both operations concurrently
+    return forkJoin([addEmployeeDetails$, addUser$]).pipe(
+      map(() => {}), // Return void when both operations are successful
+      catchError((error) => {
+        console.error('Error accepting pending user:', error);
+        throw error; // Throw the error to be caught by the caller
+      })
+    );
+  }
+
+  async deleteDocumentByEmailFirebase(email: string): Promise<any> {
+    const q = query(
+      collection(this.fs, 'pending-registration'),
+      where('email', '==', email)
+    );
+    const querySnapshot = await getDocs(q);
+
+    querySnapshot.forEach(async (doc) => {
+      await deleteDoc(doc.ref);
+      console.log(`Document with email ${email} deleted successfully`);
+    });
+  }
+
+  updateUserInformationFirebase(
+    information: any,
+    email: string
+  ): Observable<any> {
+    return new Observable<void>((observer) => {
+      const { dept, emp_number, firstname, lastname, position, role } =
+        information;
+      // Update pending-registration collection
+      const pendingRegistrationQuery = query(
+        collection(this.fs, 'pending-registration'),
+        where('email', '==', email)
+      );
+
+      getDocs(pendingRegistrationQuery)
+        .then((pendingRegistrationSnapshot) => {
+          pendingRegistrationSnapshot.forEach(async (doc) => {
+            await updateDoc(doc.ref, {
+              emp_dept: dept,
+              emp_number,
+              emp_firstname: firstname,
+              emp_lastname: lastname,
+              emp_position: position,
+              role,
+            });
+          });
+          observer.next(); // Emit completion when update is done
+          observer.complete();
+        })
+        .catch((error) => {
+          observer.error(error); // Emit error if update fails
+        });
+    });
+  }
+
+  getUsersFirebase(department: string): Observable<any[]> {
+    const usersCollection = collection(this.fs, 'users');
+    const employeeDetailsCollection = collection(this.fs, 'employee-details');
+
+    // Query to find employee details with the specified department
+    const employeeQuery = query(
+      employeeDetailsCollection,
+      where('department', '==', department)
+    );
+
+    return from(getDocs(employeeQuery)).pipe(
+      switchMap((employeeSnapshot: QuerySnapshot<DocumentData>) => {
+        const users: any[] = [];
+        const userObservables: Observable<any>[] = [];
+
+        employeeSnapshot.forEach((employeeDoc) => {
+          const employeeData = employeeDoc.data();
+          const empNumber = employeeData['emp_number'];
+          const empDocId = employeeDoc.id; // Get the document ID of employee details
+
+          // Query to find user with the same emp_number
+          const userQuery = query(
+            usersCollection,
+            where('emp_number', '==', empNumber)
+          );
+          const userObservable = from(getDocs(userQuery)).pipe(
+            map((userSnapshot: QuerySnapshot<DocumentData>) => {
+              if (!userSnapshot.empty) {
+                const userData = userSnapshot.docs[0].data();
+                const userId = userSnapshot.docs[0].id; // Get the document ID of the user
+                // Omit the password field
+                const { password, ...userDataWithoutPassword } = userData;
+                // Merge user and employee details
+                const combinedData = {
+                  ...userDataWithoutPassword,
+                  ...employeeData,
+                  userId, // Add the user document ID to the combined data
+                  empDocId, // Add the employee details document ID to the combined data
+                };
+                users.push(combinedData);
+              }
+            })
+          );
+          userObservables.push(userObservable);
+        });
+
+        // Combine all user observables and wait for them to complete
+        return combineLatest(userObservables).pipe(
+          map(() => users),
+          catchError((error) => {
+            console.error('Error getting users:', error);
+            throw error; // Optionally, rethrow the error for handling in the component
+          })
+        );
+      })
+    );
+  }
+  deleteUserFirebase(employeeNumber: string, email: string): Observable<any> {
+    const userCollection = collection(this.fs, 'users');
+    const employeeDetailsCollection = collection(this.fs, 'employee-details');
+
+    // Query to find documents in 'users' collection matching the given employee number and email
+    const userQuery = query(
+      userCollection,
+      where('emp_number', '==', employeeNumber),
+      where('email', '==', email)
+    );
+
+    return from(getDocs(userQuery)).pipe(
+      switchMap((userSnapshot: QuerySnapshot) => {
+        const deleteObservables: Observable<void>[] = [];
+
+        // Delete documents found in 'users' collection
+        userSnapshot.forEach((userDoc) => {
+          const deleteObservable = from(deleteDoc(userDoc.ref));
+          deleteObservables.push(deleteObservable);
+        });
+
+        // Query to find documents in 'employee-details' collection matching the given employee number
+        const employeeQuery = query(
+          employeeDetailsCollection,
+          where('emp_number', '==', employeeNumber)
+        );
+
+        return from(getDocs(employeeQuery)).pipe(
+          switchMap((employeeSnapshot: QuerySnapshot) => {
+            // Delete documents found in 'employee-details' collection
+            employeeSnapshot.forEach((employeeDoc) => {
+              const deleteObservable = from(deleteDoc(employeeDoc.ref));
+              deleteObservables.push(deleteObservable);
+            });
+
+            // Combine all delete observables and wait for them to complete
+            return from(Promise.all(deleteObservables));
+          })
+        );
+      }),
+      catchError((error) => {
+        console.error('Error deleting user:', error);
+        throw error; // Optionally, rethrow the error for handling in the component
+      })
+    );
+  }
+
+  submitIGCFirebase(igcfData: any): Observable<any> {
+    const submittedIGCFsCollection = collection(this.fs, 'submitted-IGCFs');
+    return from(addDoc(submittedIGCFsCollection, igcfData)).pipe(
+      catchError((error) => {
+        console.error('Error adding document: ', error);
+        throw error; // Rethrow the error for handling in the component
+      })
+    );
+  }
+  getSubmittedIGCFsFirebase(
+    role: string,
+    field: string,
+    toSearch: string
+  ): Observable<any[]> {
+    const submittedIGCFsCollection = collection(this.fs, 'submitted-IGCFs');
+    if (role === 'Admin' || role === 'Faculty') {
+      const q = query(submittedIGCFsCollection, where(field, '==', toSearch));
+
+      return from(getDocs(q)).pipe(
+        map((querySnapshot: QuerySnapshot<DocumentData>) => {
+          const igcfs: any[] = [];
+          querySnapshot.forEach((doc) => {
+            igcfs.push(doc.data());
+          });
+          return igcfs;
+        }),
+        catchError((error) => {
+          console.error('Error getting submitted IGCFs:', error);
+          throw error;
+        })
+      );
+    } else {
+      return from(getDocs(submittedIGCFsCollection)).pipe(
+        map((querySnapshot: QuerySnapshot<DocumentData>) => {
+          const igcfs: any[] = [];
+          querySnapshot.forEach((doc) => {
+            igcfs.push(doc.data());
+          });
+          return igcfs;
+        }),
+        catchError((error) => {
+          console.error('Error getting submitted IGCFs:', error);
+          throw error;
+        })
+      );
+    }
+  }
+  setYearOfCompletions(year: string) {
+    if (!this.yearOfCompletions.includes(year))
+      this.yearOfCompletions.push(year);
+  }
+  getYearOfCompletions() {
+    return this.yearOfCompletions;
+  }
+
+  getSubmittedIGCFByID(id: string): Observable<any[]> {
+    const submittedIGCFsCollection = collection(this.fs, 'submitted-IGCFs');
+    const q = query(submittedIGCFsCollection, where('id', '==', id));
+
+    return from(getDocs(q)).pipe(
+      map((querySnapshot) => {
+        let igcfs: any = {};
+        querySnapshot.forEach((doc) => {
+          igcfs = doc.data();
+        });
+        return igcfs;
+      }),
+      catchError((error) => {
+        console.error('Error getting submitted IGCFs by ID:', error);
+        throw error;
+      })
+    );
+  }
+  rateSubmittedIGCFirebase(id: string, value: any): Observable<void> {
+    return new Observable<void>((observer) => {
+      // Update pending-registration collection
+      const pendingRegistrationQuery = query(
+        collection(this.fs, 'submitted-IGCFs'),
+        where('id', '==', id)
+      );
+
+      getDocs(pendingRegistrationQuery)
+        .then((pendingRegistrationSnapshot) => {
+          pendingRegistrationSnapshot.forEach(async (doc) => {
+            await updateDoc(doc.ref, value);
+          });
+          observer.next(); // Emit completion when update is done
+          observer.complete();
+        })
+        .catch((error) => {
+          observer.error(error); // Emit error if update fails
+        });
+    });
   }
 }

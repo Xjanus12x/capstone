@@ -48,11 +48,11 @@ const routes: Routes = [
         path: 'fill-up',
         component: IgcfFormComponent,
         outlet: 'dashboardContent',
-        canActivate: [canAcessFillUpIgcf],
+        canActivate: [],
         canDeactivate: [canExit],
       },
       {
-        path: 'submitted-form/:id/:completionDate',
+        path: 'submitted-form/:id',
         component: IgcfFormComponent,
         outlet: 'dashboardContent',
         canDeactivate: [canExit],

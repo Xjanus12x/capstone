@@ -28,7 +28,7 @@ export class PartTwoFormComponent implements OnInit, AfterViewInit {
   userRole: string = '';
   @Input() stepLabel!: string[];
   currentUserId: string = '';
-  completionDate: string = '';
+  rateDate: null | string = '';
   constructor(
     private fb: FormBuilder,
     private formContentService: FormContentService,
@@ -60,50 +60,37 @@ export class PartTwoFormComponent implements OnInit, AfterViewInit {
     );
     this.activatedRoute.paramMap.subscribe((params) => {
       this.currentUserId = params.get('id')!;
-      this.completionDate = params.get('completionDate')!;
     });
+    this.rateDate = this.activatedRoute.snapshot.queryParamMap.get('rateDate');
   }
   ngAfterViewInit() {
     if (
-      this.routerService.isRouteActive('submitted-form/:id/:completionDate')
+      this.routerService.isRouteActive('submitted-form/:id') &&
+      this.rateDate
     ) {
-      this.backendService
-        .getSubmittedIgcfPartTwo(this.currentUserId!)
-        .subscribe({
-          next: (partTwo: any) => {
-            const partTwoValues = partTwo.filter((part: any) => {
-              return (
-                new Date(part.rater_completion_date).toDateString() ===
-                new Date(this.completionDate).toDateString()
-              );
-            });
+      this.backendService.getSubmittedIGCFByID(this.currentUserId).subscribe({
+        next: (submittedIGCF: any) => {
+          const {
+            top_three_competencies_improvement,
+            top_three_competency_strengths,
+            top_three_highly_agc,
+            top_three_least_agc,
+            top_three_training_development_suggestion,
+          } = submittedIGCF;
+          const partTwoIgcfValues: string[][] = [
+            top_three_least_agc,
+            top_three_highly_agc,
+            top_three_competency_strengths,
+            top_three_competencies_improvement,
+            top_three_training_development_suggestion,
+          ];
 
-            const partTwoIgcfValues: string[][] = [];
-
-            if (partTwoValues.length > 0) {
-              partTwoValues.forEach((value: any) => {
-                const {
-                  top_three_least_agc,
-                  top_three_highly_agc,
-                  top_three_competencies_improvement,
-                  top_three_competency_strengths,
-                  top_three_training_development_suggestion,
-                } = value;
-                partTwoIgcfValues.push(
-                  top_three_least_agc.split(','),
-                  top_three_highly_agc.split(','),
-                  top_three_competencies_improvement.split(','),
-                  top_three_competency_strengths.split(','),
-                  top_three_training_development_suggestion.split(',')
-                );
-              });
-
-              this.formArrayNames.forEach((name, index) => {
-                this.formGroup.get(name)?.setValue(partTwoIgcfValues[index]);
-              });
-            }
-          },
-        });
+          this.formArrayNames.forEach((name, index) => {
+            this.formGroup.get(name)?.setValue(partTwoIgcfValues[index]);
+            this.formGroup.get(name)?.disable();
+          });
+        },
+      });
     }
   }
 
@@ -124,20 +111,20 @@ export class PartTwoFormComponent implements OnInit, AfterViewInit {
     const control = this.formGroup.get(formArrayName);
     return control || new FormControl(null);
   }
-  isControlDisabled(formGroup: FormGroup, controlName: string): boolean {
-    return this.formContentService.isControlDisabled(formGroup, controlName);
+
+  getValues(): any {
+    return {
+      top_three_least_agc: this.getFormArrayValues('step1'),
+      top_three_highly_agc: this.getFormArrayValues('step2'),
+      top_three_competencies_improvement: this.getFormArrayValues('step3'),
+      top_three_competency_strengths: this.getFormArrayValues('step4'),
+      top_three_training_development_suggestion:
+        this.getFormArrayValues('step5'),
+    };
   }
 
-  getValues(): any[] {
-    const mergedValues: any = {};
-
-    this.formArrayNames.forEach((name) => {
-      const formArray = this.formGroup.get(name) as FormArray;
-      const values = formArray.value;
-      mergedValues[name] = values.join(',');
-    });
-
-    return mergedValues;
+  getFormArrayValues(formArrayName: string) {
+    return (this.formGroup.get(formArrayName) as FormArray).value;
   }
   validateFormGroup() {
     if (this.formGroup.invalid) {

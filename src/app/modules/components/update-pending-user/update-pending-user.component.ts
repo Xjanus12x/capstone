@@ -28,8 +28,6 @@ export class UpdatePendingUserComponent {
   departments: string[] = Array.from(departmentNamesMap.keys());
 
   ngOnInit(): void {
-    console.log(this.data);
-
     const {
       emp_firstname,
       emp_lastname,

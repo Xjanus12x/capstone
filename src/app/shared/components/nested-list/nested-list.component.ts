@@ -19,8 +19,7 @@ export class NestedListComponent implements OnInit {
     // this.authService.userRole$.subscribe((role: string) => {
     //   this.role = role;
     // });
-
-    this.role = this.authService.getUserRoleFirebase();
+    this.role = this.authService.getUserInformationFirebase().role;
   }
   getRouterLink(item: NavItem): any {
     if (item.outlet) return [{ outlets: { [item.outlet!]: [item.link!] } }];

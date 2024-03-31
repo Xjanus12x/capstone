@@ -10,8 +10,7 @@
 
                             <mat-form-field>
                                 <mat-label>{{ j + 1 }}</mat-label>
-                                <input matInput [formControlName]="j"
-                                    [class.disabled:text-red-500]="isControlDisabled(formGroup,formControlName)"
+                                <input class="font-extrabold disabled:text-red-500" matInput [formControlName]="j"
                                     required>
                                 <mat-error
                                     *ngIf="getFormControl(formGroup, formControlName, j)?.hasError('required') && !getFormControl(formGroup, formControlName, j)?.hasError('minlength')">

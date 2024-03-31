@@ -1,115 +1,16 @@
-<!-- <mat-stepper #stepper orientation="vertical">
-    <ng-container *ngFor="let formArrayName of formArrayNames;let i = index;">
-        <mat-step [stepControl]="formGroup">
-
-            <ng-template matStepLabel>
-                <div class="p-4 font-extrabold bg-yellow-300 rounded-sm">
-                    {{stepLabel[i]}}
-                </div>
-            </ng-template>
-            <form [formGroup]="formGroup">
-                <table class="min-w-full mb-2 border-2 border-black" [formArrayName]="formArrayName">
-                    <tr>
-                        <th class="text-black border-2 border-black">
-                            Individual Commitment
-                        </th>
-                        <th></th>
-                        <th class="text-black border-2 border-black">Assessment</th>
-
-                    </tr>
-                    <tr>
-                        <th class="text-black border-2 border-black" *ngFor="let header of headers">{{ header
-                            }}
-                        </th>
-                    </tr>
-                    <tr>
-
-                        <ng-container *ngIf="percentages.length > 0 else noSelectedPercentages">
-                            <td class="text-center text-black border-2 border-black"
-                                *ngFor="let percentage of percentages[i]; let j = index">
-                                {{ percentage }}{{j === 0? '':'%'}}
-                            </td>
-                        </ng-container> 
-
-                <ng-template #noSelectedPercentages>
-                            <td class="text-center text-black border-2 border-black" *ngFor="let row of tableRows">
-                                {{ row }}
-                            </td>
-                        </ng-template>
-                    </tr>
-                    <tr *ngFor="let control of getFormControls(formGroup,formArrayName) let i = index"
-                        [formGroupName]="i">
-                        <td class="p-4 border-2 border-black" *ngFor="let name of controlNames; let j = index">
-                            <mat-form-field>
-                                <mat-label>{{i+1}}.</mat-label>
-                                <input [class.disabled:text-red-500]="control.get(name)?.disabled ? true : null"
-                                    matInput [formControlName]="name" [type]="j===0? 'text':'number'" required
-                                    [value]="j">
-                                <mat-error
-                                    *ngIf="control.get(name)?.hasError('required') && !control.get(name)?.hasError('minlength')">
-                                    This field is required.
-                                </mat-error>
-                                <mat-error
-                                    *ngIf="!control.get(name)?.hasError('required') && control.get(name)?.hasError('minlength')">
-                                    Minimum length is 5.
-                                </mat-error>
-
-                                <mat-error
-                                    *ngIf="controlNames.length - 1 && control.get(name)?.hasError('range') && !control.get(name)?.hasError('required') && !control.get(name)?.hasError('minlength')">
-                                    Rating must be between 0 and 4.
-                                </mat-error>
-                            </mat-form-field>
-                        </td>
-                    </tr>
-
-                </table>
-
-                <div>
-                    <button mat-button matStepperPrevious *ngIf="i !== 0">Back</button>
-                    <button mat-button matStepperNext>Next</button>
-                </div>
-            </form>
-        </mat-step>
-    </ng-container>
-
-</mat-stepper> -->
-
-
-<!-- <div class="mt-4 space-x-4">
-                            <label class="text-lg font-bold">Select Action Plans</label>
-                            <mat-form-field class="w-80">
-                                <mat-label>Action Plans</mat-label>
-                                <mat-select formControlName="selectedActionPlans" multiple>
-                                    <mat-select-trigger>
-                                        <ng-container
-                                            *ngIf="getSelectedActionPlansControl(i)?.value &&  getSelectedActionPlansControl(i)?.value.length === 1;else moreThanOne">
-                                            <span>
-                                                {{
-                                                getSelectedActionPlansControl(i)?.value
-                                                }}
-                                            </span>
-                                        </ng-container>
-
-                                        <ng-template #moreThanOne>
-                                            <span *ngIf="getSelectedActionPlansControl(i)?.value.length > 1">
-                                                (+{{ getSelectedActionPlansControl(i)?.value.length - 1 }} {{
-                                                getSelectedActionPlansControl(i)?.value.length
-                                                === 2 ? 'other' : 'others' }})
-                                            </span>
-                                        </ng-template>
-
-
-                                    </mat-select-trigger>
-
-                                    <mat-option *ngFor="let obj of getActionPlans(label)" [value]="obj">{{
-                                        obj
-                                        }}</mat-option>
-                                </mat-select>
-                            </mat-form-field>
-                        </div> -->
-
 <mat-tab-group>
-    <mat-tab *ngFor="let label of stepLabels; let i = index; trackBy: trackByIndex" [label]="'KPI ' + (i+1) ">
+    <mat-tab *ngFor="let label of stepLabels; let i = index; trackBy: trackByIndex">
+
+        <ng-template mat-tab-label>
+
+            <div
+                [ngClass]="{'px-10 py-8 text-center text-white bg-black transition duration-1000 ease-in-out':  getCurrentTabIndex() === i}">
+                {{'KPI ' + (i+1)}}
+            </div>
+
+        </ng-template>
+
+
         <mat-accordion>
             <mat-expansion-panel hideToggle expanded>
                 <mat-expansion-panel-header>
@@ -140,8 +41,18 @@
                                         </ng-template>
                                     </mat-select-trigger>
 
-                                    <mat-option *ngFor="let obj of getActionPlans(label)" [value]="obj">{{ obj
-                                        }}</mat-option>
+                                    <div class="space-y-4">
+
+                                        <mat-option *ngFor="let obj of getActionPlans(label)" [value]="obj">
+                                            <div
+                                                class="transition duration-300 ease-in-out hover:bg-black hover:text-white">
+                                                {{obj}}
+                                            </div>
+                                        </mat-option>
+
+
+                                    </div>
+
                                 </mat-select>
                             </mat-form-field>
                         </div>
@@ -149,7 +60,6 @@
                         <div [formArrayName]="getFormArrayName(label)"
                             *ngIf="getSelectedActionPlansControl(i)?.value?.length > 0">
                             <div>
-                                <!-- <div>  -->
                                 <table class="overflow-y-auto border border-collapse border-black">
                                     <!-- Table content -->
                                     <tr>
@@ -203,8 +113,27 @@
                                                 <mat-form-field class="w-24" *ngIf="isFillingUp; else weight">
                                                     <mat-label
                                                         [ngClass]='{"font-extranbold text-red-500 text-xl":!isFillingUp}'>Weight</mat-label>
-                                                    <input class=" disabled:font-extrabold disabled:text-red-500"
+                                                    <input class="disabled:font-extrabold disabled:text-red-500"
                                                         matInput formControlName="weight">
+                                                    <!-- Add mat-error blocks here -->
+                                                    <mat-error class="font-extrabold"
+                                                        *ngIf="getControl(getFormArrayName(label),j,'weight')?.hasError('min')
+                                                        && !getControl(getFormArrayName(label),j,'weight')?.hasError('max')
+                                                        && !getControl(getFormArrayName(label),j,'weight')?.hasError('required')">
+                                                        Weight must be at least 1.
+                                                    </mat-error>
+                                                    <mat-error class="font-extrabold"
+                                                        *ngIf="getControl(getFormArrayName(label),j,'weight')?.hasError('max')
+                                                        && !getControl(getFormArrayName(label),j,'weight')?.hasError('min')
+                                                        && !getControl(getFormArrayName(label),j,'weight')?.hasError('required')">
+                                                        Weight cannot exceed 100.
+                                                    </mat-error>
+                                                    <mat-error class="font-extrabold"
+                                                        *ngIf="getControl(getFormArrayName(label),j,'weight')?.hasError('required')
+                                                        && !getControl(getFormArrayName(label),j,'weight')?.hasError('min')
+                                                        && !getControl(getFormArrayName(label),j,'weight')?.hasError('max')">
+                                                        Weight is required.
+                                                    </mat-error>
                                                 </mat-form-field>
                                                 <ng-template #weight>
                                                     <span class="font-bold">
@@ -213,11 +142,18 @@
                                                 </ng-template>
                                             </td>
                                             <td class="p-2 border border-collapse border-black">
-                                                <mat-form-field class="w-28" *ngIf="!isDoneRating else achieved">
+                                                <mat-form-field *ngIf="!isDoneRating else achieved">
                                                     <mat-label>Achieved</mat-label>
-                                                    <input class="disabled:font-extrabold disabled:text-red-500"
-                                                        matInput formControlName="achieved">
+                                                    <mat-select formControlName="achieved">
+                                                        <div class="space-y-4">
+                                                            <mat-option class="hover:bg-black hover:text-white"
+                                                                *ngFor="let description of ratingDescription"
+                                                                [value]="description">{{description}}</mat-option>
+                                                        </div>
+
+                                                    </mat-select>
                                                 </mat-form-field>
+
                                                 <ng-template #achieved>
                                                     <span class="font-bold">
                                                         {{ getControlValue(getFormArrayName(label), j, 'achieved')}}
@@ -229,21 +165,13 @@
                                                 <mat-form-field class="w-28" *ngIf="!isDoneRating;else rating">
                                                     <mat-label>Rating</mat-label>
                                                     <mat-select formControlName="rating">
-                                                        <mat-option>
-                                                            --None--
+                                                        <mat-option
+                                                            *ngFor="let equivalentRating of getDescriptionEquivalentRatings(getControlValue(getFormArrayName(label), j, 'achieved'))"
+                                                            [value]="equivalentRating">
+                                                            {{equivalentRating}}
                                                         </mat-option>
-                                                        <mat-option value="1">
-                                                            1
-                                                        </mat-option>
-                                                        <mat-option value="2">
-                                                            2
-                                                        </mat-option>
-                                                        <mat-option value="3">
-                                                            3
-                                                        </mat-option>
-                                                        <mat-option value="4">
-                                                            4
-                                                        </mat-option>
+
+
                                                     </mat-select>
                                                 </mat-form-field>
 
@@ -259,13 +187,9 @@
                                     </ng-container>
 
                                 </table>
-                                <!-- </div> -->
                             </div>
                         </div>
                     </div>
-                    <!-- <button class="mt-4" type="button" mat-raised-button color="primary"
-                        (click)="addFormGroup(getLabel(label))" *ngIf="isFillingUp">Add
-                        another</button> -->
 
                 </form>
             </mat-expansion-panel>

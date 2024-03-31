@@ -1,6 +1,6 @@
 import { Component, OnInit, ViewChild } from '@angular/core';
 import { FormControl, FormGroup, Validators } from '@angular/forms';
-import { Observable } from 'rxjs';
+import { Observable, last } from 'rxjs';
 import { formData } from 'src/app/core/constants/formData';
 import { IDeactivateComponent } from 'src/app/core/models/DeactivateComponent';
 import { DialogBoxComponent } from '../../components/dialog-box/dialog-box.component';
@@ -8,7 +8,6 @@ import { MatDialog } from '@angular/material/dialog';
 import { IDialogBox } from 'src/app/core/models/DialogBox';
 import { BackendService } from 'src/app/core/services/backend.service';
 import { AuthService } from 'src/app/core/services/auth.service';
-import { IIgcfPercentages } from 'src/app/core/models/IgcfPercentages';
 import { RouterService } from '../../services/router-service.service';
 import { PartOneFormComponent } from 'src/app/shared/components/part-one-form/part-one-form.component';
 import { PartTwoFormComponent } from 'src/app/shared/components/part-two-form/part-two-form.component';
@@ -17,7 +16,6 @@ import { ActivatedRoute } from '@angular/router';
 import { MatTabChangeEvent, MatTabGroup } from '@angular/material/tabs';
 import { DatePipe } from '@angular/common';
 import { FormContentService } from 'src/app/shared/services/form-content.service';
-
 @Component({
   selector: 'app-igcf-form',
   templateUrl: './igcf-form.component.html',
@@ -58,7 +56,8 @@ export class IgcfFormComponent implements OnInit, IDeactivateComponent {
     'OBE Facilitator',
   ];
   targetYears: string[] = [];
-
+  previousSelection: string[] = [];
+  isLoading: boolean = false;
   constructor(
     private backendService: BackendService,
     private authService: AuthService,
@@ -67,56 +66,27 @@ export class IgcfFormComponent implements OnInit, IDeactivateComponent {
     private activatedRoute: ActivatedRoute,
     private datePipe: DatePipe,
     private formContentService: FormContentService
-  ) {
-    this.kpiTitlesDropdown.valueChanges.subscribe((selectedKPIs: any) => {
-      // Clear existing form controls
-      this.formGroup = new FormGroup({});
-      // Generate form controls for each selected KPI
-      if (selectedKPIs) {
-        selectedKPIs.forEach((kpiTitle: string, i: number) => {
-          this.formGroup.addControl(
-            kpiTitle,
-            new FormControl(100, [
-              Validators.required,
-              Validators.min(1),
-              Validators.max(100),
-            ])
-          );
-        });
-      }
-    });
-  }
+  ) {}
 
   ngOnInit() {
     this.partTwoStepLabel = formData.partTwoForm.stepLabel;
+    this.details = this.authService.getUserInformationFirebase();
+    const { department, role } = this.details;
+    this.currentUserRole = role;
 
-    this.authService.getEmployeeNumber().subscribe({
-      next: (empNumber: string) => {
-        this.authService.getEmployeeDetails(empNumber).subscribe({
-          next: (response: any) => {
-            this.details = response.data;
-            this.backendService
-              .getKpisAndActionPlans(this.details.emp_dept)
-              .subscribe({
-                next: (data: any[]) => {
-                  if (data.length > 0) {
-                    this.kpiTitleList = Array.from(
-                      new Set(data.map((kpi: any) => kpi.kpi_title.trim()))
-                    );
-                    this.targetYears = Object.keys(
-                      JSON.parse(data[0]['targets'])
-                    );
-                    this.kpis = data;
-                  }
-                },
-              });
-          },
-        });
-      },
-    });
-    this.authService.getUserRole().subscribe({
-      next: (role: string) => {
-        this.currentUserRole = role;
+    this.backendService.getKpisAndActionPlans(department).subscribe({
+      next: (data: any[]) => {
+        if (data.length > 0) {
+          this.kpiTitleList = Array.from(
+            new Set(data.map((kpi: any) => kpi.kpi_title.trim()))
+          );
+          this.targetYears = Object.keys(JSON.parse(data[0]['targets'])).filter(
+            (year: string) =>
+              !this.backendService.getYearOfCompletions().includes(year)
+          );
+
+          this.kpis = data;
+        }
       },
     });
 
@@ -239,7 +209,7 @@ export class IgcfFormComponent implements OnInit, IDeactivateComponent {
 
   isAdminRating(): boolean {
     return (
-      this.routerService.isRouteActive('submitted-form/:id/:completionDate') &&
+      this.routerService.isRouteActive('submitted-form/:id') &&
       this.currentUserRole === 'Admin'
     );
   }
@@ -250,6 +220,52 @@ export class IgcfFormComponent implements OnInit, IDeactivateComponent {
         this.currentUserRole === 'Admin') ||
       this.currentUserRole === 'Faculty'
     );
+  }
+
+  onSelectionChange(selectedValues: string[]) {
+    const unselectedValues = this.previousSelection.filter(
+      (value) => !selectedValues.includes(value)
+    );
+
+    // Calculate the total number of selected values
+    const totalSelected = selectedValues.length;
+
+    // Calculate the weight for each selected value
+    const weight = totalSelected > 0 ? Math.floor(100 / totalSelected) : 0;
+
+    // Calculate the remaining weight after evenly distributing among selected values
+    const remainingWeight = 100 - weight * totalSelected;
+
+    // Remove unselected values from form group
+    unselectedValues.forEach((value) => {
+      this.formGroup.removeControl(value);
+    });
+
+    selectedValues.forEach((value, index) => {
+      let valueWeight = weight; // Initialize the weight for the current value
+
+      // Add the remaining weight to the last control
+      if (index === totalSelected - 1) {
+        valueWeight += remainingWeight;
+      }
+
+      if (!this.formGroup.get(value)) {
+        // Add form control for newly selected values with calculated weight
+        this.formGroup.addControl(
+          value,
+          new FormControl(valueWeight, [
+            Validators.required,
+            Validators.min(1),
+            Validators.max(100),
+          ])
+        );
+      } else {
+        // Update the value of existing form controls
+        this.formGroup.get(value)?.setValue(valueWeight);
+      }
+    });
+
+    this.previousSelection = selectedValues;
   }
 
   canExit(): boolean | Promise<boolean> | Observable<boolean> {
@@ -295,37 +311,68 @@ export class IgcfFormComponent implements OnInit, IDeactivateComponent {
 
   submit(): void {
     if (this.partOneForm || this.partTwoForm) {
+      //original
+      // const currentDate = new Date();
+
       if (this.isFillingUp() && this.partOneForm.validateFormGroup()) {
-        const { emp_fullname, emp_number, emp_position, emp_dept } =
-          this.details;
-        const currentDate = new Date();
+        // if we want to make user create igcf for future
+        const currentDate = new Date().setFullYear(
+          Number(this.selectedTargetYear.value)
+        );
         const completionDate = this.datePipe.transform(
           currentDate,
           'yyyy-MM-dd'
         );
-        const employeeDetails = {
-          fullname: emp_fullname,
-          emp_number,
-          emp_position,
-          emp_dept,
+        const { email, role, firstname, lastname, ...rest } = this.details;
+        const igcf = {
+          id: `${firstname}${lastname}${completionDate}`,
+          fullname: `${firstname} ${lastname}`.toUpperCase(),
+          ...rest,
           completion_date: completionDate,
+          igc_inputs: this.partOneForm.getValues(),
+          ratee_fullname: '',
+          overall_weighted_average_rating: '',
+          equivalent_description: '',
+          top_three_least_agc: [],
+          top_three_highly_agc: [],
+          top_three_competencies_improvement: [],
+          top_three_competency_strengths: [],
+          top_three_training_development_suggestion: [],
+          rate_date: '',
         };
 
-        this.backendService
-          .submitIGCF({
-            ...employeeDetails,
-            formData: this.partOneForm.getValues(),
-          })
-          .subscribe({
-            next: () => {
-              this.authService.openSnackBar(
-                'IGCF submitted successfully.',
-                'close',
-                'bottom'
-              );
-              this.routerService.routeTo('dashboard');
-            },
-          });
+        let title: string = '';
+        let content: string = '';
+        this.backendService.submitIGCFirebase(igcf).subscribe({
+          next: () => {
+            title = 'IGCF Submitted successfully';
+            content =
+              'Your IGCF has been submitted successfully. Please wait for admin review.';
+          },
+          error: (error) => {
+            title = 'Error';
+            content =
+              'An error occurred while submitting your IGCF. Please try again later.';
+          },
+          complete: () => {
+            this.routerService.routeTo('dashboard');
+            const dialogBoxData: IDialogBox = {
+              title,
+              content,
+              buttons: [
+                {
+                  isVisible: true,
+                  matDialogCloseValue: false,
+                  content: 'Close',
+                },
+              ],
+            };
+            this.dialog.open(DialogBoxComponent, {
+              ...dialogBoxConfig,
+              data: dialogBoxData,
+            });
+          },
+        });
       } else if (
         this.isAdminRating() &&
         this.partOneForm.validateFormGroup() &&
@@ -333,25 +380,52 @@ export class IgcfFormComponent implements OnInit, IDeactivateComponent {
       ) {
         const currentDate = new Date();
         const rateDate = this.datePipe.transform(currentDate, 'yyyy-MM-dd');
+        const { firstname, lastname } = this.details;
+        const rateDetails = {
+          // id: this.currentUserId,
+          ratee_fullname: `${firstname} ${lastname}`.toUpperCase(),
+          igc_inputs: this.partOneForm.getValues(),
+          overall_weighted_average_rating: this.partOneForm
+            .getOverallAverageRating()
+            .toFixed(2),
+          equivalent_description: this.getEquivalentDescription(
+            this.partOneForm.getOverallAverageRating()
+          ),
+          ...this.partTwoForm.getValues(),
+          rate_date: rateDate,
+        };
+        console.log(rateDetails);
 
+        let title: string = '';
+        let content: string = '';
         this.backendService
-          .rateIgcf({
-            id: this.currentUserId,
-            ratee_fullname: this.details.emp_fullname,
-            rates: this.partOneForm.getValues(),
-            overall_weighted_average_rating: this.partOneForm
-              .getOverallAverageRating()
-              .toFixed(2),
-            equivalent_description: this.getEquivalentDescription(
-              this.partOneForm.getOverallAverageRating()
-            ),
-            ...this.partTwoForm.getValues(),
-            rate_date: rateDate,
-          })
+          .rateSubmittedIGCFirebase(this.currentUserId, rateDetails)
           .subscribe({
             next: () => {
-              this.authService.openSnackBar('Sucessful', 'close', 'bottom');
+              title = 'Success';
+              content = 'IGCF rated successfully.';
+            },
+            error: (error) => {
+              title = 'Error';
+              content = 'Failed to rate IGCF: ' + error.message;
+            },
+            complete: () => {
               this.routerService.routeTo('dashboard');
+              const dialogBoxData: IDialogBox = {
+                title,
+                content,
+                buttons: [
+                  {
+                    isVisible: true,
+                    matDialogCloseValue: false,
+                    content: 'Close',
+                  },
+                ],
+              };
+              this.dialog.open(DialogBoxComponent, {
+                ...dialogBoxConfig,
+                data: dialogBoxData,
+              });
             },
           });
       }

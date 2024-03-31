@@ -4,7 +4,8 @@
             <div class="grid p-4">
                 <mat-form-field>
                     <mat-label>Select KPI's</mat-label>
-                    <mat-select [formControl]="kpiTitlesDropdown" multiple>
+                    <mat-select [formControl]="kpiTitlesDropdown" multiple
+                        (selectionChange)="onSelectionChange($event.value)">
                         <mat-select-trigger>
                             {{kpiTitlesDropdown.value?.[0] || ''}}
                             <span *ngIf="(kpiTitlesDropdown.value?.length || 0) > 1">
@@ -19,10 +20,11 @@
 
                 <ng-container *ngIf="getKpiDropdownLength() > 0">
                     <ul>
-                        <li class="grid" *ngFor="let kpiTitle of kpiTitlesDropdown?.value; let i = index">
+                        <li class="grid" *ngFor="let kpiTitle of previousSelection; let i = index">
                             <div class="space-x-4">
                                 <label class="font-bold">{{kpiTitle}}</label>
                                 <mat-form-field>
+
                                     <mat-label> Weight % </mat-label>
                                     <input matInput type="number" [formControl]="getWeightFormControl(kpiTitle)">
                                     <mat-error class="font-extrabold" *ngIf="getWeightFormControl(kpiTitle).hasError('min')
@@ -72,14 +74,15 @@
                     </ul>
                 </ng-container>
             </div>
-            <button class="mx-4" mat-raised-button color="primary" (click)="confirm()" [disabled]="isValid">Confirm</button>
+            <button class="mx-4" mat-raised-button color="primary" (click)="confirm()"
+                [disabled]="isValid">Confirm</button>
 
         </mat-tab>
 
         <mat-tab *ngIf="isValid || isAdminRating()"
             label="I. BALANCED SCORECARD PERSPECTIVES AND KEY PERFORMANCE INDICATORS">
             <div class="p-4">
-                <div class="px-8">
+                <div class="px-8 mb-4">
                     <header class="font-bold">
                         <h2>GUIDELINES:</h2>
                     </header>
@@ -106,7 +109,8 @@
                         </li>
                     </ol>
                 </div>
-                <app-part-one-form [kpis]="kpis" [responsible]="responsibleRole.getRawValue()!" [isFillingUp]="isFillingUp()">
+                <app-part-one-form [kpis]="kpis" [responsible]="responsibleRole.getRawValue()!"
+                    [isFillingUp]="isFillingUp()">
                 </app-part-one-form>
 
             </div>
@@ -129,4 +133,9 @@
             class="px-4 py-2 text-white transition-colors duration-500 ease-in-out bg-black rounded-md hover:bg-red-500">Exit</button>
     </div>
 
+</div>
+
+<div class="absolute inset-0 grid bg-black bg-opacity-60 place-content-center" *ngIf="isLoading">
+    <mat-spinner color="accent"></mat-spinner>
+    <span class="text-lg font-bold tracking-widest text-white">Loading data...</span>
 </div>

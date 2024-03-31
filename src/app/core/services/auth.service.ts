@@ -51,7 +51,7 @@ export class AuthService {
 
   // firebase
   userRoleFirebase: string = '';
-
+  userInformation: any = {};
   constructor(
     private http: HttpClient,
     public dialog: MatDialog,
@@ -186,32 +186,90 @@ export class AuthService {
     this.snackBar.open(message, action, config);
   }
 
+  // async fireBaseLogin(email: string, password: string): Promise<boolean> {
+  //   try {
+  //     const usersCollection = collection(this.fs, 'users');
+  //     const q = query(
+  //       usersCollection,
+  //       where('email', '==', email),
+  //       where('password', '==', password)
+  //     );
+  //     const querySnapshot = await getDocs(q);
+  //     this.setIsLogged(!querySnapshot.empty);
+  //     if (!querySnapshot.empty) {
+  //       const userData: any = querySnapshot.docs[0].data();
+  //       delete userData.password;
+
+  //       const employeeDetailsCollection = collection(
+  //         this.fs,
+  //         'employee-details'
+  //       );
+
+  //       this.setUserRoleFirebase(userData.role);
+  //     }
+  //     return !querySnapshot.empty;
+  //   } catch (error) {
+  //     console.error('Error logging in:', error);
+  //     throw error;
+  //   }
+  // }
+
   async fireBaseLogin(email: string, password: string): Promise<boolean> {
     try {
+      // Query users collection to find user by email and password
       const usersCollection = collection(this.fs, 'users');
-      const q = query(
+      const userQuery = query(
         usersCollection,
         where('email', '==', email),
         where('password', '==', password)
       );
-      const querySnapshot = await getDocs(q);
-      this.setIsLogged(!querySnapshot.empty);
-      if (!querySnapshot.empty) {
-        const userData: any = querySnapshot.docs[0].data();
-        delete userData.password;
-        this.setUserRoleFirebase(userData.role);
+      const userSnapshot = await getDocs(userQuery);
+
+      // Check if user with given email and password exists
+      if (userSnapshot.empty) {
+        this.setIsLogged(false);
+        return false; // User not found or password incorrect
       }
-      return !querySnapshot.empty;
+
+      // Extract user data and remove password field
+      const userData: any = userSnapshot.docs[0].data();
+      delete userData.password;
+
+      // Query employee details collection to find employee by emp_number
+      const empDetailsCollection = collection(this.fs, 'employee-details');
+      const empQuery = query(
+        empDetailsCollection,
+        where('emp_number', '==', userData.emp_number)
+      );
+      const empSnapshot = await getDocs(empQuery);
+
+      // Check if employee details exist
+      if (!empSnapshot.empty) {
+        const empData = empSnapshot.docs[0].data();
+        // Do something with the employee details data
+
+        const info = {...userData,...empData}
+        this.setUserInformationFirebase(info);        
+        
+      } else {
+        console.log('Employee details not found');
+      }
+      // Set user role and mark as logged in
+      this.setIsLogged(true);
+      return true; // Login successful
     } catch (error) {
       console.error('Error logging in:', error);
       throw error;
     }
   }
-  setUserRoleFirebase(role: string): void {
-    this.userRoleFirebase = role;
-  }
 
-  getUserRoleFirebase(): string {
-    return this.userRoleFirebase;
+
+
+
+  private setUserInformationFirebase(info: any) {
+    this.userInformation = info;
+  }
+  getUserInformationFirebase(): any {
+    return this.userInformation;
   }
 }

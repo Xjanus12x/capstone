@@ -1,5 +1,11 @@
 import { SelectionModel } from '@angular/cdk/collections';
-import { ChangeDetectorRef, Component, ViewChild } from '@angular/core';
+import {
+  AfterViewInit,
+  ChangeDetectorRef,
+  Component,
+  OnInit,
+  ViewChild,
+} from '@angular/core';
 import { MatDialog } from '@angular/material/dialog';
 import { MatPaginator } from '@angular/material/paginator';
 import { MatSort } from '@angular/material/sort';
@@ -17,7 +23,7 @@ import { UpdatePendingUserComponent } from '../../components/update-pending-user
   templateUrl: './pending-user-list.component.html',
   styleUrls: ['./pending-user-list.component.css'],
 })
-export class PendingUserListComponent {
+export class PendingUserListComponent implements OnInit, AfterViewInit {
   constructor(
     private backendService: BackendService,
     private authService: AuthService,
@@ -47,19 +53,20 @@ export class PendingUserListComponent {
     'emp_position',
   ];
   isLoading = true;
-  currentUserEmpNumber: string = '';
   @ViewChild(MatPaginator) paginator!: MatPaginator;
   @ViewChild(MatSort) sort!: MatSort;
-  test: any[] = [];
-
+  currentUserDepartment: string = '';
   ngOnInit(): void {
-    this.isLoading = true;
     // this.loadData();
+    this.isLoading = true;
+    this.currentUserDepartment =
+      this.authService.getUserInformationFirebase().department;
     this.backendService
-      .getPendingUsersFirebase('SCHOOL OF COMPUTING')
+      .getPendingUsersFirebase(this.currentUserDepartment)
       .subscribe({
         next: (data) => {
           this.dataSource.data = data;
+          this.dataToDisplay = data;
           this.isLoading = false;
           this.cdr.detectChanges(); // Trigger change detection
         },
@@ -108,7 +115,10 @@ export class PendingUserListComponent {
     //   });
   }
 
-  ngAfterViewInit() {}
+  ngAfterViewInit() {
+    this.dataSource.paginator = this.paginator; // Set paginator after data is loaded
+    this.dataSource.sort = this.sort;
+  }
   // handleDataSubscription() {
   //   this.pendingUserList$.subscribe({
   //     next: (data: any[]) => {
@@ -149,37 +159,60 @@ export class PendingUserListComponent {
     return this.displayedColumns.concat(additionalColumns);
   }
 
-  rejectUser(id: number) {
-    const indexToRemove = this.dataToDisplay.findIndex(
-      (item) => item.id === id
-    );
+  rejectUser(element: IPendingUser) {
+    // const indexToRemove = this.dataToDisplay.findIndex(
+    //   (item) => item.id === id
+    // );
 
-    // If the item is found, remove it from the array
-    if (indexToRemove === -1) return;
-    this.backendService.deletePendingUser(id).subscribe({
-      next: () => {
+    // // If the item is found, remove it from the array
+    // if (indexToRemove === -1) return;
+    // this.backendService.deletePendingUser(id).subscribe({
+    //   next: () => {
+    //     this.dataToDisplay.splice(indexToRemove, 1);
+    //     this.dataSource.data = this.dataToDisplay;
+    //     this.authService.openSnackBar(
+    //       'Row deleted successfully',
+    //       'Close',
+    //       'bottom'
+    //     );
+    //     // Optionally, update your component state or UI after deletion
+    //   },
+    //   error: (error) => {
+    //     this.authService.openSnackBar(
+    //       'Error deleting row: ' + error.message,
+    //       'Close',
+    //       'bottom'
+    //     );
+    //     // Optionally, handle the error or display an error message to the user
+    //   },
+    // });
+    this.isLoading = true;
+    this.backendService
+      .deleteDocumentByEmailFirebase(element.email)
+      .then(() => {
+        const id = element.id;
+        const indexToRemove = this.dataToDisplay.findIndex(
+          (item) => item.id === id
+        );
         this.dataToDisplay.splice(indexToRemove, 1);
         this.dataSource.data = this.dataToDisplay;
+        this.isLoading = false;
         this.authService.openSnackBar(
-          'Row deleted successfully',
-          'Close',
+          'Pending user rejected successfully.',
+          'close',
           'bottom'
         );
-        // Optionally, update your component state or UI after deletion
-      },
-      error: (error) => {
+      })
+      .catch((error) => {
+        this.isLoading = false;
         this.authService.openSnackBar(
-          'Error deleting row: ' + error.message,
-          'Close',
+          'Error rejecting user.',
+          'close',
           'bottom'
         );
-        // Optionally, handle the error or display an error message to the user
-      },
-    });
+      });
   }
   acceptUser(element: IPendingUser) {
-    console.log(element);
-
     // this.backendService.acceptPendingUser(element).subscribe({
     //   next: () => {
     //     this.authService.openSnackBar(
@@ -204,10 +237,43 @@ export class PendingUserListComponent {
     //   error: (error) => this.handleError(error),
     // });
 
-
-
-    
-
+    this.isLoading = true;
+    this.backendService.acceptPendingUserFirebase(element).subscribe({
+      next: () => {
+        this.backendService
+          .deleteDocumentByEmailFirebase(element.email)
+          .then(() => {
+            const id = element.id;
+            const indexToRemove = this.dataToDisplay.findIndex(
+              (item) => item.id === id
+            );
+            this.dataToDisplay.splice(indexToRemove, 1);
+            this.dataSource.data = this.dataToDisplay;
+            this.isLoading = false;
+            this.authService.openSnackBar(
+              'Pending user accepted successfully.',
+              'close',
+              'bottom'
+            );
+          })
+          .catch((error) => {
+            this.isLoading = false;
+            this.authService.openSnackBar(
+              'Error deleting document.',
+              'close',
+              'bottom'
+            );
+          });
+      },
+      error: (error) => {
+        this.authService.openSnackBar(
+          'Error accepting pending user',
+          'close',
+          'bottom'
+        );
+        console.error('Error accepting pending user:', error); // Log the error message
+      },
+    });
   }
 
   updateUser(pendingUser: IPendingUser) {
@@ -221,7 +287,7 @@ export class PendingUserListComponent {
         this.authService.openSnackBar('Invalid inputs', 'Close', 'bottom');
         return;
       }
-
+      this.isLoading = true;
       const orginalData = [
         pendingUser.emp_firstname,
         pendingUser.emp_lastname,
@@ -237,19 +303,61 @@ export class PendingUserListComponent {
         this.authService.openSnackBar('No changes made', 'Close', 'bottom');
         return;
       }
-      const id = pendingUser.id;
-      const updatedPendingUserInfo = { id, ...result.value };
+      const updatedPendingUserInfo = result.value;
 
-      this.backendService.updatePendingUser(updatedPendingUserInfo).subscribe({
-        next: () => {
+      this.backendService
+        .updateUserInformationFirebase(
+          updatedPendingUserInfo,
+          pendingUser.email
+        )
+        .subscribe({
+          next: () => {
+            // Handle successful update
+
+            this.refreshDataSource();
+          },
+          error: (error) => {
+            this.authService.openSnackBar(
+              'Failed updating pending user',
+              'close',
+              'bottom'
+            );
+            this.isLoading = false;
+            // Handle error
+          },
+        });
+
+      // this.backendService.updatePendingUser(updatedPendingUserInfo).subscribe({
+      //   next: () => {
+      //     this.authService.openSnackBar(
+      //       `Pengind user successfully updated`,
+      //       'close',
+      //       'bottom'
+      //     );
+      //     // this.handleDataSubscription();
+      //   },
+      // });
+    });
+  }
+  refreshDataSource() {
+    this.backendService
+      .getPendingUsersFirebase('SCHOOL OF COMPUTING')
+      .subscribe({
+        next: (data) => {
+          this.dataSource.data = data;
+          this.dataToDisplay = data;
+          this.isLoading = false;
           this.authService.openSnackBar(
-            `Pengind user successfully updated`,
+            'Pending user updated successfully',
             'close',
             'bottom'
           );
-          // this.handleDataSubscription();
+          this.cdr.detectChanges(); // Trigger change detection
+        },
+        error: (error) => {
+          console.error('Error fetching pending users:', error);
+          this.isLoading = false;
         },
       });
-    });
   }
 }

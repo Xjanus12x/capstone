@@ -28,8 +28,8 @@ export class LoginComponent implements OnDestroy {
     private dialog: MatDialog
   ) {
     this.loginFormGroup = this.formBuilder.group({
-      email: ['test@yahoo.com', [Validators.required]],
-      password: ['hey', [Validators.required]],
+      email: ['albertovillacarlos07@gmail.com', [Validators.required]],
+      password: ['villacarlos12', [Validators.required]],
     });
   }
 
@@ -82,7 +82,6 @@ export class LoginComponent implements OnDestroy {
 
       if (isLoggedIn) {
         // Redirect the user to the dashboard or any other page
-        this.authService;
         this.router.navigate(['dashboard']);
       } else {
         const dialogBoxData = {

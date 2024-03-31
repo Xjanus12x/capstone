@@ -38,12 +38,12 @@
             <!-- Manually define the "actions" column -->
             <ng-container matColumnDef="actions">
                 <mat-header-cell mat-header-cell *matHeaderCellDef> Actions </mat-header-cell>
-                <mat-cell class="flex flex-wrap" mat-cell *matCellDef="let element">
-
-                    <button mat-icon-button color="warn" matTooltip="Delete row" (click)="deleteUser(element.id)">
-                        <mat-icon>delete</mat-icon>
-                    </button>
-
+                <mat-cell mat-cell *matCellDef="let element">
+                    <div class="p-4">
+                        <button mat-raised-button color="warn" matTooltip="Delete row" (click)="deleteUser(element)">
+                            Delete user
+                        </button>
+                    </div>
                 </mat-cell>
             </ng-container>
 
@@ -67,5 +67,9 @@
 
         <!-- Add paginator if needed -->
         <mat-paginator [pageSizeOptions]="[5, 10, 25]" showFirstLastButtons></mat-paginator>
+    </div>
+    <div class="absolute inset-0 grid bg-black bg-opacity-60 place-content-center" *ngIf="isLoading">
+        <mat-spinner color="accent"></mat-spinner>
+        <span class="text-lg font-bold tracking-widest text-white">Loading data...</span>
     </div>
 </div>

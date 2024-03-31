@@ -1,4 +1,5 @@
 import {
+  ChangeDetectorRef,
   Component,
   ElementRef,
   OnDestroy,
@@ -38,15 +39,22 @@ export class DashboardComponent {
   displayedColumns: string[] = [
     'fullname',
     'emp_number',
-    'emp_position',
-    'emp_dept',
+    'position',
+    'department',
     'completion_date',
     'rate_date',
   ];
   currentUserRole: string = '';
-  isLoadingResults = false;
+  isLoading = false;
   deadlineYears: any[] = [];
   submittedIgcfIdList: number[] = [];
+  rolesMap: Map<string, string> = new Map<string, string>([
+    ['Chair', ''],
+    ['Admin', 'department'],
+    ['Faculty', 'emp_number'],
+    ['HRD', ''],
+    ['College Secretary', ''],
+  ]);
   @ViewChild(MatPaginator) paginator!: MatPaginator;
   @ViewChild(MatSort) sort!: MatSort;
   // Create a Subject to handle unsubscribing
@@ -55,12 +63,14 @@ export class DashboardComponent {
     private routerService: RouterService,
     private backendService: BackendService,
     private authService: AuthService,
-    private router: Router
+    private router: Router,
+    private cdr: ChangeDetectorRef
   ) {}
 
   ngOnInit(): void {
     // this.userRole$ = this.authService.getUserRole();
-    this.currentUserRole = this.authService.getUserRoleFirebase();
+    this.currentUserRole = this.authService.getUserInformationFirebase().role;
+
     this.loadData();
     // Subscribe to router events
     this.router.events
@@ -74,17 +84,18 @@ export class DashboardComponent {
       });
   }
 
-  ngAfterViewInit() {
-    this.updateDataSource();
-  }
   ngOnDestroy(): void {
     // Unsubscribe from observables to prevent memory leaks
     this.unsubscribe$.next();
     this.unsubscribe$.complete();
   }
-  filterSubmittedIgcf(year: string) {
+  filterSubmittedIgcf(filterType: string) {
     // Convert date to number
-    const selectedYear = Number(year);
+    const selectedYear = Number(filterType);
+    if (isNaN(selectedYear)) {
+      this.dataSource.data = this.originalSubmissionHistory;
+      return;
+    }
 
     // console.log(this.dataToDisplay);
     const result = this.originalSubmissionHistory.filter(
@@ -95,13 +106,12 @@ export class DashboardComponent {
         return yearSigned === selectedYear;
       }
     );
-    this.dataToDisplay = result;
-    this.updateDataSource();
+    this.dataSource.data = result;
   }
 
   isRouteActive() {
     return (
-      this.routerService.isRouteActive('submitted-form/:id/:completionDate') ||
+      this.routerService.isRouteActive('submitted-form/:id') ||
       this.routerService.isRouteActive('set-percentages') ||
       this.routerService.isRouteActive('fill-up') ||
       this.routerService.isRouteActive('view-igcf/:id') ||
@@ -116,46 +126,127 @@ export class DashboardComponent {
   }
 
   loadData() {
+    this.isLoading = true;
     const currentYear = new Date().getFullYear();
-    this.authService.getUserRole().subscribe({
-      next: (role) => {
-        this.isLoadingResults = true;
-        this.currentUserRole = role;
-        if (role === 'Admin') {
-          this.authService.getEmployeeDepartment().subscribe({
-            next: (deptName) => {
-              this.submissionHistory$ =
-                this.backendService.getSubmissionHistoryByDept(deptName);
-              this.handleDataSubscription(currentYear);
-            },
-            error: (error) => {
-              this.handleError(error);
-            },
-          });
-        } else if (role === 'Faculty') {
-          this.authService.getEmployeeNumber().subscribe({
-            next: (empNumber) => {
-              this.submissionHistory$ =
-                this.backendService.getSubmissionHistoryByEmployeeNumber(
-                  empNumber
-                );
-              this.handleDataSubscription(currentYear);
-              this.isLoadingResults = false;
-            },
-            error: (error) => {
-              this.handleError(error);
-            },
-          });
-        } else if (role === 'HRD') {
-          this.submissionHistory$ =
-            this.backendService.getSubmissionHistoryEveryDept();
-          this.handleDataSubscription(currentYear);
-          this.isLoadingResults = false;
-        }
-      },
-      error: (error) => {
-        this.handleError(error);
-      },
+    const { department, role, emp_number } =
+      this.authService.getUserInformationFirebase();
+
+    const toSearch: string = role === 'Admin' ? department : emp_number;
+    this.backendService
+      .getSubmittedIGCFsFirebase(role, this.rolesMap.get(role)!, toSearch)
+      .subscribe({
+        next: (submittedIGCFs: any[]) => {
+          this.checkYearOfCompletions(role, emp_number, submittedIGCFs);
+          const submissionHistory: any[] = submittedIGCFs.map(
+            (submittedIGC: any) => {
+              const {
+                id,
+                fullname,
+                emp_number,
+                position,
+                department,
+                completion_date,
+                rate_date,
+              } = submittedIGC;
+              return {
+                id,
+                fullname,
+                emp_number,
+                position,
+                department,
+                completion_date,
+                rate_date,
+              };
+            }
+          );
+
+          if (this.currentUserRole === 'Admin')
+            this.handleSubmittedIGCFs(submissionHistory, currentYear, role);
+          else if (this.currentUserRole === 'Faculty')
+            this.handleSubmittedIGCFs(submissionHistory, currentYear, role);
+          else if (this.currentUserRole === 'HRD')
+            this.handleSubmittedIGCFs(submissionHistory, currentYear, role);
+        },
+        error: (e) => {},
+        complete: () => {
+          this.isLoading = false;
+        },
+      });
+
+    // else if (this.currentUserRole === 'Faculty') {
+    //   this.authService.getEmployeeNumber().subscribe({
+    //     next: (empNumber) => {
+    //       this.submissionHistory$ =
+    //         this.backendService.getSubmissionHistoryByEmployeeNumber(empNumber);
+    //       this.handleDataSubscription(currentYear);
+    //       this.isLoading = false;
+    //     },
+    //     error: (error) => {
+    //       this.handleError(error);
+    //     },
+    //   });
+    // } else if (this.currentUserRole === 'HRD') {
+    //   this.submissionHistory$ =
+    //     this.backendService.getSubmissionHistoryEveryDept();
+    //   this.handleDataSubscription(currentYear);
+    //   this.isLoading = false;
+    // }
+  }
+
+  checkYearOfCompletions(
+    role: string,
+    employeeNumber: string,
+    submittedIGCFs: any[]
+  ) {
+    // this.backendService
+    //   .getSubmittedIGCFsFirebase(role, 'emp_number', employeeNumber)
+    //   .subscribe({
+    //     next: (submittedIGCFs: any[]) => {
+    //       submittedIGCFs.forEach((submittedIGCF: any) => {
+    //         const completionYear = new Date(submittedIGCF.completion_date)
+    //           .getFullYear()
+    //           .toString();
+    //         this.backendService.setYearOfCompletions(completionYear);
+    //       });
+    //     },
+    //   });
+    submittedIGCFs.forEach((submittedIGCF: any) => {
+      const completionYear = new Date(submittedIGCF.completion_date)
+        .getFullYear()
+        .toString();
+      this.backendService.setYearOfCompletions(completionYear);
+    });    
+  }
+
+  handleSubmittedIGCFs(data: any[], currentYear: number, role: string) {
+    const modifiedData = this.modifySubmissionHistoryData(data);
+    const getCurrentYearIGCFs = this.getCurrentYearOfIGCFs(
+      modifiedData,
+      currentYear
+    );
+    this.deadlineYears = this.extractYears(modifiedData);
+    this.originalSubmissionHistory = modifiedData;
+    if (role === 'Admin' || role === 'HRD')
+      this.dataSource.data = getCurrentYearIGCFs;
+    else if (role === 'Faculty') this.dataSource.data = modifiedData;
+    this.setupPaginatorAndSort();
+  }
+
+  modifySubmissionHistoryData(submissionHistory: any[]) {
+    return submissionHistory.map((submissionDetails: any) => {
+      return {
+        ...submissionDetails,
+        rating_status: !!submissionDetails.rate_date ? 'Done' : 'Pending',
+      };
+    });
+  }
+
+  getCurrentYearOfIGCFs(submittedIGCFs: any[], currentYear: number) {
+    return submittedIGCFs.filter((submissionDetails: any) => {
+      const yearOfCompletion = new Date(
+        submissionDetails.completion_date
+      ).getFullYear();
+      return yearOfCompletion === currentYear;
     });
   }
 
@@ -188,43 +279,42 @@ export class DashboardComponent {
   //     },
   //   });
   // }
-  handleDataSubscription(currentYear: number) {
-    this.submissionHistory$
-      .pipe(takeUntil(this.unsubscribe$)) // Unsubscribe when component is destroyed
-      .subscribe({
-        next: (data) => {
-          const modifiedData = data.map((submissionDetails: any) => {
-            this.submittedIgcfIdList.push(submissionDetails.id);
-            return {
-              ...submissionDetails,
-              rating_status: !!submissionDetails.rate_date ? 'Done' : 'Pending',
-            };
-          });
-          this.deadlineYears = this.extractYears(modifiedData);
-          this.originalSubmissionHistory = modifiedData;
-          const result = modifiedData.filter((submissionDetails: any) => {
-            const yearOfCompletion = new Date(
-              submissionDetails.completion_date
-            ).getFullYear();
-            return yearOfCompletion === currentYear;
-          });
-          this.routerService.setSubmittedIgcIdList(
-            Array.from(new Set(this.submittedIgcfIdList))
-          );
-          this.dataToDisplay = result;
-          this.updateDataSource();
-        },
-        error: (error) => {
-          this.handleError(error);
-        },
-      });
-  }
-  updateDataSource() {
+  // handleDataSubscription(currentYear: number) {
+  //   this.submissionHistory$
+  //     .pipe(takeUntil(this.unsubscribe$)) // Unsubscribe when component is destroyed
+  //     .subscribe({
+  //       next: (data) => {
+  //         const modifiedData = data.map((submissionDetails: any) => {
+  //           this.submittedIgcfIdList.push(submissionDetails.id);
+  //           return {
+  //             ...submissionDetails,
+  //             rating_status: !!submissionDetails.rate_date ? 'Done' : 'Pending',
+  //           };
+  //         });
+  //         this.deadlineYears = this.extractYears(modifiedData);
+  //         this.originalSubmissionHistory = modifiedData;
+  //         const result = modifiedData.filter((submissionDetails: any) => {
+  //           const yearOfCompletion = new Date(
+  //             submissionDetails.completion_date
+  //           ).getFullYear();
+  //           return yearOfCompletion === currentYear;
+  //         });
+  //         this.routerService.setSubmittedIgcIdList(
+  //           Array.from(new Set(this.submittedIgcfIdList))
+  //         );
+  //         this.dataToDisplay = result;
+  //         this.updateDataSource();
+  //       },
+  //       error: (error) => {
+  //         this.handleError(error);
+  //       },
+  //     });
+  // }
+  setupPaginatorAndSort() {
     setTimeout(() => {
-      this.dataSource = new MatTableDataSource(this.dataToDisplay);
       this.dataSource.paginator = this.paginator; // Set paginator after data is loaded
       this.dataSource.sort = this.sort;
-      this.isLoadingResults = false;
+      this.isLoading = false;
     }, 0);
   }
 
@@ -234,7 +324,7 @@ export class DashboardComponent {
   }
 
   deleteSubmittedIgcf(id: number) {
-    this.isLoadingResults = true;
+    this.isLoading = true;
     const indexToRemove = this.dataToDisplay.findIndex(
       (item) => item.id === id
     );
@@ -245,7 +335,7 @@ export class DashboardComponent {
       next: () => {
         this.dataToDisplay.splice(indexToRemove, 1);
         this.dataSource.data = this.dataToDisplay;
-        this.isLoadingResults = false;
+        this.isLoading = false;
         this.authService.openSnackBar(
           'Row deleted successfully',
           'Close',

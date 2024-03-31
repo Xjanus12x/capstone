@@ -1,4 +1,4 @@
-import { Component, Input, OnInit } from '@angular/core';
+import { Component, Input, OnInit, ViewChild } from '@angular/core';
 import {
   AbstractControl,
   FormArray,
@@ -12,6 +12,8 @@ import { AuthService } from 'src/app/core/services/auth.service';
 import { BackendService } from 'src/app/core/services/backend.service';
 import { RouterService } from 'src/app/modules/services/router-service.service';
 import { ActivatedRoute } from '@angular/router';
+import { MatTabGroup } from '@angular/material/tabs';
+import { timeInterval } from 'rxjs';
 
 @Component({
   selector: 'app-part-one-form',
@@ -36,20 +38,25 @@ export class PartOneFormComponent implements OnInit {
     'Initiatives',
     'Weight',
     'Achieved',
-    'Rating (1 - 4)',
+    'Rating',
   ];
   @Input() kpis: any[] = [];
   @Input() responsible: string = '';
   @Input() isFillingUp: boolean = false;
+  @ViewChild(MatTabGroup) tabGroup!: MatTabGroup;
 
-  toppingList: string[] = [
-    'Extra cheese',
-    'Mushroom',
-    'Onion',
-    'Pepperoni',
-    'Sausage',
-    'Tomato',
+  ratingDescription: string[] = [
+    'Failed to deliver',
+    'Partially delivered',
+    'Delivered agreed',
+    'Exceeded',
   ];
+  equivalentRatingMap = new Map<string, Array<number>>([
+    ['Failed to deliver', this.generateDecimals(1.0, 1.6, 0.1)],
+    ['Partially delivered', this.generateDecimals(1.51, 2.5, 0.01)],
+    ['Delivered agreed', this.generateDecimals(2.51, 3.5, 0.01)],
+    ['Exceeded', this.generateDecimals(3.51, 4.0, 0.01)],
+  ]);
 
   constructor(
     private formContentService: FormContentService,
@@ -77,18 +84,19 @@ export class PartOneFormComponent implements OnInit {
   //     ?.get(groupName)
   //     ?.get('selectedActionPlans') as FormControl;
   // }
-
+  generateDecimals(start: number, end: number, step: number): number[] {
+    const decimals: number[] = [];
+    for (let i = start; i <= end; i += step) {
+      decimals.push(parseFloat(i.toFixed(2)));
+    }
+    return decimals;
+  }
   ngOnInit() {
-    this.authService.getUserRole().subscribe({
-      next: (role) => {
-        this.isAdmin = role === 'Admin';
-        this.isFaculty = role === 'Faculty';
-        this.currentUserRole = role;
-      },
-      error: (error) => {
-        console.error('Error fetching user role:', error);
-      },
-    });
+    const role = this.authService.getUserInformationFirebase().role;
+    this.isAdmin = role === 'Admin';
+    this.isFaculty = role === 'Faculty';
+    this.currentUserRole = role;
+
     this.activatedRoute.queryParamMap.subscribe((params) => {
       this.isDoneRating = !!params.get('rateDate');
     });
@@ -109,10 +117,11 @@ export class PartOneFormComponent implements OnInit {
       const selectedKpiMap = new Map<string, number>();
       this.activatedRoute.paramMap.subscribe((params) => {
         const id = params.get('id');
-        this.backendService.getSubmittedIgcfDetails(id!).subscribe({
-          next: (igcfDetails: any) => {
-            igcfDetails.forEach((elem: any) => {
-              const { selected_kpi, weight } = elem;
+        this.backendService.getSubmittedIGCFByID(id!).subscribe({
+          next: (submittedIGCF: any) => {
+            const { igc_inputs } = submittedIGCF;
+            igc_inputs.forEach((inputs: any) => {
+              const { selected_kpi, weight } = inputs;
               if (selectedKpiMap.has(selected_kpi)) {
                 const currentWeight = selectedKpiMap.get(selected_kpi)!;
                 selectedKpiMap.set(
@@ -123,7 +132,6 @@ export class PartOneFormComponent implements OnInit {
                 selectedKpiMap.set(selected_kpi, parseInt(weight));
               }
             });
-
             selectedKpiMap.forEach((weight, selected_kpi) => {
               this.stepLabels.push(`${selected_kpi} ${weight}%`);
             });
@@ -138,19 +146,16 @@ export class PartOneFormComponent implements OnInit {
             });
 
             const selectedPlans: any = {};
-            igcfDetails.forEach((elem: any, i: number) => {
+            igc_inputs.forEach((elem: any, i: number) => {
               // Check if the selected_kpi already exists as a key in selectedPlans
               if (!(elem.selected_kpi in selectedPlans)) {
                 // If not, initialize it as an empty array
                 selectedPlans[elem.selected_kpi] = [];
+                // Push the selected_plan into the array under the corresponding selected_kpi key
               }
-
-              // Push the selected_plan into the array under the corresponding selected_kpi key
-              selectedPlans[elem.selected_kpi].push(elem.selected_plan);
-
+              selectedPlans[elem.selected_kpi].push(elem.personalObject);
               this.addFormGroupForAdmin(elem.selected_kpi, elem);
             });
-
             for (const key in selectedPlans) {
               if (selectedPlans.hasOwnProperty(key)) {
                 const value = selectedPlans[key];
@@ -166,12 +171,21 @@ export class PartOneFormComponent implements OnInit {
               }
             }
           },
-          error: (error: any) => {
-            console.error('Error fetching IGCF details:', error);
+          error: (error) => {
+            console.error('Error:', error);
+            // Handle error
           },
         });
       });
     }
+  }
+  getCurrentTabIndex(): number | null {
+    if (this.tabGroup) return this.tabGroup.selectedIndex;
+    return 0;
+  }
+
+  getDescriptionEquivalentRatings(achievedValue: string) {
+    return this.equivalentRatingMap.get(achievedValue);
   }
 
   // Function to get the selectedActionPlans control
@@ -190,25 +204,19 @@ export class PartOneFormComponent implements OnInit {
   }
 
   createFormGroupForAdmin(values: any): FormGroup {
-    const selectedPlanWeight: string = values.selected_plan_weight;
-
     return this.fb.group({
-      uniqueId: [values.id],
       personalObject: [
-        { value: values.selected_plan, disabled: true },
+        { value: values.personalObject, disabled: true },
         Validators.required,
       ],
       personalMeasures: [
         {
-          value: values.personal_measures_kpi,
+          value: values.personalMeasures,
           disabled: true,
         },
         Validators.required,
       ],
-      target: [
-        { value: selectedPlanWeight, disabled: true },
-        Validators.required,
-      ],
+      target: [{ value: values.target, disabled: true }, Validators.required],
       initiatives: [
         { value: values.initiatives, disabled: true },
         Validators.required,
@@ -233,8 +241,7 @@ export class PartOneFormComponent implements OnInit {
 
   isAdminRating(): boolean {
     return (
-      this.routerService.isRouteActive('submitted-form/:id/:completionDate') &&
-      this.isAdmin
+      this.routerService.isRouteActive('submitted-form/:id') && this.isAdmin
     );
   }
 
@@ -245,23 +252,9 @@ export class PartOneFormComponent implements OnInit {
     return actionPlans.map((kpi) => kpi.action_plan);
   }
 
-  // onActionPlanSelectionChange(value: string, label: string, index: number) {
-  //   // Filter kpis array to find the selected plan
-  //   const selectedPlan = this.kpis.find((kpi) => {
-  //     return kpi.kpi_title === label && kpi.action_plan === value;
-  //   });
-  //   // Set the target control value to the selected plan's weight percentage
-  //   if (selectedPlan) {
-  //     const targetControl = this.formGroup.get(
-  //       `${label}.${index}.target`
-  //     ) as FormControl;
-  //     targetControl.setValue(`${selectedPlan.target}`);
-  //   }
-  // }
-
   getValues() {
-    const values: any = this.formGroup.value;
     if (this.isFillingUp) {
+      const values: any = this.formGroup.value;
       const igcfInputs: any[] = [];
       // Loop through each key-value pair
       Object.entries(values).forEach(([key, value]: [string, any]) => {
@@ -280,7 +273,7 @@ export class PartOneFormComponent implements OnInit {
       });
       return igcfInputs;
     }
-
+    const values: any = this.formGroup.getRawValue();
     let totalRating = 0;
     let totalRatingsEncountered = 0;
 
@@ -307,9 +300,8 @@ export class PartOneFormComponent implements OnInit {
     Object.entries(values).forEach(([key, value]: [string, any]) => {
       value[key].forEach((item: any) => {
         adminInputs.push({
-          uniqueId: item.uniqueId,
-          achieved: item.achieved,
-          rating: item.rating,
+          selected_kpi: key,
+          ...item,
         });
       });
     });
@@ -412,7 +404,8 @@ export class PartOneFormComponent implements OnInit {
   }
   createFormGroupForFaculty(
     personaObjective: string,
-    target: string
+    target: string,
+    weight: number
   ): FormGroup {
     return this.fb.group({
       personalObject: [
@@ -431,7 +424,10 @@ export class PartOneFormComponent implements OnInit {
         { value: '', disabled: !this.isFillingUp },
         Validators.required,
       ],
-      weight: [{ value: '', disabled: !this.isFillingUp }, Validators.required],
+      weight: [
+        { value: weight, disabled: !this.isFillingUp },
+        [Validators.required, Validators.min(1), Validators.max(100)],
+      ],
       achieved: [
         { value: '', disabled: this.isFillingUp },
         Validators.required,
@@ -489,7 +485,9 @@ export class PartOneFormComponent implements OnInit {
       if (!currentValues.includes(value)) {
         this.kpis.forEach((kpi: any) => {
           if (kpi.action_plan === value) {
-            formArray.push(this.createFormGroupForFaculty(value, kpi.target));
+            formArray.push(
+              this.createFormGroupForFaculty(value, kpi.target, 100)
+            );
           }
         });
       }
@@ -524,6 +522,14 @@ export class PartOneFormComponent implements OnInit {
       ?.get(formArrayName) as FormArray;
     const control = formArray.controls[index].get(controlName);
     return control ? control.value : '';
+  }
+
+  getControl(formArrayName: string, index: number, controlName: string) {
+    const formArray = this.formGroup
+      .get(formArrayName)
+      ?.get(formArrayName) as FormArray;
+    const control = formArray.controls[index].get(controlName);
+    return control;
   }
 
   getFormArrayControls(arrayName: string): FormArray {

@@ -109,7 +109,7 @@ export class FormContentService {
       // const isDisabled = false
 
       // Create the form control and set its initial value and disabled state
-      const control = this.fb.control('111111', [
+      const control = this.fb.control('', [
         Validators.required,
         Validators.minLength(5),
       ]);
@@ -148,7 +148,7 @@ export class FormContentService {
   setStepLabels(labels: string[]) {
     this.stepLabels = labels;
   }
-  getStepLabels():string[]{
-    return this.stepLabels
+  getStepLabels(): string[] {
+    return this.stepLabels;
   }
 }

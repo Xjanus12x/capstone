@@ -1,7 +1,26 @@
 <div class="bg-login min-h-[100vh] bg-no-repeat bg-cover bg-center grid place-content-center ">
     <mat-stepper #stepper [linear]="false" class="border-1  rounded-xl p-6 min-w-[35rem] bg-slate-100 text-black 
         bg-clip-padding backdrop-filter backdrop-blur-sm bg-opacity-10 border border-gray-100">
-        <mat-step [stepControl]="getFormGroup('personalInformationFormGroup')">
+        <mat-step>
+            <ng-template matStepLabel>
+                <h2 class="text-white">Select Registration Method</h2>
+            </ng-template>
+            <div class="grid gap-4 place-content-center">
+                <button mat-raised-button color="primary" (click)="setRegistrationType('manual')">Register
+                    Manually</button>
+                <button mat-raised-button color="accent" (click)="setRegistrationType('byEmpNumber')">Register with
+                    Employee
+                    Number</button>
+            </div>
+            <div class="mt-4">
+                <button *ngIf="getRegistrationType()" mat-button matStepperNext>Next</button>
+                <button routerLink="/login" mat-raised-button color="warn">Exit</button>
+            </div>
+        </mat-step>
+
+
+        <mat-step [stepControl]="getFormGroup('personalInformationFormGroup')"
+            *ngIf="getRegistrationType() === 'manual'">
             <ng-template matStepLabel>
                 <h2 class="text-white">Personal Information</h2>
             </ng-template>
@@ -22,19 +41,25 @@
                             <mat-error class="px-1 text-white bg-red-900">Lastname is required</mat-error>
                         </mat-form-field>
                     </div>
+
                 </div>
                 <mat-form-field>
                     <mat-label>Employee number</mat-label>
-                    <input matInput formControlName="emp_number" required>
-
-                    <mat-error class="px-1 text-white bg-red-900">Employee number is required</mat-error>
+                    <input type="number" matInput formControlName="emp_number" required>
+                    <mat-error
+                        *ngIf="getFormControl('personalInformationFormGroup','emp_number').hasError('employeeNumberExists')
+                                                && !getFormControl('personalInformationFormGroup','emp_number').hasError('required')"
+                        class="px-1 text-white bg-red-900">Employee number is already in use</mat-error>
+                    <mat-error *ngIf="getFormControl('personalInformationFormGroup','emp_number').hasError('required')
+                    && !getFormControl('personalInformationFormGroup','emp_number').hasError('employeeNumberExists')"
+                        class="px-1 text-white bg-red-900">Employee number is required</mat-error>
                 </mat-form-field>
 
-                <mat-form-field>
+                <!-- <mat-form-field>
                     <mat-label>Position</mat-label>
                     <input matInput formControlName="emp_position" required>
                     <mat-error class="px-1 text-white bg-red-900">Employee Position is required</mat-error>
-                </mat-form-field>
+                </mat-form-field> -->
 
                 <mat-form-field>
                     <mat-label>Department</mat-label>
@@ -48,12 +73,15 @@
                 </mat-form-field>
 
                 <div class="flex justify-between">
-                    <button mat-button matStepperNext>Next</button>
+                    <div>
+                        <button mat-button matStepperPrevious>Back</button>
+                        <button mat-button matStepperNext>Next</button>
+                    </div>
                     <button routerLink="/login" mat-raised-button color="warn">Exit</button>
                 </div>
             </form>
         </mat-step>
-        <mat-step [stepControl]="getFormGroup('userAccountFormGroup')">
+        <mat-step [stepControl]="getFormGroup('userAccountFormGroup')" *ngIf="getRegistrationType() === 'manual'">
             <ng-template matStepLabel>
                 <h2 class="text-white">User Account</h2>
             </ng-template>
@@ -64,7 +92,7 @@
                     <mat-error class="px-1 text-white bg-red-900" *ngIf="getFormControl('userAccountFormGroup','email').hasError('emailExist') 
                         && !getFormControl('userAccountFormGroup','email').hasError('required') && 
                         !getFormControl('userAccountFormGroup','email').hasError('email')">
-                        Email already exist
+                        Email already in use
                     </mat-error>
                     <mat-error class="px-1 text-white bg-red-900" *ngIf="getFormControl('userAccountFormGroup','email').hasError('email')
                          && !getFormControl('userAccountFormGroup','email').hasError('required')
@@ -161,7 +189,80 @@
                 Exit
             </button>
         </mat-step> -->
+
+        <mat-step *ngIf="getRegistrationType() === 'byEmpNumber'">
+            <ng-template matStepLabel>
+                <h2 class="text-white">User Account</h2>
+            </ng-template>
+            <form class='grid gap-2'>
+
+                <mat-form-field>
+                    <mat-label>Employee number</mat-label>
+                    <input type="number" matInput
+                        [formControl]="getFormControl('personalInformationFormGroup','emp_number')" required>
+                    <mat-error *ngIf="getFormControl('personalInformationFormGroup','emp_number').hasError('hauEmployeeNotFound') 
+                  
+                        && !getFormControl('personalInformationFormGroup','emp_number').hasError('required')"
+                        class="px-1 text-white bg-red-900">Employee number is does not exist</mat-error>
+                    <!-- <mat-error
+                        *ngIf="getFormControl('personalInformationFormGroup','emp_number').hasError('employeeNumberExists')
+                                                    && !getFormControl('personalInformationFormGroup','emp_number').hasError('hauEmployeeNotFound') 
+                                                    && !getFormControl('personalInformationFormGroup','emp_number').hasError('required')"
+                        class="px-1 text-white bg-red-900">Employee number is already in use</mat-error> -->
+
+                    <mat-error *ngIf="getFormControl('personalInformationFormGroup','emp_number').hasError('required')
+                 
+                    && !getFormControl('personalInformationFormGroup','emp_number').hasError('employeeNumberExists')"
+                        class="px-1 text-white bg-red-900">Employee number is required</mat-error>
+                </mat-form-field>
+
+                <mat-form-field>
+                    <mat-label>Password</mat-label>
+
+                    <input matInput [formControl]="getFormControl('userAccountFormGroup','password')"
+                        placeholder="Ex. example8" type='password' minlength="8" required>
+                    <mat-error class="px-1 text-white bg-red-900" *ngIf="getFormControl('userAccountFormGroup','password').hasError('minlength') 
+                                && !getFormControl('userAccountFormGroup','password').hasError('required') 
+                                && !getFormControl('userAccountFormGroup','password').hasError('pattern')">
+                        Password should be at least 8 characters long.
+                    </mat-error>
+                    <mat-error class="px-1 text-white bg-red-900" *ngIf="getFormControl('userAccountFormGroup','password').hasError('pattern') 
+                                && !getFormControl('userAccountFormGroup','password').hasError('required') 
+                                && !getFormControl('userAccountFormGroup','password').hasError('minlength')">
+                        Password should include both letters and numbers.
+                    </mat-error>
+
+                    <mat-error class="px-1 text-white bg-red-900" *ngIf="getFormControl('userAccountFormGroup','password').hasError('required') 
+                                && !getFormControl('userAccountFormGroup','password').hasError('minlength') 
+                                && !getFormControl('userAccountFormGroup','password').hasError('pattern')">
+                        Password is required
+                    </mat-error>
+                </mat-form-field>
+
+                <mat-form-field>
+                    <mat-label>Role</mat-label>
+                    <mat-select [formControl]="getFormControl('userAccountFormGroup','role')" required>
+                        <mat-option>--</mat-option>
+                        <mat-option *ngFor="let role of roles" [value]="role">
+                            {{role}}
+                        </mat-option>
+                    </mat-select>
+                    <mat-error class="px-1 text-white bg-red-900"
+                        *ngIf="getFormControl('userAccountFormGroup','role').hasError('required')">Role is
+                        required.</mat-error>
+                </mat-form-field>
+                <div class="flex justify-between">
+                    <div>
+                        <button mat-button matStepperPrevious>Back</button>
+                        <button mat-button (click)="register()">Register</button>
+                    </div>
+
+                    <button routerLink="/login" mat-raised-button color="warn">Exit</button>
+                </div>
+            </form>
+        </mat-step>
     </mat-stepper>
+
 
     <div class="absolute inset-0 grid bg-black bg-opacity-60 place-content-center" *ngIf="isLoading">
         <mat-spinner color="accent"></mat-spinner>

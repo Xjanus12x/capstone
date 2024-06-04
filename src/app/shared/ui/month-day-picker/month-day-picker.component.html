@@ -1,0 +1,12 @@
+<div class="grid">
+    <mat-form-field class="mat-50-left">
+        <mat-label>{{label}}</mat-label>
+        <input matInput [matDatepicker]="monthDayPicker" required [formControl]="control"
+            (click)="monthDayPicker.open();">
+        <mat-datepicker-toggle matSuffix (click)="monthDayPicker.open();"></mat-datepicker-toggle>
+        <mat-datepicker #monthDayPicker startView="year"></mat-datepicker>
+        <mat-error class="font-extrabold" *ngIf="control.hasError('required')">
+            field is required
+        </mat-error>
+    </mat-form-field>
+</div>

@@ -2,10 +2,10 @@ import { Component, OnInit } from '@angular/core';
 import { formData } from 'src/app/core/constants/formData';
 import { RouterService } from '../../services/router-service.service';
 import { BackendService } from 'src/app/core/services/backend.service';
-import { Observable, forkJoin } from 'rxjs';
+import { Observable } from 'rxjs';
 import { ActivatedRoute } from '@angular/router';
 import { AuthService } from 'src/app/core/services/auth.service';
-import { tap } from 'rxjs/operators';
+import { GeneratePdfService } from 'src/app/shared/services/generate-pdf.service';
 
 @Component({
   selector: 'app-view-igcf',
@@ -14,151 +14,132 @@ import { tap } from 'rxjs/operators';
 })
 export class ViewIgcfComponent implements OnInit {
   tableHeaders: string[] = [];
-  isLoadingResults: boolean = false;
-  userRole$!: Observable<string>;
-  partTwoQuestions: string[] = [
-    'a. Top three least accomplished goal commitments',
-    'b. Top three highly accomplished goal commitments',
-    'c. Top three competencies that need improvement',
-    'd. Top three competency strengths',
-    'e. Top three training and development suggestions based on previous items',
-  ];
+  isLoading: boolean = false;
+  partTwoQuestions!: string[];
   deadline: Date | undefined = undefined;
-  raterInfos: any = {};
-  submittedPartOneIgcf: any[] = [];
-  submittedPartTwoIgcf: any = {};
   kpiPercentagesMap = new Map<string, number>();
-  isRatingPending: boolean = false;
-  fullname: string = '';
-  completion_date: string = '';
   currentYear: number = new Date().getFullYear();
   submittedIgcIdList: number[] = [];
+  submittedIgcInfo: any = {};
+  submittedIgcPartOne: { [key: string]: any }[] = [];
+  submittedIgcPartTwo: any[] = [];
+  submittedIGCF: any = {};
+  submittedIGCFInputs: any[] = [];
   constructor(
     private routerService: RouterService,
     private backendService: BackendService,
     private activatedRoute: ActivatedRoute,
-    private authService: AuthService
+    private generatePdfService: GeneratePdfService
   ) {}
 
   ngOnInit() {
+    this.partTwoQuestions = this.generatePdfService.getPartTwoQuestions();
+    this.isLoading = true;
     this.submittedIgcIdList = this.routerService.getSubmittedIgcIdList();
-    this.userRole$ = this.authService.getUserRole();
     const { tableHeaders } = formData.partOneForm;
     this.tableHeaders = tableHeaders;
 
     this.activatedRoute.paramMap.subscribe((params) => {
       const id = params.get('id');
-      const submissionHistory$ =
-        this.backendService.getSubmissionHistoryEveryDept();
-      const submittedIgcfDetails$ = this.backendService.getSubmittedIgcfDetails(
-        id!
-      );
-      const submittedIgcfPartTwo$ = this.backendService.getSubmittedIgcfPartTwo(
-        id!
-      );
-
-      forkJoin({
-        submissionHistory: submissionHistory$,
-        submittedIgcfDetails: submittedIgcfDetails$,
-        submittedIgcfPartTwo: submittedIgcfPartTwo$,
-      })
-        .pipe(
-          tap(
-            ({
-              submissionHistory,
-              submittedIgcfDetails,
-              submittedIgcfPartTwo,
-            }) => {
-              (submissionHistory as any[]).forEach((history: any) => {
-                if (history.id === Number(id)) {
-                  this.raterInfos = history;
-                }
-              });
-
-              (submittedIgcfDetails as any[]).forEach((detail: any) => {
-                // Ensure detail is not already included
-                if (!this.submittedPartOneIgcf.includes(detail.selected_kpi)) {
-                  this.submittedPartOneIgcf.push(detail.selected_kpi);
-                }
-                // Add weight to the total for the selected KPI
+      this.backendService.getSubmittedIGCFByID(id!).subscribe({
+        next: (submittedIGCF: any) => {
+          const {
+            igc_inputs,
+            top_three_least_agc,
+            top_three_highly_agc,
+            top_three_competencies_improvement,
+            top_three_competency_strengths,
+            top_three_training_development_suggestion,
+          } = submittedIGCF;
+          this.submittedIGCF = submittedIGCF;
+          const answersArray = [
+            top_three_least_agc,
+            top_three_highly_agc,
+            top_three_competencies_improvement,
+            top_three_competency_strengths,
+            top_three_training_development_suggestion,
+          ];
+          igc_inputs.forEach((input: any) => {
+            const { selected_kpi, ...rest } = input;
+            let found = false;
+            for (let i = 0; i < this.submittedIgcPartOne.length; i++) {
+              const key = Object.keys(this.submittedIgcPartOne[i])[0];
+              if (selected_kpi === key) {
                 const totalWeight =
-                  this.kpiPercentagesMap.get(detail.selected_kpi) || 0;
+                  this.kpiPercentagesMap.get(selected_kpi) || 0;
                 this.kpiPercentagesMap.set(
-                  detail.selected_kpi,
-                  totalWeight + detail.weight
+                  selected_kpi,
+                  totalWeight + Number(rest.weight)
                 );
-                this.submittedPartOneIgcf.push(detail);
-              });
-
-              (submittedIgcfPartTwo as any[]).filter((partTwo: any) => {
-                const {
-                  equivalent_description,
-                  overall_weighted_average_rating,
-                  top_three_competencies_improvement,
-                  top_three_competency_strengths,
-                  top_three_highly_agc,
-                  top_three_least_agc,
-                  top_three_training_development_suggestion,
-                  rate_date,
-                  ratee_fullname,
-                } = partTwo;
-
-                this.submittedPartTwoIgcf = {
-                  ratee_fullname,
-                  rate_date,
-                  equivalent_description,
-                  overall_weighted_average_rating,
-                  answers: [
-                    top_three_competencies_improvement.split(','),
-                    top_three_competency_strengths.split(','),
-                    top_three_highly_agc.split(','),
-                    top_three_least_agc.split(','),
-                    top_three_training_development_suggestion.split(','),
-                  ],
-                };
-              });
+                this.submittedIgcPartOne[i][key].push({ ...rest });
+                found = true;
+                break;
+              }
             }
-          )
-        )
-        .subscribe();
+            if (!found) {
+              this.submittedIgcPartOne.push({
+                [selected_kpi]: [{ ...rest }],
+              });
+              const totalWeight = this.kpiPercentagesMap.get(selected_kpi) || 0;
+              this.kpiPercentagesMap.set(
+                selected_kpi,
+                totalWeight + Number(rest.weight)
+              );
+            }
+          });
+
+          this.submittedIgcPartTwo = this.partTwoQuestions.map(
+            (question: string, index: number) => {
+              return { question, answers: answersArray[index] };
+            }
+          );
+          // igc_inputs.forEach((igc: any) => {
+          //   if (!this.submittedIGCFInputs.includes(igc.selected_kpi))
+          //     this.submittedIGCFInputs.push(igc.selected_kpi);
+          //   const totalWeight =
+          //     this.kpiPercentagesMap.get(igc.selected_kpi) || 0;
+          //   this.kpiPercentagesMap.set(
+          //     igc.selected_kpi,
+          //     totalWeight + Number(igc.weight)
+          //   );
+          //   this.submittedIGCFInputs.push(igc);
+          // });
+        },
+        error: () => {},
+        complete: () => {
+          this.isLoading = false;
+        },
+      });
     });
   }
 
   handleClick(direction: string) {
-    this.activatedRoute.paramMap.subscribe((params) => {
-      const id = Number(params.get('id'));
-      const currentIdPosition = this.submittedIgcIdList.indexOf(id);
-      const submittedIgcIdListLength = this.submittedIgcIdList.length;
-
-      if (direction === 'prev' && submittedIgcIdListLength > 1) {
-        const previousId = currentIdPosition - 1;
-        if (previousId >= 0)
-          this.routerService.navigateToViewIgcf(
-            this.submittedIgcIdList[previousId]
-          );
-      } else if (direction === 'next' && submittedIgcIdListLength > 1) {
-        const nextId = currentIdPosition + 1;
-
-        if (nextId >= 0 && nextId <= submittedIgcIdListLength)
-          this.routerService.navigateToViewIgcf(
-            this.submittedIgcIdList[nextId]
-          );
-      }
-    });
-  }
-
-  isObject(param: string | object) {
-    return typeof param === 'object';
-  }
-  getAnswers(questionIndex: number): any[] {
-    const answers = this.submittedPartTwoIgcf?.answers;
-    return Array.isArray(answers) ? answers[questionIndex] : [];
-  }
-  getPartTwoAnswers(questionType: string) {
-    return this.submittedPartTwoIgcf[0][questionType];
+    // this.activatedRoute.paramMap.subscribe((params) => {
+    //   const id = Number(params.get('id'));
+    //   const currentIdPosition = this.submittedIgcIdList.indexOf(id);
+    //   const submittedIgcIdListLength = this.submittedIgcIdList.length;
+    //   if (direction === 'prev' && submittedIgcIdListLength > 1) {
+    //     const previousId = currentIdPosition - 1;
+    //     if (previousId >= 0)
+    //       this.routerService.navigateToViewIgcf(
+    //         this.submittedIgcIdList[previousId]
+    //       );
+    //   } else if (direction === 'next' && submittedIgcIdListLength > 1) {
+    //     const nextId = currentIdPosition + 1;
+    //     if (nextId >= 0 && nextId <= submittedIgcIdListLength)
+    //       this.routerService.navigateToViewIgcf(
+    //         this.submittedIgcIdList[nextId]
+    //       );
+    //   }
+    // });
   }
 
   getKPIPerntage(kpi_title: string) {
     return this.kpiPercentagesMap.get(kpi_title);
+  }
+
+  generatePDF() {
+    const copiedIGCF = JSON.parse(JSON.stringify(this.submittedIGCF)); // Deep copy of submittedIGCF
+    this.generatePdfService.generateSinglePagePDF(copiedIGCF);
   }
 }

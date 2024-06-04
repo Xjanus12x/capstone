@@ -11,16 +11,21 @@ import { MatPaginator } from '@angular/material/paginator';
 import { MatTableDataSource } from '@angular/material/table';
 import { SelectionModel } from '@angular/cdk/collections';
 import { BackendService } from 'src/app/core/services/backend.service';
-import { Observable, Subject, filter, takeUntil } from 'rxjs';
-import { ISubmittedIGCF } from 'src/app/core/models/SubmittedIgcf';
+import { Observable, Subject, Subscription, filter, takeUntil } from 'rxjs';
 import { AuthService } from 'src/app/core/services/auth.service';
 import { NavigationEnd, Router } from '@angular/router';
 import { MatSort } from '@angular/material/sort';
+import { DatePipe } from '@angular/common';
+import { MatDialog } from '@angular/material/dialog';
+import { DialogBoxComponent } from '../../components/dialog-box/dialog-box.component';
+import { IDialogBox } from 'src/app/core/models/DialogBox';
+import { dialogBoxConfig } from 'src/app/core/constants/DialogBoxConfig';
 
 @Component({
   selector: 'app-dashboard',
   templateUrl: './dashboard.component.html',
   styleUrls: ['./dashboard.component.css'],
+  providers: [DatePipe],
 })
 export class DashboardComponent {
   submissionHistory$!: Observable<any>;
@@ -31,23 +36,27 @@ export class DashboardComponent {
   displayedHeader: string[] = [
     'Fullname',
     'Employee Number',
-    'Position',
+    // 'Position',
     'Department',
     'Completion Date',
     'Rated On',
+    'Overall Average Rating',
   ];
   displayedColumns: string[] = [
     'fullname',
     'emp_number',
-    'position',
+    // 'position',
     'department',
     'completion_date',
     'rate_date',
+    'overall_weighted_average_rating',
   ];
   currentUserRole: string = '';
   isLoading = false;
   deadlineYears: any[] = [];
   submittedIgcfIdList: number[] = [];
+  private deleteSubscription: Subscription | undefined;
+
   rolesMap: Map<string, string> = new Map<string, string>([
     ['Chair', ''],
     ['Admin', 'department'],
@@ -64,7 +73,8 @@ export class DashboardComponent {
     private backendService: BackendService,
     private authService: AuthService,
     private router: Router,
-    private cdr: ChangeDetectorRef
+    private datePipe: DatePipe,
+    private dialog: MatDialog
   ) {}
 
   ngOnInit(): void {
@@ -88,6 +98,10 @@ export class DashboardComponent {
     // Unsubscribe from observables to prevent memory leaks
     this.unsubscribe$.next();
     this.unsubscribe$.complete();
+
+    if (this.deleteSubscription) {
+      this.deleteSubscription.unsubscribe();
+    }
   }
   filterSubmittedIgcf(filterType: string) {
     // Convert date to number
@@ -119,9 +133,10 @@ export class DashboardComponent {
       this.routerService.isRouteActive('reports') ||
       this.routerService.isRouteActive('percentages-list') ||
       this.routerService.isRouteActive('pending-user-list') ||
-      this.routerService.isRouteActive('input-kpis') ||
+      this.routerService.isRouteActive('create-objectives') ||
       this.routerService.isRouteActive('action-plans') ||
-      this.routerService.isRouteActive('obj-and-action-plan-list')
+      this.routerService.isRouteActive('obj-and-action-plan-list') ||
+      this.routerService.isRouteActive('logs')
     );
   }
 
@@ -136,7 +151,7 @@ export class DashboardComponent {
       .getSubmittedIGCFsFirebase(role, this.rolesMap.get(role)!, toSearch)
       .subscribe({
         next: (submittedIGCFs: any[]) => {
-          this.checkYearOfCompletions(role, emp_number, submittedIGCFs);
+          this.checkYearOfCompletions(emp_number, submittedIGCFs);
           const submissionHistory: any[] = submittedIGCFs.map(
             (submittedIGC: any) => {
               const {
@@ -147,6 +162,7 @@ export class DashboardComponent {
                 department,
                 completion_date,
                 rate_date,
+                overall_weighted_average_rating,
               } = submittedIGC;
               return {
                 id,
@@ -156,6 +172,7 @@ export class DashboardComponent {
                 department,
                 completion_date,
                 rate_date,
+                overall_weighted_average_rating,
               };
             }
           );
@@ -172,50 +189,24 @@ export class DashboardComponent {
           this.isLoading = false;
         },
       });
-
-    // else if (this.currentUserRole === 'Faculty') {
-    //   this.authService.getEmployeeNumber().subscribe({
-    //     next: (empNumber) => {
-    //       this.submissionHistory$ =
-    //         this.backendService.getSubmissionHistoryByEmployeeNumber(empNumber);
-    //       this.handleDataSubscription(currentYear);
-    //       this.isLoading = false;
-    //     },
-    //     error: (error) => {
-    //       this.handleError(error);
-    //     },
-    //   });
-    // } else if (this.currentUserRole === 'HRD') {
-    //   this.submissionHistory$ =
-    //     this.backendService.getSubmissionHistoryEveryDept();
-    //   this.handleDataSubscription(currentYear);
-    //   this.isLoading = false;
-    // }
   }
 
-  checkYearOfCompletions(
-    role: string,
-    employeeNumber: string,
-    submittedIGCFs: any[]
-  ) {
-    // this.backendService
-    //   .getSubmittedIGCFsFirebase(role, 'emp_number', employeeNumber)
-    //   .subscribe({
-    //     next: (submittedIGCFs: any[]) => {
-    //       submittedIGCFs.forEach((submittedIGCF: any) => {
-    //         const completionYear = new Date(submittedIGCF.completion_date)
-    //           .getFullYear()
-    //           .toString();
-    //         this.backendService.setYearOfCompletions(completionYear);
-    //       });
-    //     },
-    //   });
-    submittedIGCFs.forEach((submittedIGCF: any) => {
-      const completionYear = new Date(submittedIGCF.completion_date)
-        .getFullYear()
-        .toString();
-      this.backendService.setYearOfCompletions(completionYear);
-    });    
+  checkYearOfCompletions(employeeNumber: string, submittedIGCFs: any[]) {
+    const currentUserSubmittedIGCFs = submittedIGCFs.filter(
+      (igcf) => igcf.emp_number === employeeNumber
+    );
+    const currentUserIGCFYearOfCompletionsSet = new Set(
+      currentUserSubmittedIGCFs.map((submittedIGCF: any) =>
+        new Date(submittedIGCF.completion_date).getFullYear().toString()
+      )
+    );
+
+    // Convert the Set back to an array if needed
+    const currentUserIGCFYearOfCompletions = Array.from(
+      currentUserIGCFYearOfCompletionsSet
+    );
+
+    this.backendService.setYearOfCompletions(currentUserIGCFYearOfCompletions);
   }
 
   handleSubmittedIGCFs(data: any[], currentYear: number, role: string) {
@@ -250,66 +241,6 @@ export class DashboardComponent {
     });
   }
 
-  // handleDataSubscription(currentYear: number) {
-  //   this.submissionHistory$.subscribe({
-  //     next: (data) => {
-  //       const modifiedData = data.map((submissionDetails: any) => {
-  //         this.submittedIgcfIdList.push(submissionDetails.id);
-  //         return {
-  //           ...submissionDetails,
-  //           rating_status: !!submissionDetails.rate_date ? 'Done' : 'Pending',
-  //         };
-  //       });
-  //       this.deadlineYears = this.extractYears(modifiedData);
-  //       this.originalSubmissionHistory = modifiedData;
-  //       const result = modifiedData.filter((submissionDetails: any) => {
-  //         const yearOfCompletion = new Date(
-  //           submissionDetails.completion_date
-  //         ).getFullYear();
-  //         return yearOfCompletion === currentYear;
-  //       });
-  //       this.routerService.setSubmittedIgcIdList(
-  //         Array.from(new Set(this.submittedIgcfIdList))
-  //       );
-  //       this.dataToDisplay = result;
-  //       this.updateDataSource();
-  //     },
-  //     error: (error) => {
-  //       this.handleError(error);
-  //     },
-  //   });
-  // }
-  // handleDataSubscription(currentYear: number) {
-  //   this.submissionHistory$
-  //     .pipe(takeUntil(this.unsubscribe$)) // Unsubscribe when component is destroyed
-  //     .subscribe({
-  //       next: (data) => {
-  //         const modifiedData = data.map((submissionDetails: any) => {
-  //           this.submittedIgcfIdList.push(submissionDetails.id);
-  //           return {
-  //             ...submissionDetails,
-  //             rating_status: !!submissionDetails.rate_date ? 'Done' : 'Pending',
-  //           };
-  //         });
-  //         this.deadlineYears = this.extractYears(modifiedData);
-  //         this.originalSubmissionHistory = modifiedData;
-  //         const result = modifiedData.filter((submissionDetails: any) => {
-  //           const yearOfCompletion = new Date(
-  //             submissionDetails.completion_date
-  //           ).getFullYear();
-  //           return yearOfCompletion === currentYear;
-  //         });
-  //         this.routerService.setSubmittedIgcIdList(
-  //           Array.from(new Set(this.submittedIgcfIdList))
-  //         );
-  //         this.dataToDisplay = result;
-  //         this.updateDataSource();
-  //       },
-  //       error: (error) => {
-  //         this.handleError(error);
-  //       },
-  //     });
-  // }
   setupPaginatorAndSort() {
     setTimeout(() => {
       this.dataSource.paginator = this.paginator; // Set paginator after data is loaded
@@ -323,36 +254,101 @@ export class DashboardComponent {
     // Handle error here (e.g., display error message)
   }
 
-  deleteSubmittedIgcf(id: number) {
-    this.isLoading = true;
-    const indexToRemove = this.dataToDisplay.findIndex(
-      (item) => item.id === id
-    );
+  deleteSubmittedIgcf(id: string, element: any) {
+    // Open confirmation dialog
+    const dialogBoxData: IDialogBox = {
+      title: 'Confirm Deletion',
+      content:
+        'Are you sure you want to delete this item? This action cannot be undone.',
+      buttons: [
+        {
+          isVisible: true,
+          matDialogCloseValue: false,
+          content: 'No',
+        },
+        {
+          isVisible: true,
+          matDialogCloseValue: true,
+          content: 'Yes, Confirm Deletion',
+        },
+      ],
+    };
 
-    // // If the item is found, remove it from the array
-    if (indexToRemove === -1) return;
-    this.backendService.deleteSubmittedIgcf(id).subscribe({
-      next: () => {
-        this.dataToDisplay.splice(indexToRemove, 1);
-        this.dataSource.data = this.dataToDisplay;
-        this.isLoading = false;
-        this.authService.openSnackBar(
-          'Row deleted successfully',
-          'Close',
-          'bottom'
-        );
-        // Optionally, update your component state or UI after deletion
-      },
-      error: (error) => {
-        this.authService.openSnackBar(
-          'Error deleting row: ' + error.message,
-          'Close',
-          'bottom'
-        );
+    const dialogRef = this.dialog.open(DialogBoxComponent, {
+      ...dialogBoxConfig,
+      data: dialogBoxData,
+    });
 
-        // Optionally, handle the error or display an error message to the user
+    dialogRef.afterClosed().subscribe({
+      next: (result) => {
+        if (result) {
+          const indexToRemove = this.dataToDisplay.findIndex(
+            (item) => item.id === id
+          );
+          let msg: string = '';
+          this.deleteSubscription = this.backendService
+            .deleteSubmittedIGCFByID(id)
+            .subscribe({
+              next: () => {
+                msg = 'IGCF deleted successfully';
+                this.dataToDisplay.splice(indexToRemove, 1);
+                this.dataSource.data = this.dataToDisplay;
+              },
+              error: (err) => {
+                msg = 'Error deleting IGCF';
+              },
+              complete: () => {
+                this.authService.openSnackBar(msg, 'Close', 'bottom');
+                this.loadData();
+                const { firstname, lastname, role, department } =
+                  this.authService.getUserInformationFirebase();
+                const fullname = `${firstname} ${lastname}`.toUpperCase();
+                const deletionDate = this.datePipe.transform(
+                  new Date(),
+                  'yyyy-MM-dd'
+                );
+                let message = '';
+                if (role === 'Admin')
+                  message = `${fullname} has deleted an Individual Goal Commitment Form (IGCF) submitted by ${element.fullname} on ${element.completion_date}`;
+                else if (role === 'Faculty')
+                  message = `${fullname} has deleted their own Individual Goal Commitment Form (IGCF) submitted on ${element.completion_date}.`;
+
+                this.backendService.addLog({
+                  message,
+                  timestamp: deletionDate,
+                  department: department,
+                  type: 'deleted-igc',
+                });
+              },
+            });
+        }
       },
     });
+
+    // If the item is found, remove it from the array
+
+    // this.backendService.deleteSubmittedIgcf(id).subscribe({
+    //   next: () => {
+    //     this.dataToDisplay.splice(indexToRemove, 1);
+    //     this.dataSource.data = this.dataToDisplay;
+    //     this.isLoading = false;
+    //     this.authService.openSnackBar(
+    //       'Row deleted successfully',
+    //       'Close',
+    //       'bottom'
+    //     );
+    //     // Optionally, update your component state or UI after deletion
+    //   },
+    //   error: (error) => {
+    //     this.authService.openSnackBar(
+    //       'Error deleting row: ' + error.message,
+    //       'Close',
+    //       'bottom'
+    //     );
+
+    //     // Optionally, handle the error or display an error message to the user
+    //   },
+    // });
   }
 
   applyFilter(event: Event) {

@@ -1,6 +1,6 @@
 import { Component, OnInit, ViewChild } from '@angular/core';
 import { FormControl, FormGroup, Validators } from '@angular/forms';
-import { Observable, last } from 'rxjs';
+import { Observable, filter, last } from 'rxjs';
 import { formData } from 'src/app/core/constants/formData';
 import { IDeactivateComponent } from 'src/app/core/models/DeactivateComponent';
 import { DialogBoxComponent } from '../../components/dialog-box/dialog-box.component';
@@ -12,7 +12,7 @@ import { RouterService } from '../../services/router-service.service';
 import { PartOneFormComponent } from 'src/app/shared/components/part-one-form/part-one-form.component';
 import { PartTwoFormComponent } from 'src/app/shared/components/part-two-form/part-two-form.component';
 import { dialogBoxConfig } from 'src/app/core/constants/DialogBoxConfig';
-import { ActivatedRoute } from '@angular/router';
+import { ActivatedRoute, NavigationEnd, Router } from '@angular/router';
 import { MatTabChangeEvent, MatTabGroup } from '@angular/material/tabs';
 import { DatePipe } from '@angular/common';
 import { FormContentService } from 'src/app/shared/services/form-content.service';
@@ -54,10 +54,13 @@ export class IgcfFormComponent implements OnInit, IDeactivateComponent {
     'Staff',
     'GPC',
     'OBE Facilitator',
+    'Practicum',
+    'Coor',
   ];
   targetYears: string[] = [];
   previousSelection: string[] = [];
   isLoading: boolean = false;
+  submittedIGCF!: any;
   constructor(
     private backendService: BackendService,
     private authService: AuthService,
@@ -65,7 +68,8 @@ export class IgcfFormComponent implements OnInit, IDeactivateComponent {
     private routerService: RouterService,
     private activatedRoute: ActivatedRoute,
     private datePipe: DatePipe,
-    private formContentService: FormContentService
+    private formContentService: FormContentService,
+    private router: Router
   ) {}
 
   ngOnInit() {
@@ -73,29 +77,43 @@ export class IgcfFormComponent implements OnInit, IDeactivateComponent {
     this.details = this.authService.getUserInformationFirebase();
     const { department, role } = this.details;
     this.currentUserRole = role;
+    this.backendService
+      .fetchAllObjectivesAndActionPlansByDept(department)
+      .subscribe({
+        next: (data: any[]) => {
+          if (data.length > 0) {
+            this.kpiTitleList = Array.from(
+              new Set(data.map((kpi: any) => kpi.kpi_title.trim()))
+            );
+            data.forEach((data) => {
+              const targetYears = Object.keys(data.targets);
+              targetYears.forEach((year) => {
+                if (
+                  !this.targetYears.includes(year) &&
+                  !this.backendService.getYearOfCompletions().includes(year)
+                )
+                  this.targetYears.push(year);
+              });
+            });
 
-    this.backendService.getKpisAndActionPlans(department).subscribe({
-      next: (data: any[]) => {
-        if (data.length > 0) {
-          this.kpiTitleList = Array.from(
-            new Set(data.map((kpi: any) => kpi.kpi_title.trim()))
-          );
-          this.targetYears = Object.keys(JSON.parse(data[0]['targets'])).filter(
-            (year: string) =>
-              !this.backendService.getYearOfCompletions().includes(year)
-          );
+            this.kpis = data;
+          }
+        },
+      });
 
-          this.kpis = data;
-        }
-      },
-    });
-
-    this.activatedRoute.paramMap.subscribe((params) => {
-      this.currentUserId = params.get('id')!;
-    });
-    this.activatedRoute.queryParamMap.subscribe((params) => {
-      this.isDoneRating = !!params.get('rateDate');
-    });
+    if (this.routerService.isRouteActive('submitted-form/:id')) {
+      this.activatedRoute.paramMap.subscribe((params) => {
+        this.currentUserId = params.get('id')!;
+        this.backendService.getSubmittedIGCFByID(this.currentUserId).subscribe({
+          next: (submittedIGCF: any) => {
+            this.submittedIGCF = submittedIGCF;
+          },
+        });
+      });
+      this.activatedRoute.queryParamMap.subscribe((params) => {
+        this.isDoneRating = !!params.get('rateDate');
+      });
+    }
   }
 
   confirm() {
@@ -178,16 +196,15 @@ export class IgcfFormComponent implements OnInit, IDeactivateComponent {
         if (result) {
           this.kpis = this.kpis
             .map((data: any) => {
-              const parseTargets = JSON.parse(data.targets);
               const selectedYear: any = this.selectedTargetYear.value;
-              const target = parseTargets[selectedYear];
+              const target = data.targets[selectedYear];
               return {
                 ...data,
                 target: target,
               };
             })
             .filter((kpi: any) => {
-              const responsibles = kpi.responsibles.split(',');
+              const responsibles = kpi.responsible;
               const selectedResponsible = this.responsibleRole.value;
               return responsibles.includes(selectedResponsible);
             });
@@ -279,7 +296,6 @@ export class IgcfFormComponent implements OnInit, IDeactivateComponent {
       )
         return Promise.resolve(true); // Allow navigation
     }
-
     const dialogBoxData: IDialogBox = {
       title: 'Confirm Exit',
       content:
@@ -315,6 +331,7 @@ export class IgcfFormComponent implements OnInit, IDeactivateComponent {
       // const currentDate = new Date();
 
       if (this.isFillingUp() && this.partOneForm.validateFormGroup()) {
+        this.isLoading = true;
         // if we want to make user create igcf for future
         const currentDate = new Date().setFullYear(
           Number(this.selectedTargetYear.value)
@@ -328,6 +345,7 @@ export class IgcfFormComponent implements OnInit, IDeactivateComponent {
           id: `${firstname}${lastname}${completionDate}`,
           fullname: `${firstname} ${lastname}`.toUpperCase(),
           ...rest,
+          position: this.responsibleRole.value,
           completion_date: completionDate,
           igc_inputs: this.partOneForm.getValues(),
           ratee_fullname: '',
@@ -340,7 +358,6 @@ export class IgcfFormComponent implements OnInit, IDeactivateComponent {
           top_three_training_development_suggestion: [],
           rate_date: '',
         };
-
         let title: string = '';
         let content: string = '';
         this.backendService.submitIGCFirebase(igcf).subscribe({
@@ -355,6 +372,7 @@ export class IgcfFormComponent implements OnInit, IDeactivateComponent {
               'An error occurred while submitting your IGCF. Please try again later.';
           },
           complete: () => {
+            this.isLoading = false;
             this.routerService.routeTo('dashboard');
             const dialogBoxData: IDialogBox = {
               title,
@@ -371,6 +389,15 @@ export class IgcfFormComponent implements OnInit, IDeactivateComponent {
               ...dialogBoxConfig,
               data: dialogBoxData,
             });
+            const fullname = `${firstname} ${lastname}`.toUpperCase();
+            const message = `${fullname} has submitted an Individual Goal Commitment Form For ${this.selectedTargetYear.value}`;
+            const timeStamp = this.datePipe.transform(new Date(), 'yyyy-MM-dd');
+            this.backendService.addLog({
+              message,
+              timestamp: timeStamp,
+              department: this.details.department,
+              type: 'submitted-igcs',
+            });
           },
         });
       } else if (
@@ -378,12 +405,14 @@ export class IgcfFormComponent implements OnInit, IDeactivateComponent {
         this.partOneForm.validateFormGroup() &&
         this.partTwoForm.validateFormGroup()
       ) {
+        this.isLoading = true;
         const currentDate = new Date();
         const rateDate = this.datePipe.transform(currentDate, 'yyyy-MM-dd');
         const { firstname, lastname } = this.details;
+        const rateeFullname = `${firstname} ${lastname}`.toUpperCase();
         const rateDetails = {
           // id: this.currentUserId,
-          ratee_fullname: `${firstname} ${lastname}`.toUpperCase(),
+          ratee_fullname: rateeFullname,
           igc_inputs: this.partOneForm.getValues(),
           overall_weighted_average_rating: this.partOneForm
             .getOverallAverageRating()
@@ -394,22 +423,56 @@ export class IgcfFormComponent implements OnInit, IDeactivateComponent {
           ...this.partTwoForm.getValues(),
           rate_date: rateDate,
         };
-        console.log(rateDetails);
 
         let title: string = '';
         let content: string = '';
+
         this.backendService
           .rateSubmittedIGCFirebase(this.currentUserId, rateDetails)
           .subscribe({
             next: () => {
               title = 'Success';
               content = 'IGCF rated successfully.';
+              // department: 'SCHOOL OF COMPUTING';
+              // email: 'albertovillacarlos07@gmail.com';
+              // emp_number: 12321;
+              // firstname: 'alberto';
+              // lastname: 'villacarlos';
+              // role: 'Admin';
+
+              this.authService
+                .fetchSpecificUserInformation(
+                  this.partOneForm.getSubmittedIGCEmployeeNumber()
+                )
+                .subscribe({
+                  next: (userInformation: any) => {
+                    const { firstname, lastname, email } = userInformation;
+                    const raterFullname =
+                      `${firstname} ${lastname}`.toUpperCase();
+            this.backendService.sendEmail(
+              `${rateeFullname}`, // recipient name (Ratee who completed the rating)
+              `${raterFullname}`, // sender name (Rater who submitted the IGC)
+              `
+              Dear ${raterFullname},
+
+              This is to inform you that the submitted IGC has been completed rating by ${rateeFullname}.
+
+              Best regards,
+              ${rateeFullname}
+              `, // email message
+              `${rateeFullname} has completed rating your submitted IGC`, // email subject
+              email // recipient email address
+            );
+                  },
+                });
+ 
             },
             error: (error) => {
               title = 'Error';
               content = 'Failed to rate IGCF: ' + error.message;
             },
             complete: () => {
+              this.isLoading = false;
               this.routerService.routeTo('dashboard');
               const dialogBoxData: IDialogBox = {
                 title,
@@ -425,6 +488,19 @@ export class IgcfFormComponent implements OnInit, IDeactivateComponent {
               this.dialog.open(DialogBoxComponent, {
                 ...dialogBoxConfig,
                 data: dialogBoxData,
+              });
+              const fullname = `${firstname} ${lastname}`.toUpperCase();
+              const message = `${fullname} has completed rating an Individual Goal Commitment Form (IGCF) submitted by ${this.submittedIGCF.fullname}`;
+              const timeStamp = this.datePipe.transform(
+                new Date(),
+                'yyyy-MM-dd'
+              );
+
+              this.backendService.addLog({
+                message,
+                timestamp: timeStamp,
+                department: this.details.department,
+                type: 'completed-ratings',
               });
             },
           });
@@ -468,5 +544,11 @@ export class IgcfFormComponent implements OnInit, IDeactivateComponent {
       ...dialogBoxConfig,
       data: dialogBoxData,
     });
+  }
+  isCurrentTarget(year: string) {
+    const currentYear = new Date().getFullYear().toString();
+    return currentYear === year
+      ? `Use for Current Year (${year}) - Fill out`
+      : `Use for ${year}`;
   }
 }

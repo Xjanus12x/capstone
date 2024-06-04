@@ -4,13 +4,16 @@ import { HttpClient, HttpParams, HttpResponse } from '@angular/common/http';
 import {
   BehaviorSubject,
   Observable,
+  Observer,
   catchError,
   combineLatest,
   forkJoin,
   from,
   map,
+  mergeMap,
   switchMap,
   tap,
+  throwError,
 } from 'rxjs';
 import { IUserAccount } from '../models/UserAccount';
 import { AuthService } from './auth.service';
@@ -30,8 +33,11 @@ import {
   deleteDoc,
   getDoc,
   updateDoc,
+  QueryDocumentSnapshot,
 } from '@angular/fire/firestore';
 import { collectionData, doc } from 'rxfire/firestore';
+import emailjs from '@emailjs/browser';
+
 @Injectable({
   providedIn: 'root',
 })
@@ -56,7 +62,7 @@ export class BackendService {
   private igcfValues!: any;
   private currentIgcfId!: number;
   private yearOfCompletions: string[] = [];
-
+  private objAndActionPlans: any[] = [];
   constructor(
     private http: HttpClient,
     private authService: AuthService,
@@ -417,7 +423,6 @@ export class BackendService {
       emp_lastName,
       emp_number,
       emp_dept,
-      emp_position,
     } = userCredentials;
     const pendingRegCollection = collection(this.fs, 'pending-registration');
 
@@ -430,7 +435,6 @@ export class BackendService {
         emp_lastname: emp_lastName,
         emp_number: emp_number,
         emp_dept: emp_dept,
-        emp_position,
       })
     );
   }
@@ -505,6 +509,41 @@ export class BackendService {
     }
   }
 
+  async checkEmployeeNumberExistenceFirebase(emp_number: number) {
+    try {
+      // Reference both the 'users' and 'pending-registration' collections
+      const usersCollection = collection(this.fs, 'users');
+      const pendingRegCollection = collection(this.fs, 'pending-registration');
+
+      // Create a query to find documents with matching email in the 'users' collection
+      const usersQuery = query(
+        usersCollection,
+        where('emp_number', '==', emp_number)
+      );
+
+      // Get the documents that match the query in the 'users' collection
+      const usersSnapshot = await getDocs(usersQuery);
+
+      // If email exists in 'users' collection, return true
+      if (!usersSnapshot.empty) {
+        return true;
+      }
+
+      // Create a query to find documents with matching email in the 'pending-registration' collection
+      const pendingRegQuery = query(
+        pendingRegCollection,
+        where('emp_number', '==', emp_number)
+      );
+      // Get the documents that match the query in the 'pending-registration' collection
+      const pendingRegSnapshot = await getDocs(pendingRegQuery);
+      // Return true if email exists in 'pending-registration' collection, false otherwise
+      return !pendingRegSnapshot.empty;
+    } catch (error) {
+      console.error('Error checking email existence:', error);
+      throw error;
+    }
+  }
+
   // getPendingUsersFirebase(dept: string): Observable<any> {
   //   const pendingRegistrationCollection = collection(
   //     this.fs,
@@ -544,7 +583,6 @@ export class BackendService {
       emp_lastname,
       emp_number,
       emp_dept,
-      emp_position,
       email,
       password,
       role,
@@ -560,7 +598,6 @@ export class BackendService {
         lastname: emp_lastname,
         emp_number,
         department: emp_dept,
-        position: emp_position,
       })
     );
 
@@ -592,7 +629,6 @@ export class BackendService {
 
     querySnapshot.forEach(async (doc) => {
       await deleteDoc(doc.ref);
-      console.log(`Document with email ${email} deleted successfully`);
     });
   }
 
@@ -617,7 +653,7 @@ export class BackendService {
               emp_number,
               emp_firstname: firstname,
               emp_lastname: lastname,
-              emp_position: position,
+              // emp_position: position,
               role,
             });
           });
@@ -781,9 +817,8 @@ export class BackendService {
       );
     }
   }
-  setYearOfCompletions(year: string) {
-    if (!this.yearOfCompletions.includes(year))
-      this.yearOfCompletions.push(year);
+  setYearOfCompletions(yearOfCompletionsList: string[]) {
+    this.yearOfCompletions = yearOfCompletionsList;
   }
   getYearOfCompletions() {
     return this.yearOfCompletions;
@@ -807,14 +842,14 @@ export class BackendService {
       })
     );
   }
-  rateSubmittedIGCFirebase(id: string, value: any): Observable<void> {
-    return new Observable<void>((observer) => {
+
+  rateSubmittedIGCFirebase(id: string, value: any): Observable<any> {
+    return new Observable<any>((observer) => {
       // Update pending-registration collection
       const pendingRegistrationQuery = query(
         collection(this.fs, 'submitted-IGCFs'),
         where('id', '==', id)
       );
-
       getDocs(pendingRegistrationQuery)
         .then((pendingRegistrationSnapshot) => {
           pendingRegistrationSnapshot.forEach(async (doc) => {
@@ -827,5 +862,202 @@ export class BackendService {
           observer.error(error); // Emit error if update fails
         });
     });
+  }
+
+  // rateSubmittedIGCFirebase(id: string, value: any): Observable<string> {
+  //   return new Observable<string>((observer) => {
+  //     // Update pending-registration collection
+  //     const pendingRegistrationQuery = query(
+  //       collection(this.fs, 'submitted-IGCFs'),
+  //       where('id', '==', id)
+  //     );
+
+  //     getDocs(pendingRegistrationQuery)
+  //       .then((pendingRegistrationSnapshot) => {
+  //         pendingRegistrationSnapshot.forEach(async (doc) => {
+  //           // Get the emp_number from the document data
+  //           const empNumber = doc.data()['emp_number'];
+  //           console.log(empNumber);
+
+  //           // Update the document
+  //           await updateDoc(doc.ref, value);
+
+  //           // Emit the emp_number
+  //           observer.next(empNumber);
+  //         });
+  //         observer.complete(); // Emit completion when update is done
+  //       })
+  //       .catch((error) => {
+  //         observer.error(error); // Emit error if update fails
+  //       });
+  //   });
+  // }
+
+  deleteSubmittedIGCFByID(id: string): Observable<void> {
+    return new Observable<void>((observer) => {
+      (async () => {
+        try {
+          const submittedIGCFsCollection = collection(
+            this.fs,
+            'submitted-IGCFs'
+          );
+
+          // Create a query to find the document with the matching ID field
+          const q = query(submittedIGCFsCollection, where('id', '==', id));
+
+          // Get the documents that match the query
+          const querySnapshot = await getDocs(q);
+
+          // Iterate over the documents and delete each one
+          querySnapshot.forEach(async (doc) => {
+            // Delete the document
+            await deleteDoc(doc.ref);
+          });
+
+          // Emit completion when deletion is successful
+          observer.next();
+          observer.complete();
+        } catch (error) {
+          console.error('Error deleting documents:', error);
+          // Emit error if deletion fails
+          observer.error(error);
+        }
+      })();
+    });
+  }
+
+  addKpiAndActionPlansFirebase(kpiAndActionPlans: any[]): Observable<any> {
+    // Create an array of promises for each document addition
+    const promises: Promise<any>[] = [];
+
+    // Iterate through each object in the array and add it as a separate document
+    kpiAndActionPlans.forEach((plan) => {
+      const promise = addDoc(collection(this.fs, 'kpi-action-plans'), plan);
+      promises.push(promise);
+    });
+
+    // Merge all promises into a single promise
+    return new Observable<void>((observer) => {
+      Promise.all(promises)
+        .then(() => {
+          observer.next();
+          observer.complete();
+        })
+        .catch((error) => {
+          observer.error(error);
+        });
+    });
+  }
+
+  fetchAllObjectivesAndActionPlansByDept(
+    department: string
+  ): Observable<any[]> {
+    const kpiAndActionPlansCollection = collection(this.fs, 'kpi-action-plans');
+
+    // Create a query to filter documents based on the department field
+    const q = query(
+      kpiAndActionPlansCollection,
+      where('dept', '==', department)
+    );
+
+    // Execute the query and return the result as an Observable
+    return from(getDocs(q)).pipe(
+      map((querySnapshot) => {
+        const data: any[] = [];
+        querySnapshot.forEach((doc: QueryDocumentSnapshot<any>) => {
+          data.push(doc.data());
+        });
+        return data;
+      })
+    );
+  }
+
+  setAllObjectiveAndActionPlansByDept(ObjAndPlans: any[]) {
+    this.objAndActionPlans = ObjAndPlans;
+  }
+  getAllObjectiveAndActionPlansByDept(): any[] {
+    return this.objAndActionPlans;
+  }
+
+  addLog(log: any): Observable<any> {
+    return from(addDoc(collection(this.fs, 'logs'), log)).pipe(
+      map((docRef) => {
+        return docRef.id;
+      }),
+      catchError((error) => {
+        console.error('Error adding log:', error);
+        return throwError(error);
+      })
+    );
+  }
+  fetchLogs(department: string): Observable<any[]> {
+    const logsCollection = collection(this.fs, 'logs');
+
+    // Create a query to filter logs based on the department field
+    const logsQuery = query(
+      logsCollection,
+      where('department', '==', department)
+    );
+
+    return from(getDocs(logsQuery)).pipe(
+      map((logsSnapshot) => logsSnapshot.docs.map((doc) => doc.data()))
+    );
+  }
+
+  updateObjectiveAndActionPlans(
+    plan: string,
+    dept: string,
+    objectiveAndActionPlans: any
+  ): Observable<void> {
+    return new Observable<void>((observer) => {
+      // Find the matching documents based on both plan and department
+      const objectiveAndActionPlansQuery = query(
+        collection(this.fs, 'kpi-action-plans'),
+        where('plan', '==', plan),
+        where('dept', '==', dept)
+      );
+
+      getDocs(objectiveAndActionPlansQuery)
+        .then((objectiveAndActionPlansQuerySnapshot) => {
+          // Update the matching documents
+          objectiveAndActionPlansQuerySnapshot.forEach(async (doc) => {
+            // Perform the update
+            await updateDoc(doc.ref, {
+              ...objectiveAndActionPlans,
+              targets: JSON.parse(objectiveAndActionPlans.targets),
+            });
+          });
+
+          observer.next(); // Emit completion when update is done
+          observer.complete();
+        })
+        .catch((error) => {
+          observer.error(error); // Emit error if update fails
+        });
+    });
+  }
+
+  async sendEmail(
+    fromName: string,
+    toName: string,
+    message: string,
+    subject: string,
+    to_email: string
+    // from_email: string
+  ) {
+    emailjs.init('f0geW1LMYP7YlUpHa');
+    let response = await emailjs.send('service_ip99gnh', 'template_ys3ytn2', {
+      from_name: fromName,
+      to_name: toName,
+      message: message,
+      subject: subject,
+      to_email: to_email,
+      // from_email: from_email,
+    });
+  }
+
+  fetchHauEmployeeDetails(): Observable<any[]> {
+    const hauEmpDetailsCollection = collection(this.fs, 'hau-employees');
+    return collectionData(hauEmpDetailsCollection);
   }
 }

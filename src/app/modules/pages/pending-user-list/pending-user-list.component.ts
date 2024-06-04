@@ -17,6 +17,10 @@ import { BackendService } from 'src/app/core/services/backend.service';
 import { UpdateUserComponent } from '../../components/update-user/update-user.component';
 import { IPendingUser } from 'src/app/core/models/PendingUser';
 import { UpdatePendingUserComponent } from '../../components/update-pending-user/update-pending-user.component';
+import { DatePipe } from '@angular/common';
+import { dialogBoxConfig } from 'src/app/core/constants/DialogBoxConfig';
+import { IDialogBox } from 'src/app/core/models/DialogBox';
+import { DialogBoxComponent } from '../../components/dialog-box/dialog-box.component';
 
 @Component({
   selector: 'app-pending-user-list',
@@ -28,7 +32,8 @@ export class PendingUserListComponent implements OnInit, AfterViewInit {
     private backendService: BackendService,
     private authService: AuthService,
     public dialog: MatDialog,
-    private cdr: ChangeDetectorRef
+    private cdr: ChangeDetectorRef,
+    private datePipe: DatePipe
   ) {}
   pendingUserList$!: Observable<IPendingUser[]>;
   dataToDisplay: IPendingUser[] = [];
@@ -41,7 +46,7 @@ export class PendingUserListComponent implements OnInit, AfterViewInit {
     'Lastname',
     'Employee Number',
     'Department',
-    'Position',
+    // 'Position',
   ];
   displayedColumns: string[] = [
     'email',
@@ -50,7 +55,7 @@ export class PendingUserListComponent implements OnInit, AfterViewInit {
     'emp_lastname',
     'emp_number',
     'emp_dept',
-    'emp_position',
+    // 'emp_position',
   ];
   isLoading = true;
   @ViewChild(MatPaginator) paginator!: MatPaginator;
@@ -160,88 +165,109 @@ export class PendingUserListComponent implements OnInit, AfterViewInit {
   }
 
   rejectUser(element: IPendingUser) {
-    // const indexToRemove = this.dataToDisplay.findIndex(
-    //   (item) => item.id === id
-    // );
+    // Open confirmation dialog
+    const dialogBoxData: IDialogBox = {
+      title: 'Reject User Registration',
+      content:
+        "Are you sure you want to reject this user's registration request? This action cannot be undone.",
+      buttons: [
+        {
+          isVisible: true,
+          matDialogCloseValue: false,
+          content: 'No',
+        },
+        {
+          isVisible: true,
+          matDialogCloseValue: true,
+          content: 'Yes, Reject Registration',
+        },
+      ],
+    };
 
-    // // If the item is found, remove it from the array
-    // if (indexToRemove === -1) return;
-    // this.backendService.deletePendingUser(id).subscribe({
-    //   next: () => {
-    //     this.dataToDisplay.splice(indexToRemove, 1);
-    //     this.dataSource.data = this.dataToDisplay;
-    //     this.authService.openSnackBar(
-    //       'Row deleted successfully',
-    //       'Close',
-    //       'bottom'
-    //     );
-    //     // Optionally, update your component state or UI after deletion
-    //   },
-    //   error: (error) => {
-    //     this.authService.openSnackBar(
-    //       'Error deleting row: ' + error.message,
-    //       'Close',
-    //       'bottom'
-    //     );
-    //     // Optionally, handle the error or display an error message to the user
-    //   },
-    // });
-    this.isLoading = true;
-    this.backendService
-      .deleteDocumentByEmailFirebase(element.email)
-      .then(() => {
-        const id = element.id;
-        const indexToRemove = this.dataToDisplay.findIndex(
-          (item) => item.id === id
-        );
-        this.dataToDisplay.splice(indexToRemove, 1);
-        this.dataSource.data = this.dataToDisplay;
+    const dialogRef = this.dialog.open(DialogBoxComponent, {
+      ...dialogBoxConfig,
+      data: dialogBoxData,
+    });
+
+    dialogRef.afterClosed().subscribe({
+      next: (result) => {
+        if (result) {
+          this.isLoading = true;
+          const { emp_firstname, emp_lastname, email } = element;
+          const { firstname, lastname, department } =
+            this.authService.getUserInformationFirebase();
+          this.backendService
+            .deleteDocumentByEmailFirebase(element.email)
+            .then(() => {
+              const id = element.id;
+              const indexToRemove = this.dataToDisplay.findIndex(
+                (item) => item.id === id
+              );
+              this.dataToDisplay.splice(indexToRemove, 1);
+              this.dataSource.data = this.dataToDisplay;
+              this.isLoading = false;
+              this.authService.openSnackBar(
+                'Pending user rejected successfully.',
+                'close',
+                'bottom'
+              );
+              const pendingUserFullname =
+                `${emp_firstname} ${emp_lastname}`.toUpperCase();
+              const adminName = `${firstname} ${lastname}`.toUpperCase();
+              const message = `"${adminName}" has rejected "${pendingUserFullname}" as a new faculty user.`;
+              const timeStamp = this.datePipe.transform(
+                new Date(),
+                'yyyy-MM-dd'
+              );
+              this.backendService.addLog({
+                message,
+                timestamp: timeStamp,
+                department: department,
+                type: 'rejected-users',
+              });
+
+              const rejectedUserFullname =
+                `${emp_firstname} ${emp_lastname}`.toUpperCase();
+
+              this.backendService.sendEmail(
+                `${adminName}`, // recipient name (user whose registration is rejected)
+                `${rejectedUserFullname}`, // sender name (admin who rejected the registration)
+                `
+          Dear ${rejectedUserFullname},
+
+          We regret to inform you that your registration has been rejected by ${adminName}. Please contact us for further assistance.
+
+          Best regards,
+          ${adminName}
+        `, // email message
+                `Registration Rejected`, // email subject
+                email // recipient email address
+              );
+            })
+            .catch((error) => {
+              this.isLoading = false;
+              this.authService.openSnackBar(
+                'Error rejecting user.',
+                'close',
+                'bottom'
+              );
+            });
+        }
+      },
+      complete: () => {
         this.isLoading = false;
-        this.authService.openSnackBar(
-          'Pending user rejected successfully.',
-          'close',
-          'bottom'
-        );
-      })
-      .catch((error) => {
-        this.isLoading = false;
-        this.authService.openSnackBar(
-          'Error rejecting user.',
-          'close',
-          'bottom'
-        );
-      });
+      },
+    });
   }
   acceptUser(element: IPendingUser) {
-    // this.backendService.acceptPendingUser(element).subscribe({
-    //   next: () => {
-    //     this.authService.openSnackBar(
-    //       'Pending user accepted successfully',
-    //       'Close',
-    //       'bottom'
-    //     );
-    //     const id = element.id;
-    //     const indexToRemove = this.dataToDisplay.findIndex(
-    //       (item) => item.id === id
-    //     );
-    //     // If the item is found, remove it from the array
-    //     if (indexToRemove === -1) return;
-    //     this.backendService.deletePendingUser(id!).subscribe({
-    //       next: () => {
-    //         this.dataToDisplay.splice(indexToRemove, 1);
-    //         this.dataSource.data = this.dataToDisplay;
-    //         this.updateDataSource();
-    //       },
-    //     });
-    //   },
-    //   error: (error) => this.handleError(error),
-    // });
-
     this.isLoading = true;
     this.backendService.acceptPendingUserFirebase(element).subscribe({
       next: () => {
+        const { email, emp_firstname, emp_lastname } = element;
+        const { firstname, lastname, department } =
+          this.authService.getUserInformationFirebase();
         this.backendService
-          .deleteDocumentByEmailFirebase(element.email)
+          .deleteDocumentByEmailFirebase(email)
           .then(() => {
             const id = element.id;
             const indexToRemove = this.dataToDisplay.findIndex(
@@ -254,6 +280,35 @@ export class PendingUserListComponent implements OnInit, AfterViewInit {
               'Pending user accepted successfully.',
               'close',
               'bottom'
+            );
+            const pendingUserFullname =
+              `${emp_firstname} ${emp_lastname}`.toUpperCase();
+            const adminName = `${firstname} ${lastname}`.toUpperCase();
+            const message = `"${adminName}" has accepted "${pendingUserFullname}" as a new faculty user.`;
+            const timeStamp = this.datePipe.transform(new Date(), 'yyyy-MM-dd');
+            this.backendService.addLog({
+              message,
+              timestamp: timeStamp,
+              department: department,
+              type: 'accepted-users',
+            });
+
+            const acceptedUserFullname =
+              `${emp_firstname} ${emp_lastname}`.toUpperCase();
+
+            this.backendService.sendEmail(
+              `${adminName}`, // recipient name (user whose registration is accepted)
+              `${acceptedUserFullname}`, // sender name (admin who accepted the registration)
+              `
+            Dear ${acceptedUserFullname},
+
+            We are pleased to inform you that your registration has been accepted by ${adminName}. You are now a new user.
+
+            Best regards,
+            ${adminName}
+            `, // email message
+              `Registration Accepted`, // email subject
+              email // recipient email address
             );
           })
           .catch((error) => {
@@ -285,8 +340,12 @@ export class PendingUserListComponent implements OnInit, AfterViewInit {
       if (!result) return;
       if (result.invalid) {
         this.authService.openSnackBar('Invalid inputs', 'Close', 'bottom');
+        this.isLoading = false;
         return;
       }
+      const { emp_firstname, emp_lastname } = pendingUser;
+      const { firstname, lastname, department } =
+        this.authService.getUserInformationFirebase();
       this.isLoading = true;
       const orginalData = [
         pendingUser.emp_firstname,
@@ -294,16 +353,18 @@ export class PendingUserListComponent implements OnInit, AfterViewInit {
         pendingUser.emp_number,
         pendingUser.role,
         pendingUser.emp_dept,
-        pendingUser.emp_position,
+        // pendingUser.emp_position,
       ].join(',');
 
       const updateData = Object.values(result.value).join(',');
 
       if (orginalData === updateData) {
         this.authService.openSnackBar('No changes made', 'Close', 'bottom');
+        this.isLoading = false;
         return;
       }
       const updatedPendingUserInfo = result.value;
+      console.log(updatedPendingUserInfo);
 
       this.backendService
         .updateUserInformationFirebase(
@@ -315,6 +376,33 @@ export class PendingUserListComponent implements OnInit, AfterViewInit {
             // Handle successful update
 
             this.refreshDataSource();
+
+            const pendingUserFullname =
+              `${emp_firstname} ${emp_lastname}`.toUpperCase();
+            const adminName = `${firstname} ${lastname}`.toUpperCase();
+            const message = `"${adminName}" has updated the user information for "${pendingUserFullname}" as a new faculty user.`;
+            const timeStamp = this.datePipe.transform(new Date(), 'yyyy-MM-dd');
+            this.backendService.addLog({
+              message,
+              timestamp: timeStamp,
+              department: department,
+              type: 'updated-pending-users',
+            });
+
+            this.backendService.sendEmail(
+              `${adminName}`, // recipient name (user whose information is updated)
+              `${pendingUserFullname}`, // sender name (admin who updated the registration)
+              `
+              Dear ${pendingUserFullname},
+
+              We would like to inform you that your information has been updated by ${adminName}. If you have any questions or concerns regarding the changes, please don't hesitate to contact us.
+
+              Best regards,
+              ${adminName}
+              `, // email message
+              `Account Information Updated`, // email subject
+              pendingUser.email // recipient email address
+            );
           },
           error: (error) => {
             this.authService.openSnackBar(
@@ -326,17 +414,6 @@ export class PendingUserListComponent implements OnInit, AfterViewInit {
             // Handle error
           },
         });
-
-      // this.backendService.updatePendingUser(updatedPendingUserInfo).subscribe({
-      //   next: () => {
-      //     this.authService.openSnackBar(
-      //       `Pengind user successfully updated`,
-      //       'close',
-      //       'bottom'
-      //     );
-      //     // this.handleDataSubscription();
-      //   },
-      // });
     });
   }
   refreshDataSource() {

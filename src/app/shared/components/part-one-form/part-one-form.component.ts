@@ -40,6 +40,7 @@ export class PartOneFormComponent implements OnInit {
     'Achieved',
     'Rating',
   ];
+  submittedIGCF: any = {};
   @Input() kpis: any[] = [];
   @Input() responsible: string = '';
   @Input() isFillingUp: boolean = false;
@@ -119,6 +120,7 @@ export class PartOneFormComponent implements OnInit {
         const id = params.get('id');
         this.backendService.getSubmittedIGCFByID(id!).subscribe({
           next: (submittedIGCF: any) => {
+            this.submittedIGCF = submittedIGCF;
             const { igc_inputs } = submittedIGCF;
             igc_inputs.forEach((inputs: any) => {
               const { selected_kpi, weight } = inputs;
@@ -249,7 +251,7 @@ export class PartOneFormComponent implements OnInit {
     const actionPlans = this.kpis.filter(
       (kpi: any) => kpi.kpi_title.trim() === this.getLabel(label)
     );
-    return actionPlans.map((kpi) => kpi.action_plan);
+    return actionPlans.map((kpi) => kpi.plan);
   }
 
   getValues() {
@@ -393,6 +395,10 @@ export class PartOneFormComponent implements OnInit {
     );
   }
 
+  getFormControls(label: string) {
+    return this.formGroup.get(label)?.get(label);
+  }
+
   getFormControl(label: string, index: number, controlName: string) {
     return this.formGroup.get(
       `${label}.${index}.${controlName}`
@@ -404,8 +410,7 @@ export class PartOneFormComponent implements OnInit {
   }
   createFormGroupForFaculty(
     personaObjective: string,
-    target: string,
-    weight: number
+    target: string
   ): FormGroup {
     return this.fb.group({
       personalObject: [
@@ -425,7 +430,7 @@ export class PartOneFormComponent implements OnInit {
         Validators.required,
       ],
       weight: [
-        { value: weight, disabled: !this.isFillingUp },
+        { value: '', disabled: !this.isFillingUp },
         [Validators.required, Validators.min(1), Validators.max(100)],
       ],
       achieved: [
@@ -455,10 +460,11 @@ export class PartOneFormComponent implements OnInit {
     return formArray.length;
   }
 
-  onSelectionChange(selectedValues: any[], formArrayName: string) {
+  onSelectionChange(selectedValues: any[], label: string) {
+    const arrayName = this.getFormArrayName(label);
     const formArray = this.formGroup
-      .get(formArrayName)
-      ?.get(formArrayName) as FormArray;
+      .get(arrayName)
+      ?.get(arrayName) as FormArray;
 
     // Get the currently selected values in the form array
     const currentValues = formArray.value.map(
@@ -480,18 +486,43 @@ export class PartOneFormComponent implements OnInit {
       }
     });
 
-    // Add form groups for newly selected values
+    // Calculate the weight for each selected value
+
+    // Add form groups for newly selected values with evenly distributed weight
     selectedValues.forEach((value) => {
       if (!currentValues.includes(value)) {
         this.kpis.forEach((kpi: any) => {
-          if (kpi.action_plan === value) {
-            formArray.push(
-              this.createFormGroupForFaculty(value, kpi.target, 100)
-            );
+          if (kpi.plan === value) {
+            formArray.push(this.createFormGroupForFaculty(value, kpi.target));
           }
         });
       }
     });
+
+    const match = label.match(/\d+/g); // Match all occurrences of one or more digits
+    const number = match ? parseInt(match[1]) : null; // Parse the matched digits as an integer
+    const formArray2 = this.getFormControls(this.getLabel(label)) as FormArray;
+    const length = formArray.controls.length;
+
+    if (number && length > 1) {
+      const wholeWeightValue = Math.floor(number / length); // Calculate the whole number weight value for each control
+      const remainingWeight = number % length; // Calculate the remaining weight to be added to the last control
+
+      // Iterate over each control except the last one
+      for (let i = 0; i < length - 1; i++) {
+        const control = formArray2.controls[i];
+        control.get('weight')?.patchValue(wholeWeightValue);
+      }
+
+      // Set the remaining weight to the last control
+      const lastControl = formArray2.controls[length - 1];
+      lastControl.get('weight')?.patchValue(wholeWeightValue + remainingWeight);
+    } else {
+      // If the number is not provided or there's only one control, set the weight to 100 for all controls
+      formArray2.controls.forEach((control) => {
+        control.get('weight')?.patchValue(number);
+      });
+    }
   }
 
   getLabel(label: string) {
@@ -538,5 +569,8 @@ export class PartOneFormComponent implements OnInit {
 
   igcControls(): FormArray {
     return this.formGroup.get('igc') as FormArray;
+  }
+  getSubmittedIGCEmployeeNumber() {
+    return this.submittedIGCF.emp_number;
   }
 }

@@ -17,6 +17,7 @@ import { InputAllKpisComponent } from './modules/pages/input-all-kpis/input-all-
 import { ActionPlansComponent } from './modules/pages/action-plans/action-plans.component';
 import { ObjAndActionPlansListComponent } from './modules/pages/obj-and-action-plans-list/obj-and-action-plans-list.component';
 import { canAcessFillUpIgcf } from './core/guards/canAccessFillUpIgcf.guard';
+import { AuditTrailComponent } from './modules/pages/audit-trail/audit-trail.component';
 
 const routes: Routes = [
   { path: '', redirectTo: 'login', pathMatch: 'full' },
@@ -48,7 +49,7 @@ const routes: Routes = [
         path: 'fill-up',
         component: IgcfFormComponent,
         outlet: 'dashboardContent',
-        canActivate: [],
+        canActivate: [canAcessFillUpIgcf],
         canDeactivate: [canExit],
       },
       {
@@ -63,7 +64,7 @@ const routes: Routes = [
         outlet: 'dashboardContent',
       },
       {
-        path: 'input-kpis',
+        path: 'create-objectives',
         component: InputAllKpisComponent,
         outlet: 'dashboardContent',
       },
@@ -80,6 +81,11 @@ const routes: Routes = [
       {
         path: 'reports',
         component: ReportsComponent,
+        outlet: 'dashboardContent',
+      },
+      {
+        path: 'logs',
+        component: AuditTrailComponent,
         outlet: 'dashboardContent',
       },
     ],

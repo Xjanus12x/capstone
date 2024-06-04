@@ -99,7 +99,7 @@ export const canActivateAdminRoutes = (
   const authService = inject(AuthService);
   const dialog = inject(MatDialog);
   const currentUserRole = authService.getUserInformationFirebase().role;
-  if (currentUserRole === 'Admin') return true;
+  if (currentUserRole === 'Admin' || currentUserRole === 'College Secretary') return true;
   const dialogBoxData: IDialogBox = {
     title: 'Unauthorized Access',
     content: 'You do not have permission to access this page.',

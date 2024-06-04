@@ -14,19 +14,18 @@ import { MatInputModule } from '@angular/material/input';
 import { MatDatepickerModule } from '@angular/material/datepicker';
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatNativeDateModule } from '@angular/material/core';
-import { CalendarComponent } from './calendar/calendar.component';
 import { MatDialogModule } from '@angular/material/dialog';
 import { MatButtonModule } from '@angular/material/button';
 import { FormsModule } from '@angular/forms';
 import { MatMenuModule } from '@angular/material/menu';
 import { MatCardModule } from '@angular/material/card';
+import { CalendarComponent } from './calendar/calendar.component';
 import { ProfilePageComponent } from './profile-page/profile-page.component';
 @NgModule({
   declarations: [
     HeaderComponent,
     SidenavComponent,
     FooterComponent,
-
     CalendarComponent,
     ProfilePageComponent,
   ],

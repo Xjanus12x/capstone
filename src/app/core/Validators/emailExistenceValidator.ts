@@ -51,7 +51,7 @@ export function emailExistenceValidator(
   backendService: BackendService
 ): AsyncValidatorFn {
   return async (control: AbstractControl): Promise<ValidationErrors | null> => {
-    const value: string = control.value || '';    
+    const value: string = control.value.trim() || '';    
     const emailExists = await backendService.checkEmailExistenceFirebase(value);
     return emailExists ? { emailExist: true } : null;
   };

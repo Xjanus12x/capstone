@@ -1,243 +1,228 @@
-<div>
-    <mat-checkbox #selectAfterAdding>
-        <span class="font-semibold">
-            Select tab after adding
-        </span>
-    </mat-checkbox>
-</div>
-<form [formGroup]="getEffectivityGroup()">
+<div class="static z-10">
+    <div>
+        <mat-checkbox #selectAfterAdding>
+            <span class="font-semibold">
+                Select tab after adding
+            </span>
+        </mat-checkbox>
+    </div>
+
+
     <div class="grid gap-2 place-content-center">
         <label class="mx-auto font-bold">Effectivity</label>
         <div class="flex gap-4">
-            <div>
+            <div class="flex items-center gap-3">
                 <label class="font-bold">Start:</label>
-                <mat-form-field>
-                    <mat-label>Choose a date</mat-label>
-                    <input matInput [matDatepicker]="startPicker" formControlName="start" [min]="minDate">
-                    <mat-hint>MM/DD/YYYY</mat-hint>
-                    <mat-datepicker-toggle matIconSuffix [for]="startPicker"></mat-datepicker-toggle>
-                    <mat-datepicker #startPicker>
-                        <mat-datepicker-actions>
-                            <button mat-button matDatepickerCancel>Cancel</button>
-                            <button mat-raised-button color="primary" matDatepickerApply>Apply</button>
-                        </mat-datepicker-actions>
-                    </mat-datepicker>
-                </mat-form-field>
+                <app-year-picker [yearControl]="getEffectivityControl('start')"
+                    [label]="'Choose a start year'"></app-year-picker>
             </div>
-            <div>
+            <div class="flex items-center gap-4">
                 <label class="font-bold">End:</label>
-                <mat-form-field>
-                    <mat-label>Choose a date</mat-label>
-                    <input matInput [matDatepicker]="endPicker" formControlName="end" [min]="minDate">
-                    <mat-hint>MM/DD/YYYY</mat-hint>
-                    <mat-datepicker-toggle matIconSuffix [for]="endPicker"></mat-datepicker-toggle>
-                    <mat-datepicker #endPicker>
-                        <mat-datepicker-actions>
-                            <button mat-button matDatepickerCancel>Cancel</button>
-                            <button mat-raised-button color="primary" matDatepickerApply>Apply</button>
-                        </mat-datepicker-actions>
-                    </mat-datepicker>
-                </mat-form-field>
-
+                <app-year-picker [yearControl]="getEffectivityControl('end')"
+                    [label]="'Choose a end year'"></app-year-picker>
             </div>
         </div>
     </div>
-</form>
 
 
-<mat-tab-group [selectedIndex]="selected.value" (selectedIndexChange)="selected.setValue($event)">
-    <form [formGroup]="formGroup">
-        <ng-container *ngFor="let groupName of getFormGroupNames(); let i = index">
+    <mat-tab-group [selectedIndex]="selected.value" (selectedIndexChange)="selected.setValue($event)">
 
-            <div [formGroupName]="groupName" *ngIf="groupName !== 'effectivity'">
-                <mat-tab [label]="groupName.toLocaleUpperCase()">
+        <form [formGroup]="formGroup">
+            <ng-container *ngFor="let groupName of getFormGroupNames(); let i = index">
+                <div [formGroupName]="groupName" *ngIf="groupName !== 'effectivity'">
+                    <mat-tab>
+                        <ng-template mat-tab-label>
 
+                            <div
+                                [ngClass]="{'px-10 py-8 text-center text-white bg-black transition duration-1000 ease-in-out':  i  === (selected.value || 0) + 1}">
+                                {{ groupName.toLocaleUpperCase() }}
+                            </div>
 
-                    <div class="grid gap-2 mt-4">
-                        <label class="font-bold">KPI Title: </label>
-                        <mat-form-field>
-                            <mat-label>KPI Title</mat-label>
-                            <input matInput formControlName="kpi_title" placeholder="Ex. pat@example.com">
-                        </mat-form-field>
-                    </div>
+                      
+                        </ng-template>
+                        <div class="grid gap-2 mt-4">
+                            <label class="font-bold">Objective Title: </label>
+                            <mat-form-field>
+                                <mat-label>Title</mat-label>
+                                <input matInput formControlName="kpi_title"
+                                    placeholder="Ex. IMPROVE CUSTOMER & STAKEHOLDER SATISFACTION">
+                                <mat-error class="font-extrabold">
+                                    field is required
+                                </mat-error>
+                            </mat-form-field>
+                        </div>
 
-                    <table class="min-w-full border-collapse" *ngIf="getActionPlanFormArray(groupName).length > 0">
-                        <tr>
-                            <th class="border border-black">
-                                Action Plan
-                            </th>
-                            <th class="border border-black">
-                                Responsible
-                            </th>
-                            <th class="border border-black" colspan="2">
-                                Time Frame
-                            </th>
-                            <th class="border border-black" [colSpan]="getYears().length">
-                                Target
-                            </th>
-                            <th class="border border-black">
-                                Actions
-                            </th>
-                        </tr>
-                        <tr>
-                            <th class="border border-black" colspan="2">
-
-                            </th>
-                            <th class="border border-black">
-                                Start Date
-                            </th>
-                            <th>
-                                Due Date
-                            </th>
-                            <th class="border border-black" *ngFor="let year of getYears(); let i = index">
-                                {{ year }}
-                            </th>
-                            <th class="border border-black"></th>
-                        </tr>
-
-                        <ng-container
-                            *ngFor="let actionPlan of getActionPlanFormArray(groupName).controls; let j = index"
-                            formArrayName="actionPlan">
-
-                            <tr [formGroupName]="j">
-                                <td class="border border-black fit-content">
-                                    <div class="grid">
-                                        <mat-form-field class="h-28">
-                                            <mat-label>Plan</mat-label>
-                                            <textarea matInput formControlName="plan"
-                                                placeholder="Ex. It makes me feel..."></textarea>
-                                        </mat-form-field>
-                                    </div>
-                                </td>
-                                <td class="w-40 border border-black fit-content">
-                                    <div class="grid">
-                                        <!-- <mat-form-field>
-                                            <mat-label>Responsible</mat-label>
-                                            <input matInput formControlName="responsible"
-                                                placeholder="Ex. pat@example.com">
-                                        </mat-form-field> -->
-                                        <mat-form-field>
-                                            <mat-label>Responsible</mat-label>
-                                            <mat-select formControlName="responsible" multiple>
-                                                <mat-select-trigger>
-                                                    {{getResponsiblesControl(groupName,j)?.value?.[0] || ''}}
-                                                    <span
-                                                        *ngIf="(getResponsiblesControl(groupName,j)?.value?.length || 0) > 1">
-                                                        (+{{(getResponsiblesControl(groupName,j)?.value?.length ||
-                                                        0) -
-                                                        1}} {{getResponsiblesControl(groupName,j)?.value?.length
-                                                        === 2 ?
-                                                        'other' : 'others'}})
-                                                    </span>
-                                                </mat-select-trigger>
-                                                <mat-option *ngFor="let responsible of responsibleList"
-                                                    [value]="responsible">{{responsible}}</mat-option>
-                                            </mat-select>
-                                            <!-- <mat-error class="font-extrabold"
-                                                *ngIf="getActionPlanControl(i, j, 'responsible').hasError('required')
-                                                                                                         && getActionPlanControl(i, j, 'responsible').invalid && getActionPlanControl(i, j, 'responsible').touched">
-                                                Person in charge is required
-                                            </mat-error> -->
-                                        </mat-form-field>
-                                    </div>
-                                </td>
-                                <td class="w-40 border border-black fit-content">
-
-                                    <div class="grid">
-                                        <!-- <mat-form-field>
-                                            <mat-label>Start</mat-label>
-                                            <input matInput formControlName="start_date"
-                                                placeholder="Ex. pat@example.com">
-                                        </mat-form-field> -->
-
-
-                                        <mat-form-field>
-                                            <mat-label>Choose a date</mat-label>
-                                            <input matInput [matDatepicker]="startDate" formControlName="start_date"
-                                                [min]="minDate">
-                                            <mat-hint>MM/DD/YYYY</mat-hint>
-                                            <mat-datepicker-toggle matIconSuffix
-                                                [for]="startDate"></mat-datepicker-toggle>
-                                            <mat-datepicker #startDate>
-                                                <mat-datepicker-actions>
-                                                    <button mat-button matDatepickerCancel>Cancel</button>
-                                                    <button mat-raised-button color="primary"
-                                                        matDatepickerApply>Apply</button>
-                                                </mat-datepicker-actions>
-                                            </mat-datepicker>
-                                        </mat-form-field>
-
-                                    </div>
-                                </td>
-                                <td class="w-40 border border-black">
-                                    <div class="grid">
-                                        <!-- <mat-form-field>
-                                            <mat-label>End</mat-label>
-                                            <input matInput formControlName="due_date"
-                                                placeholder="Ex. pat@example.com">
-                                        </mat-form-field> -->
-
-
-
-                                        <mat-form-field>
-                                            <mat-label>Choose a date</mat-label>
-                                            <input matInput [matDatepicker]="endDate" formControlName="due_date"
-                                                [min]="minDate">
-                                            <mat-hint>MM/DD/YYYY</mat-hint>
-                                            <mat-datepicker-toggle matIconSuffix
-                                                [for]="endDate"></mat-datepicker-toggle>
-                                            <mat-datepicker #endDate>
-                                                <mat-datepicker-actions>
-                                                    <button mat-button matDatepickerCancel>Cancel</button>
-                                                    <button mat-raised-button color="primary"
-                                                        matDatepickerApply>Apply</button>
-                                                </mat-datepicker-actions>
-                                            </mat-datepicker>
-                                        </mat-form-field>
-
-
-
-                                    </div>
-                                </td>
-                                <td class="w-24 border border-black fit-content" formArrayName="target"
-                                    *ngFor="let targetControl of getTargetControls(actionPlan); let x = index">
-                                    <div class="grid">
-                                        <mat-form-field>
-                                            <mat-label>Target {{ x + 1 }}</mat-label>
-                                            <input matInput [formControlName]="x" placeholder="Enter Target">
-                                        </mat-form-field>
-                                    </div>
-                                </td>
-                                <td class="border border-black fit-content ">
-                                    <div class="grid place-content-center">
-                                        <button type="button" mat-raised-button color="warn" (click)="removePlan(groupName,j)"
-                                            [disabled]="getActionPlanFormArray(groupName).length === 1">Delete</button>
-                                    </div>
-                                </td>
+                        <table class="overflow-auto border-collapse w-[100%]"
+                            *ngIf="getActionPlanFormArray(groupName).length > 0">
+                            <tr>
+                                <th class="border border-black">
+                                    Action Plan
+                                </th>
+                                <th class="border border-black">
+                                    Responsible
+                                </th>
+                                <th class="border border-black" colspan="2">
+                                    Time Frame
+                                </th>
+                                <th class="border border-black" [colSpan]="getYears().length">
+                                    Target
+                                </th>
+                                <th class="border border-black">
+                                    Actions
+                                </th>
                             </tr>
-                        </ng-container>
+                            <tr>
+                                <th class="border border-black" colspan="2">
 
-                        <!-- <tr>
+                                </th>
+                                <th class="border border-black">
+                                    Start Date
+                                </th>
+                                <th>
+                                    Due Date
+                                </th>
+                                <th class="border border-black" *ngFor="let year of getYears(); let i = index">
+                                    {{ year }}
+                                </th>
+                                <th class="border border-black"></th>
+                            </tr>
+
+                            <ng-container
+                                *ngFor="let actionPlan of getActionPlanFormArray(groupName).controls; let j = index"
+                                formArrayName="actionPlan">
+
+                                <tr [formGroupName]="j">
+                                    <td class="border border-black fit-content">
+                                        <div class="grid">
+                                            <mat-form-field class="h-28">
+                                                <mat-label>Plan</mat-label>
+                                                <textarea matInput formControlName="plan"
+                                                    placeholder="Ex. It makes me feel..."></textarea>
+                                                <mat-error class="font-extrabold" *ngIf="getActionPlanControl(groupName,j,'plan').hasError('actionPlanAlreadyExists') 
+                                                    && !getActionPlanControl(groupName,j,'plan').hasError('required')">
+                                                    Plan already exist
+                                                </mat-error>
+                                                <mat-error class="font-extrabold"
+                                                    *ngIf="getActionPlanControl(groupName,j,'plan').hasError('required') 
+                                                    && !getActionPlanControl(groupName,j,'plan').hasError('actionPlanAlreadyExists')">
+                                                    field is required
+                                                </mat-error>
+
+                                            </mat-form-field>
+                                        </div>
+                                    </td>
+                                    <td class="w-40 border border-black fit-content">
+                                        <div class="grid">
+                                            <mat-form-field>
+                                                <mat-label>Responsible</mat-label>
+                                                <mat-select formControlName="responsible" multiple>
+                                                    <mat-select-trigger>
+                                                        {{getResponsiblesControl(groupName,j)?.value?.[0] || ''}}
+                                                        <span
+                                                            *ngIf="(getResponsiblesControl(groupName,j)?.value?.length || 0) > 1">
+                                                            (+{{(getResponsiblesControl(groupName,j)?.value?.length ||
+                                                            0) -
+                                                            1}} {{getResponsiblesControl(groupName,j)?.value?.length
+                                                            === 2 ?
+                                                            'other' : 'others'}})
+                                                        </span>
+                                                    </mat-select-trigger>
+                                                    <mat-option *ngFor="let responsible of responsibleList"
+                                                        [value]="responsible">{{responsible}}</mat-option>
+                                                </mat-select>
+                                                <mat-error class="font-extrabold"
+                                                    *ngIf="getResponsiblesControl(groupName,j)?.hasError('required')">
+                                                    field is required
+                                                </mat-error>
+                                            </mat-form-field>
+                                        </div>
+                                    </td>
+                                    <td class="w-40 border border-black fit-content">
+
+                                        <div class="grid">
+                                            <app-month-day-picker
+                                                [monthAndDayControl]="getActionPlanControl(groupName,j,'start_date')"
+                                                label="Month and Day"></app-month-day-picker>
+                                            <div class="text-sm font-extrabold text-red-500" *ngIf="validateMonth(getActionPlanControl(groupName,j,'start_date').value
+                                                !=='' && getMonth(groupName,j,'start_date') >
+                                                getMonth(groupName,j,'due_date')) ||
+                                                getActionPlanControl(groupName,j,'start_date').value
+                                                !=='' && getDay(groupName,j,'start_date') >
+                                                getDay(groupName,j,'due_date') && getMonth(groupName,j,'start_date') >
+                                                getMonth(groupName,j,'due_date')
+                                                ">
+                                                Start date must be before the due date.
+                                            </div>
+
+
+                                        </div>
+                                    </td>
+                                    <td class="w-40 border border-black ">
+                                        <div class="grid">
+                                            <app-month-day-picker
+                                                [monthAndDayControl]="getActionPlanControl(groupName,j,'due_date')"
+                                                label="Month and Day"></app-month-day-picker>
+
+                                            <div class="text-sm font-extrabold text-red-500"
+                                                *ngIf="getActionPlanControl(groupName, j, 'start_date').value !== '' && getMonth(groupName, j, 'due_date') < getMonth(groupName, j, 'start_date')
+                                                 || getActionPlanControl(groupName, j, 'start_date').value !== '' && getDay(groupName, j, 'due_date') < getDay(groupName, j, 'start_date') 
+                                                 &&  getMonth(groupName, j, 'due_date') < getMonth(groupName, j, 'start_date')">
+                                                Due date must be after the start date.
+                                            </div>
+                                        </div>
+                                    </td>
+                                    <td class="w-24 border border-black fit-content" formArrayName="target"
+                                        *ngFor="let targetControl of getTargetControls(actionPlan); let x = index">
+                                        <div class="grid">
+                                            <mat-form-field>
+                                                <mat-label>Target {{ x + 1 }}</mat-label>
+                                                <input matInput [formControlName]="x" placeholder="Enter Target">
+                                                <mat-error class="font-extrabold"
+                                                    *ngIf="targetControl.hasError('required')">
+                                                    field is required
+                                                </mat-error>
+                                            </mat-form-field>
+                                        </div>
+                                    </td>
+                                    <td class="border border-black fit-content ">
+                                        <div class="grid place-content-center">
+                                            <button type="button" mat-raised-button color="warn"
+                                                (click)="removePlan(groupName,j)"
+                                                [disabled]="getActionPlanFormArray(groupName).length === 1">Delete</button>
+                                        </div>
+                                    </td>
+                                </tr>
+                            </ng-container>
+
+                            <!-- <tr>
                         <tr></tr>
                     </tr> -->
-                    </table>
-                    <div class="flex justify-between p-8">
-                        <div class="space-x-4">
-                            <button type="button" mat-raised-button color="primary" [disabled]="!getEffectivityGroup().valid"
-                                (click)="addKPI(selectAfterAdding.checked)">Add
-                                KPI</button>
-                            <button type="button" mat-raised-button color="accent" [disabled]="!getEffectivityGroup().valid"
-                                (click)='addActionPlan(groupName)'>Add
-                                Plan</button>
+                        </table>
+                        <div class="flex justify-between p-8">
+                            <div class="space-x-4">
+                                <button type="button" mat-raised-button color="primary"
+                                    [disabled]="!getEffectivityGroup().valid"
+                                    (click)="addKPI(selectAfterAdding.checked)">Add
+                                    KPI</button>
+                                <button type="button" mat-raised-button color="accent"
+                                    [disabled]="!getEffectivityGroup().valid" (click)='addActionPlan(groupName)'>Add
+                                    Plan</button>
 
-                            <button type="button" mat-raised-button color="warn" [disabled]="(getFormGroupNames().length - 1) === 1"
-                                (click)='removeTab(groupName)'>Delete tab</button>
+                                <button type="button" mat-raised-button color="warn"
+                                    [disabled]="(getFormGroupNames().length - 1) === 1"
+                                    (click)='removeTab(groupName)'>Delete tab</button>
+                            </div>
+                            <button type="button" mat-raised-button color="primary"
+                                [disabled]="formGroup.invalid || getActionPlanFormArray(groupName).controls.length === 0 || isMonthValid"
+                                (click)="submit()">Done</button>
                         </div>
-                        <button type="button" mat-raised-button color="primary" [disabled]="formGroup.invalid || getActionPlanFormArray(groupName).controls.length === 0"
-                            (click)="submit()">Done</button>
-                    </div>
-                </mat-tab>
-            </div>
-        </ng-container>
-    </form>
-</mat-tab-group>
+                    </mat-tab>
+                </div>
+            </ng-container>
+        </form>
+    </mat-tab-group>
+</div>
+<div class="absolute inset-0 grid bg-black bg-opacity-60 place-content-center z-[999]" *ngIf="isLoading">
+    <mat-spinner color="accent"></mat-spinner>
+    <span class="text-lg font-bold tracking-widest text-white">Submitting...</span>
+</div>

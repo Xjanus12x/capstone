@@ -38,6 +38,7 @@ import { ActionPlansComponent } from './action-plans/action-plans.component';
 import { ObjAndActionPlansListComponent } from './obj-and-action-plans-list/obj-and-action-plans-list.component';
 import { MatDatepickerModule } from '@angular/material/datepicker';
 import { MatExpansionModule } from '@angular/material/expansion';
+import { AuditTrailComponent } from './audit-trail/audit-trail.component';
 
 @NgModule({
   declarations: [
@@ -52,6 +53,7 @@ import { MatExpansionModule } from '@angular/material/expansion';
     PendingUserListComponent,
     ActionPlansComponent,
     ObjAndActionPlansListComponent,
+    AuditTrailComponent,
   ],
   exports: [LoginComponent, RegisterComponent, DashboardComponent],
   imports: [
@@ -86,7 +88,6 @@ import { MatExpansionModule } from '@angular/material/expansion';
     MatProgressSpinnerModule,
     MatDialogModule,
     MatDatepickerModule,
-
     MatExpansionModule,
   ],
   providers: [],

@@ -7,6 +7,7 @@ import {
 import { ToggleSideNavService } from '../../services/toggle-side-nav.service';
 import { Router } from '@angular/router';
 import { NavItem } from '../../models/NavItems';
+import { AuthService } from '../../services/auth.service';
 
 @Component({
   selector: 'app-sidenav',
@@ -16,13 +17,16 @@ import { NavItem } from '../../models/NavItems';
 export class SidenavComponent {
   @ViewChild('drawer') drawer!: any;
   isOpen!: boolean;
-  constructor(private sideNav: ToggleSideNavService) {
+  constructor(
+    private sideNav: ToggleSideNavService,
+    private authService: AuthService
+  ) {
     // this.dataSource.data = this.TREE_DATA;
   }
   ngOnInit() {
     this.sideNav.isOpen$.subscribe((isOpen) => {
       this.isOpen = isOpen;
-    });
+    }); 
   }
   navItems: NavItem[] = [
     {
@@ -30,28 +34,29 @@ export class SidenavComponent {
       link: '/dashboard',
     },
     {
-      label: 'User',
+      label: 'Manage Users',
       children: [
         {
-          label: 'Pending Users',
+          label: 'View Pending Users',
           link: 'pending-user-list',
           outlet: 'dashboardContent',
           canAccess: ['Admin', 'College Secretary'],
         },
         {
-          label: 'User List',
+          label: 'View All Users',
           link: 'user-list',
           outlet: 'dashboardContent',
+          canAccess: ['Admin', 'College Secretary'],
         },
       ],
       collapsed: true,
-      canAccess: ['Admin'],
+      canAccess: ['Admin', 'College Secretary'],
     },
     {
-      label: 'Form',
+      label: 'Manage Form',
       children: [
         {
-          label: 'Fill Out',
+          label: 'Fill Out IGC Form',
           link: 'fill-up',
           outlet: 'dashboardContent',
           canAccess: ['Faculty', 'Admin'],
@@ -62,16 +67,16 @@ export class SidenavComponent {
     },
 
     {
-      label: 'Manage',
+      label: 'Manage Objectives',
       children: [
         {
-          label: "Input KPI's",
-          link: 'input-kpis',
+          label: 'Create Objectives',
+          link: 'create-objectives',
           outlet: 'dashboardContent',
           canAccess: ['Admin', 'College Secretary'],
         },
         {
-          label: 'KPI List',
+          label: 'View Objectives List',
           link: 'obj-and-action-plan-list',
           outlet: 'dashboardContent',
           canAccess: ['Admin', 'College Secretary'],
@@ -80,11 +85,18 @@ export class SidenavComponent {
       collapsed: true,
       canAccess: ['Admin', 'College Secretary'],
     },
+
     {
       label: 'Reports',
       outlet: 'dashboardContent',
       link: 'reports',
       canAccess: ['Admin', 'HRD'],
+    },
+    {
+      label: 'View Logs',
+      outlet: 'dashboardContent',
+      link: 'logs',
+      canAccess: ['Admin'],
     },
   ];
 }

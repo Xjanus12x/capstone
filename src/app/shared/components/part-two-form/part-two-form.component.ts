@@ -29,6 +29,7 @@ export class PartTwoFormComponent implements OnInit, AfterViewInit {
   @Input() stepLabel!: string[];
   currentUserId: string = '';
   rateDate: null | string = '';
+  selectedActionPlans: string[] = [];
   constructor(
     private fb: FormBuilder,
     private formContentService: FormContentService,
@@ -39,11 +40,7 @@ export class PartTwoFormComponent implements OnInit, AfterViewInit {
   ) {}
 
   ngOnInit() {
-    this.authService.getUserRole().subscribe({
-      next: (role) => {
-        this.userRole = role;
-      },
-    });
+    this.userRole = this.authService.getUserInformationFirebase().role;
     this.formGroup = this.fb.group({
       step1: this.formContentService.createFormArray(3),
       step2: this.formContentService.createFormArray(3),
@@ -62,6 +59,12 @@ export class PartTwoFormComponent implements OnInit, AfterViewInit {
       this.currentUserId = params.get('id')!;
     });
     this.rateDate = this.activatedRoute.snapshot.queryParamMap.get('rateDate');
+              // submittedIGCF.igc_inputs.forEach((data: any) => {
+              //   this.selectedActionPlans.push(data.personalObject);
+              //   console.log(data.personalObject);
+              // });
+
+    
   }
   ngAfterViewInit() {
     if (
@@ -84,7 +87,6 @@ export class PartTwoFormComponent implements OnInit, AfterViewInit {
             top_three_competencies_improvement,
             top_three_training_development_suggestion,
           ];
-
           this.formArrayNames.forEach((name, index) => {
             this.formGroup.get(name)?.setValue(partTwoIgcfValues[index]);
             this.formGroup.get(name)?.disable();

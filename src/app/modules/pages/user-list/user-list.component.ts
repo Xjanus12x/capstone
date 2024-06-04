@@ -1,5 +1,5 @@
 import { SelectionModel } from '@angular/cdk/collections';
-import { Component, ViewChild } from '@angular/core';
+import { AfterViewInit, Component, ViewChild } from '@angular/core';
 import { MatDialog } from '@angular/material/dialog';
 import { MatPaginator } from '@angular/material/paginator';
 import { MatSort } from '@angular/material/sort';
@@ -8,29 +8,34 @@ import { Observable } from 'rxjs';
 import { IUserList } from 'src/app/core/models/UsersList';
 import { AuthService } from 'src/app/core/services/auth.service';
 import { BackendService } from 'src/app/core/services/backend.service';
+import { DialogBoxComponent } from '../../components/dialog-box/dialog-box.component';
+import { dialogBoxConfig } from 'src/app/core/constants/DialogBoxConfig';
+import { IDialogBox } from 'src/app/core/models/DialogBox';
+import { DatePipe } from '@angular/common';
 
 @Component({
   selector: 'app-user-list',
   templateUrl: './user-list.component.html',
   styleUrls: ['./user-list.component.css'],
 })
-export class UserListComponent {
+export class UserListComponent implements AfterViewInit {
   constructor(
     private backendService: BackendService,
     private authService: AuthService,
-    public dialog: MatDialog
+    public dialog: MatDialog,
+    private datePipe: DatePipe
   ) {}
   userList$!: Observable<IUserList[]>;
-  dataToDisplay: IUserList[] = [];
   selection = new SelectionModel<any>(true, []);
   dataSource = new MatTableDataSource<any>();
+  dataToDisplay: any[] = [];
   displayedHeader: string[] = [
     'Employee Number',
     'Firstname',
     'Lastname',
     'Email',
     'User Role',
-    'Position',
+    // 'Position',
     'Department',
   ];
   displayedColumns: string[] = [
@@ -39,7 +44,7 @@ export class UserListComponent {
     'lastname',
     'email',
     'role',
-    'position',
+    // 'position',
     'department',
   ];
   userRole$!: Observable<string>;
@@ -50,8 +55,6 @@ export class UserListComponent {
   currentUserDepartment: string = '';
 
   ngOnInit(): void {
-    // this.userRole$ = this.authService.getUserRole();
-    // this.loadData();
     this.isLoading = true;
     this.currentUserDepartment =
       this.authService.getUserInformationFirebase().department;
@@ -61,52 +64,75 @@ export class UserListComponent {
           (user) =>
             user.emp_number !==
             this.authService.getUserInformationFirebase().emp_number
+          //   &&
+          // user.role !== 'Admin'
         );
         this.dataSource.data = this.dataToDisplay;
       },
-      error: () => {},
+      error: (error) => {
+        this.dataSource.data = [];
+        const dialogBoxData: IDialogBox = {
+          title: 'Error',
+          content:
+            'An error occurred while fetching user data. Please try again later.',
+          buttons: [
+            {
+              isVisible: true,
+              matDialogCloseValue: false,
+              content: 'Close',
+            },
+          ],
+        };
+        this.dialog.open(DialogBoxComponent, {
+          ...dialogBoxConfig,
+          data: dialogBoxData,
+        });
+      },
       complete: () => {
         this.isLoading = false;
       },
     });
   }
-
-  loadData() {
-    this.isLoading = true;
-    this.authService.getEmployeeNumber().subscribe({
-      next: (empNumber: string) => {
-        this.authService.getEmployeeDetails(empNumber).subscribe({
-          next: (result) => {
-            const { data } = result;
-            this.currentUserEmpNumber = data.emp_number;
-            this.userList$ = this.backendService.getAllUsers(data.emp_dept);
-            this.handleDataSubscription();
-          },
-        });
-      },
-    });
-  }
-
-  handleDataSubscription() {
-    this.userList$.subscribe({
-      next: (data: IUserList[]) => {
-        this.dataToDisplay = data.filter(
-          (users) => users.emp_number !== this.currentUserEmpNumber
-        );
-        this.updateDataSource();
-      },
-      error: (error) => {
-        this.handleError(error);
-      },
-    });
-  }
-
-  updateDataSource() {
-    this.dataSource = new MatTableDataSource(this.dataToDisplay);
+  ngAfterViewInit(): void {
     this.dataSource.paginator = this.paginator; // Set paginator after data is loaded
     this.dataSource.sort = this.sort;
-    this.isLoading = false;
   }
+  // loadData() {
+  //   this.isLoading = true;
+  //   this.authService.getEmployeeNumber().subscribe({
+  //     next: (empNumber: string) => {
+  //       this.authService.getEmployeeDetails(empNumber).subscribe({
+  //         next: (result) => {
+  //           const { data } = result;
+  //           this.currentUserEmpNumber = data.emp_number;
+  //           this.userList$ = this.backendService.getAllUsers(data.emp_dept);
+  //           this.handleDataSubscription();
+  //         },
+  //       });
+  //     },
+  //   });
+  // }
+
+  // handleDataSubscription() {
+  //   this.userList$.subscribe({
+  //     next: (data: IUserList[]) => {
+  //       this.dataToDisplay = data.filter(
+  //         (users) => users.emp_number !== this.currentUserEmpNumber
+  //       );
+  //       this.updateDataSource();
+  //     },
+  //     error: (error) => {
+  //       this.handleError(error);
+  //     },
+  //   });
+  // }
+
+  // updateDataSource() {
+  //   this.dataSource = new MatTableDataSource(this.dataToDisplay);
+  //   this.dataSource.paginator = this.paginator; // Set paginator after data is loaded
+  //   this.dataSource.sort = this.sort;
+  //   this.isLoading = false;
+  // }
 
   handleError(error: any) {
     console.error('Error:', error);
@@ -158,17 +184,9 @@ export class UserListComponent {
 
   deleteUser(element: any) {
     this.isLoading = true;
-    const { empDocId, userId, email, emp_number } = element;
-    // department: 'SCHOOL OF COMPUTING';
-    // email: 'albertovillacarlos07@gmail.com';
-    // empDocId: 'ivljwHxfpqjHTRLlzInJ';
-    // emp_number: '03192002';
-    // firstname: 'Albert0';
-    // lastname: 'Villacarlos';
-    // position: 'Student';
-    // role: 'Admin';
-    // userId: 'asfZcRDbvMgOtX1tMYA2';
-    const indexToRemove = this.dataToDisplay.findIndex(
+    const { empDocId, userId, email, emp_number, firstname, lastname } =
+      element;
+    const indexToRemove = this.dataSource.data.findIndex(
       (item: any) => item.empDocId === empDocId && item.userId === userId
     );
 
@@ -176,11 +194,56 @@ export class UserListComponent {
       next: () => {
         this.dataToDisplay.splice(indexToRemove, 1);
         this.dataSource.data = this.dataToDisplay;
-        // Handle success, if needed
+        const {
+          firstname: adminFn,
+          lastname: adminLn,
+          department,
+        } = this.authService.getUserInformationFirebase();
+        const user = `${firstname} ${lastname}`.toUpperCase();
+        const adminName = `${adminFn} ${adminLn}`.toUpperCase();
+        const message = `"${adminName}" has deleted the official faculty user "${user}".`;
+        const timeStamp = this.datePipe.transform(new Date(), 'yyyy-MM-dd');
+        this.backendService.addLog({
+          message,
+          timestamp: timeStamp,
+          department: department,
+          type:'deleted-users'
+        });
+
+        const userFullName = `${firstname} ${lastname}`.toUpperCase();
+
+        this.backendService.sendEmail(
+          `${userFullName}`, // recipient name (registered user whose account is deleted)
+          `${adminName}`, // sender name (admin who deleted the account)
+          `
+          Dear ${userFullName},
+
+          We regret to inform you that your account has been deactivated by ${adminName}. If you believe this is an error or have any concerns, please feel free to contact us.
+
+          Best regards,
+          ${adminName}
+          `, // email message
+          `Account Deactivation Notification`, // email subject
+          email // recipient email address
+        );
       },
       error: (error) => {
-        console.error('Error deleting user:', error);
-        // Handle error, if needed
+        const dialogBoxData: IDialogBox = {
+          title: 'Error',
+          content:
+            'An error occurred while deleting the user. Please try again later.',
+          buttons: [
+            {
+              isVisible: true,
+              matDialogCloseValue: false,
+              content: 'Close',
+            },
+          ],
+        };
+        this.dialog.open(DialogBoxComponent, {
+          ...dialogBoxConfig,
+          data: dialogBoxData,
+        });
       },
       complete: () => {
         this.isLoading = false;

@@ -1,0 +1,62 @@
+<div class="pt-8 space-y-4 bg-white">
+    <div class="grid  grid-cols-6">
+        <div class="grid col-span-5">
+            <mat-form-field>
+                <mat-label>Filter</mat-label>
+                <input matInput (input)="applyFilter($event)" placeholder="Ex. Hello" #input>
+            </mat-form-field>
+        </div>
+        <div class="grid">
+            <mat-form-field class="mx-auto">
+                <mat-label>Select Log types</mat-label>
+                <mat-select (valueChange)="filterSubmittedIgcf($event)">
+                    <mat-option value="none">
+                        --None--
+                    </mat-option>
+                    <mat-option *ngFor="let type of logTypes" [value]="type">
+                        {{ type }}
+                    </mat-option>
+                </mat-select>
+            </mat-form-field>
+        </div>
+    </div>
+    <div>
+        <table mat-table [dataSource]="dataSource" matSort>
+            <ng-container *ngFor="let column of displayedColumns; let i = index" [matColumnDef]="column">
+                <mat-header-cell mat-header-cell *matHeaderCellDef mat-sort-header>
+                    {{ displayedHeader[i] }}
+                </mat-header-cell>
+
+                <mat-cell mat-cell *matCellDef="let element">
+                    {{element[column]}}
+                </mat-cell>
+
+            </ng-container>
+
+            <mat-header-row *matHeaderRowDef="displayedColumns"></mat-header-row>
+            <mat-row matRipple *matRowDef=" let row; columns: displayedColumns"></mat-row>
+
+            <!-- Row shown when there is no matching data. -->
+            <tr class="text-lg text-center" *matNoDataRow>
+                <ng-container *ngIf="input.value === ''; else noSubmitted">
+                    <td class="p-4" colspan="4">
+                        No logs.
+                    </td>
+                </ng-container>
+                <ng-template #noSubmitted>
+                    <td class="p-4" colspan="4">
+                        No data matching the filter "<span class="font-bold text-red-600">{{ input.value }}</span>"
+                    </td>
+                </ng-template>
+            </tr>
+        </table>
+
+        <!-- Add paginator if needed -->
+        <mat-paginator [pageSizeOptions]="[5, 10, 25]" showFirstLastButtons></mat-paginator>
+    </div>
+</div>
+
+<div class="absolute inset-0 grid bg-black bg-opacity-60 place-content-center" *ngIf="isLoading">
+    <mat-spinner color="accent"></mat-spinner>
+    <span class="text-lg font-bold tracking-widest text-white">Loading data...</span>
+</div>

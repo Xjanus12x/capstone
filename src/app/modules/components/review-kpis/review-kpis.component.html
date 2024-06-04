@@ -2,48 +2,43 @@
     <button mat-button (click)="accordion.openAll()">Expand All</button>
     <button mat-button (click)="accordion.closeAll()">Collapse All</button>
 </div>
-
+<h2 mat-dialog-title class="text-1xl texto-black">Confirm Inputs</h2>
 <mat-accordion multi #accordion="matAccordion">
-    <mat-expansion-panel *ngFor="let kpi of kpiAndActionPlans; let i = index">
+    <mat-expansion-panel *ngFor="let kpi of uniqueKpis; let i = index">
         <mat-expansion-panel-header>
             <mat-panel-title>
-                KPI Title {{i+1}} - {{ kpi.title }}
+                Objective Title {{i+1}} - {{ kpi.kpi_title }}
             </mat-panel-title>
         </mat-expansion-panel-header>
 
         <!-- Display action plans for this KPI -->
-        <table mat-table [dataSource]="[kpi.kpiAndActionPlans]">
-            <!-- Define table columns -->
-            <ng-container matColumnDef="actionPlan">
+        <table mat-table [dataSource]="kpi.kpiAndActionPlans">
+            <!-- Define columns -->
+            <ng-container matColumnDef="plan">
                 <th mat-header-cell *matHeaderCellDef>Plan</th>
-                <td mat-cell *matCellDef="let actionPlan">{{ actionPlan.actionPlan }}</td>
+                <td mat-cell *matCellDef="let element">{{ element.plan }}</td>
             </ng-container>
-
             <ng-container matColumnDef="target">
                 <th mat-header-cell *matHeaderCellDef>Target</th>
-                <td mat-cell *matCellDef="let actionPlan">{{ actionPlan.target }}
-                    <div class="grid">
-                        <span *ngFor="let target of actionPlan.target.split(',')">
+                <td mat-cell *matCellDef="let element">
+                    <div class="grid gap-2">
+                        <span *ngFor="let target of element.target">
                             {{target}}
                         </span>
                     </div>
-
                 </td>
             </ng-container>
-
-            <ng-container matColumnDef="timeFrame">
-                <th mat-header-cell *matHeaderCellDef>Time Frame</th>
-                <td mat-cell *matCellDef="let actionPlan">
-                    <div class="grid">
-                        <span *ngFor="let timeFrame of actionPlan.timeFrame.split(',')">
-                            {{timeFrame}}
-                        </span>
-                    </div>
-                </td>
+            <ng-container matColumnDef="startDateFormatted">
+                <th mat-header-cell *matHeaderCellDef>Start Date</th>
+                <td mat-cell *matCellDef="let element">{{ element.startDateFormatted }}</td>
             </ng-container>
-            <ng-container matColumnDef="responsible">
-                <th mat-header-cell *matHeaderCellDef>Responsible</th>
-                <td mat-cell *matCellDef="let actionPlan">{{ actionPlan.responsible }}</td>
+            <ng-container matColumnDef="dueDateFormatted">
+                <th mat-header-cell *matHeaderCellDef>Due Date</th>
+                <td mat-cell *matCellDef="let element">{{ element.dueDateFormatted }}</td>
+            </ng-container>
+            <ng-container matColumnDef="responsibles">
+                <th mat-header-cell *matHeaderCellDef>Responsibles</th>
+                <td mat-cell *matCellDef="let element">{{ element.responsibles }}</td>
             </ng-container>
 
             <!-- Set table rows -->

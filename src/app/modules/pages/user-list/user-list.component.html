@@ -1,7 +1,7 @@
 <div class="pt-8 space-y-4">
     <div class="grid bg-white">
         <mat-form-field>
-            <mat-label>Filter</mat-label>
+            <mat-label>Search</mat-label>
             <input matInput (input)="applyFilter($event)" placeholder="Ex. Hello" #input>
         </mat-form-field>
     </div>
@@ -10,7 +10,8 @@
             <!-- Manually define column headers -->
             <ng-container *ngFor="let column of displayedColumns; let i = index" [matColumnDef]="column">
 
-                <mat-header-cell mat-header-cell *matHeaderCellDef mat-sort-header>
+                <mat-header-cell mat-header-cell *matHeaderCellDef mat-sort-header
+                    [matTooltip]="'Click to sort by ' +  displayedHeader[i]">
                     {{
                     displayedHeader[i]
                     }}
@@ -19,17 +20,6 @@
                 <mat-cell mat-cell *matCellDef="let element">
                     {{ column === 'fullname'?
                     element[column].toUpperCase() : element[column] }}
-                </mat-cell>
-            </ng-container>
-
-            <ng-container matColumnDef="isSigned">
-                <mat-header-cell mat-header-cell *matHeaderCellDef mat-sort-header> Status
-                </mat-header-cell>
-                <mat-cell mat-cell *matCellDef="let element">
-                    <span [ngClass]="{'bg-green-200': element.isSigned,'bg-red-200':!element.isSigned}"
-                        class="p-1 font-extrabold rounded-md">
-                        {{element.isSigned? 'Signed': 'Not sign'}}
-                    </span>
                 </mat-cell>
             </ng-container>
 

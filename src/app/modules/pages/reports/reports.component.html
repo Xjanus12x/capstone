@@ -38,13 +38,20 @@
                 Submitted Individual Goal Commitment Forms (IGCFs)
             </mat-panel-title>
             <mat-panel-description>
-                Total Count: {{numberOfSubmittedIgcfByDept}}
+                Total Count: {{mapNumbersBaseOnSubmittedIGCFs.get('numberOfSubmittedIGCFs') || 0}}
             </mat-panel-description>
-            <button mat-icon-button
-                (click)="generateReport($event,dataSourceForSubmissionHistory.data,'Submitted Individual Goal Commitment Forms (IGCFs) List')"
-                matTooltip="Generate PDF">
-                <mat-icon>picture_as_pdf</mat-icon>
-            </button>
+            <div class="space-x-4">
+                <button mat-raised-button color="primary" (click)="generatePDF($event,'submitted')"
+                    matTooltip="Generate PDF">
+                    Generate IGC PDF
+                </button>
+                <button mat-raised-button color="accent"
+                    (click)="generateReport($event,dataSourceForSubmissionHistory.data,'Submitted Individual Goal Commitment Forms (IGCFs) List')"
+                    matTooltip="Generate PDF">
+                    Generate List PDF
+                </button>
+            </div>
+
         </mat-expansion-panel-header>
         <div class="pt-8 ">
             <div class="grid bg-white">
@@ -104,11 +111,12 @@
                 Done Rating Individual Goal Commitment Forms (IGCFs)
             </mat-panel-title>
             <mat-panel-description>
-                Total Count: {{ numberOfDoneRatingIgcByDept }}
+                Total Count: {{ mapNumbersBaseOnSubmittedIGCFs.get('numberOfDoneRatingIGCFs') || 0}}
             </mat-panel-description>
 
             <div class="space-x-4">
-                <button mat-raised-button color="primary" (click)="generatePDF($event)" matTooltip="Generate PDF">
+                <button mat-raised-button color="primary"
+                    (click)="generatePDF($event,'rated')" matTooltip="Generate PDF">
                     Generate IGC PDF
                 </button>
                 <button mat-raised-button color="accent"
@@ -117,12 +125,7 @@
                     Generate List PDF
                 </button>
             </div>
-
-
-
         </mat-expansion-panel-header>
-
-
         <div class="pt-8 ">
             <div class="grid bg-white">
                 <div class="grid col-span-5">
@@ -134,6 +137,7 @@
                 </div>
             </div>
             <div class="bg-white">
+
                 <table mat-table [dataSource]="dataSourceForRatedIgcf" matSort>
                     <!-- Manually define column headers -->
                     <ng-container *ngFor="let column of displayedColumnsForNotRatedIgcf; let i = index"
@@ -171,9 +175,7 @@
                 <mat-paginator [pageSizeOptions]="[5, 10, 25]" showFirstLastButtons></mat-paginator>
             </div>
         </div>
-
     </mat-expansion-panel>
-
 
     <mat-expansion-panel>
         <mat-expansion-panel-header>

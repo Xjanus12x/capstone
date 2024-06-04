@@ -1,25 +1,16 @@
-import {
-  AfterViewInit,
-  Component,
-  ElementRef,
-  OnInit,
-  ViewChild,
-} from '@angular/core';
+import { AfterViewInit, Component, OnInit, ViewChild } from '@angular/core';
 import { AuthService } from 'src/app/core/services/auth.service';
 import { BackendService } from 'src/app/core/services/backend.service';
-import * as pdfMake from 'pdfmake/build/pdfmake';
-import * as pdfFonts from 'pdfmake/build/vfs_fonts';
-import { HttpClient } from '@angular/common/http';
 import { ISubmittedIGCF } from 'src/app/core/models/SubmittedIgcf';
 import { formData } from 'src/app/core/constants/formData';
-
-import { Observable, forkJoin, map, switchMap } from 'rxjs';
 import { SelectionModel } from '@angular/cdk/collections';
 import { MatTableDataSource } from '@angular/material/table';
 import { MatPaginator } from '@angular/material/paginator';
 import { MatSort } from '@angular/material/sort';
 import { MatAccordion } from '@angular/material/expansion';
 import { FormControl } from '@angular/forms';
+import { GeneratePdfService } from 'src/app/shared/services/generate-pdf.service';
+import * as pdfMake from 'pdfmake/build/pdfmake';
 
 @Component({
   selector: 'app-reports',
@@ -30,10 +21,9 @@ export class ReportsComponent implements OnInit, AfterViewInit {
   constructor(
     private backendService: BackendService,
     private authService: AuthService,
-    private http: HttpClient
-  ) {
-    (pdfMake.vfs as any) = pdfFonts.pdfMake.vfs;
-  }
+
+    private generatePDFService: GeneratePdfService
+  ) {}
 
   isLoadingResults: boolean = false;
   numberOfSubmissions: number = 0;
@@ -56,8 +46,11 @@ export class ReportsComponent implements OnInit, AfterViewInit {
   notSignedCountMap = new Map<string, number>();
   deadlineYears: any[] = [];
   originalSubmissionHistory: any[] = [];
-  numberOfSubmittedIgcfByDept: number = 0;
-  numberOfDoneRatingIgcByDept: number = 0;
+
+  mapNumbersBaseOnSubmittedIGCFs = new Map<string, number>([
+    ['numberOfDoneRatingIGCFs', 0],
+    ['numberOfSubmittedIGCFs', 0],
+  ]);
   overallAverageDescriptionMap = new Map<string, number>();
   displayedHeaderForSubmissionHistory: string[] = [
     'Fullname',
@@ -69,8 +62,8 @@ export class ReportsComponent implements OnInit, AfterViewInit {
   displayedColumnsForSubmissionHistory: string[] = [
     'fullname',
     'emp_number',
-    'emp_position',
-    'emp_dept',
+    'position',
+    'department',
     'completion_date',
   ];
   displayedHeaderForNotRatedIgcf: string[] = [
@@ -81,11 +74,12 @@ export class ReportsComponent implements OnInit, AfterViewInit {
     'Completion Date',
     'Rated On',
   ];
+
   displayedColumnsForNotRatedIgcf: string[] = [
     'fullname',
     'emp_number',
-    'emp_position',
-    'emp_dept',
+    'position',
+    'department',
     'completion_date',
     'rate_date',
   ];
@@ -102,8 +96,8 @@ export class ReportsComponent implements OnInit, AfterViewInit {
   displayedColumnsForDeliveredAgreedIgc: string[] = [
     'fullname',
     'emp_number',
-    'emp_position',
-    'emp_dept',
+    'position',
+    'department',
     'overall_weighted_average_rating',
     'completion_date',
     'rate_date',
@@ -119,11 +113,11 @@ export class ReportsComponent implements OnInit, AfterViewInit {
     'Exceeded or Delivered beyond individual goal commitment IGCF employees list',
   ];
 
-  submissionHistory$!: Observable<any>;
+  submittedIGCFs: any[] = [];
   filteredSubmissionHistory: any[] = [];
   currentDate: Date = new Date();
   dataToDisplay: any[] = [];
-  originalPartTwoIgcfData: any[] = [];
+  originalSubmittedIGCFs: any[] = [];
   selection = new SelectionModel<any>(true, []);
   dataSourceForSubmissionHistory = new MatTableDataSource<any>([]);
   dataSourceForRatedIgcf = new MatTableDataSource<any>([]);
@@ -137,142 +131,102 @@ export class ReportsComponent implements OnInit, AfterViewInit {
   @ViewChild(MatAccordion) accordion!: MatAccordion;
 
   ngOnInit(): void {
+    const { role, department } = this.authService.getUserInformationFirebase();
     const { formArrayNames, groupCounts, stepLabel } = formData.partOneForm;
     this.arrayNames = formArrayNames;
     this.groupCounts = groupCounts;
     this.stepLabel = stepLabel;
-    this.authService.getEmployeeDepartment().subscribe({
-      next: (dept: string) => {
-        this.dept = dept;
-      },
-    });
-    this.authService.getUserRole().subscribe({
-      next: (role: string) => {
-        if (role === 'Admin') {
-          this.backendService.getSubmissionHistoryByDept(this.dept).subscribe({
-            next: (submissionHistory: any) => {
-              this.deadlineYears = this.extractYears(submissionHistory);
-              this.originalSubmissionHistory = submissionHistory;
+    this.dept = department;
 
-              const filteredData =
-                this.filterDataToCurrentYear(submissionHistory);
+    // getSubmittedIGCFsFirebase
 
-              this.filteredSubmissionHistory = filteredData;
+    this.backendService
+      .getSubmittedIGCFsFirebase(role, 'department', department)
+      .subscribe({
+        next: (data: any[]) => {
+          this.submittedIGCFs = data;
+          this.originalSubmittedIGCFs = data;
+          const modifiedData = data.map((data: any) => {
+            const {
+              fullname,
+              emp_number,
+              position,
+              department,
+              completion_date,
+              rate_date,
+            } = data;
 
-              const filterRatedIgcf = filteredData.filter(
-                (submission: any) => submission.rate_date
-              );
-
-              this.numberOfSubmittedIgcfByDept = filteredData.length;
-              this.numberOfDoneRatingIgcByDept = filterRatedIgcf.length;
-              this.dataSourceForSubmissionHistory.data = filteredData;
-              this.dataSourceForRatedIgcf.data = filterRatedIgcf;
-            },
+            return {
+              fullname,
+              emp_number,
+              position,
+              department,
+              completion_date,
+              rate_date,
+            };
           });
-          this.backendService
-            .getSubmittedIgcfPartTwoByDept(this.dept)
-            .subscribe({
-              next: (data: any) => {
-                this.originalPartTwoIgcfData = data;
-                const filteredData = this.filterDataToCurrentYear(data);
-                this.filteredSubmissionHistory = filteredData;
-                const filteredFailedDeliveredAgreedIgc =
-                  this.filterDataBaseOnEquivalentDescription(
-                    filteredData,
-                    'Failed to deliver agreed individual goal commitment'
-                  );
 
-                const filteredPartiallyDeliveredAgreedIgc =
-                  this.filterDataBaseOnEquivalentDescription(
-                    filteredData,
-                    'Partially delivered agreed individual goal commitment'
-                  );
-                const filterDeliveredAgreedIgc =
-                  this.filterDataBaseOnEquivalentDescription(
-                    filteredData,
-                    'Delivered agreed individual goal commitment'
-                  );
-                const filterExceededOrDeliveredIgc =
-                  this.filterDataBaseOnEquivalentDescription(
-                    filteredData,
-                    'Exceeded or Delivered beyond individual goal commitment'
-                  );
-                this.overallAverageDescriptionMap =
-                  this.mapEquivalentDescription(filteredData);
-                this.dataSourceForFailedDeliveredAgreedIgc.data =
-                  filteredFailedDeliveredAgreedIgc;
-                this.dataSourceForPartiallyDeliveredAgreedIgc.data =
-                  filteredPartiallyDeliveredAgreedIgc;
-                this.dataSourceForDeliveredAgreedIgc.data =
-                  filterDeliveredAgreedIgc;
-                this.dataSourceForExceededOrDeliveredAgreedIgc.data =
-                  filterExceededOrDeliveredIgc;
-                // Now equivalentDescriptionMap contains the desired mapping of equivalent descriptions to counts
-              },
-            });
-        }
-        // else if (role === 'HRD') {
-        //   this.backendService.getSubmissionHistoryEveryDept().subscribe({
-        //     next: (submissionHistory: any) => {
-        //       this.deadlineYears = this.extractYears(submissionHistory);
-        //       this.originalSubmissionHistory = submissionHistory;
-        //       const filteredData =
-        //         this.filterDataToCurrentYear(submissionHistory);
-        //       const filterNotRatedIgcf = filteredData.filter(
-        //         (submission: any) => !submission.rate_date
-        //       );
-        //       this.numberOfSubmittedIgcfByDept = filteredData.length;
-        //       this.numberOfNotRatedIgcfByDept = filterNotRatedIgcf.length;
-        //       this.dataSourceForSubmissionHistory.data = filteredData;
-        //       this.dataSourceForNotRatedIgcf.data = filterNotRatedIgcf;
-        //     },
-        //   });
-        //   this.backendService.getSubmittedIgcfPartTwoByDept('').subscribe({
-        //     next: (data: any) => {
-        //       this.originalPartTwoIgcfData = data;
-        //       const filteredData = this.filterDataToCurrentYear(data);
-        //       const filteredFailedDeliveredAgreedIgc =
-        //         this.filterDataBaseOnEquivalentDescription(
-        //           filteredData,
-        //           'Failed to deliver agreed individual goal commitment'
-        //         );
+          this.deadlineYears = this.extractYears(modifiedData);
+          const filterCurrentYearOfIGCFs = modifiedData.filter(
+            (igcf: any) =>
+              new Date(igcf.completion_date).getFullYear() ===
+              new Date().getFullYear()
+          );
+          const filterRatedIGCFs = filterCurrentYearOfIGCFs.filter(
+            (submission: any) => submission.rate_date
+          );
 
-        //       const filteredPartiallyDeliveredAgreedIgc =
-        //         this.filterDataBaseOnEquivalentDescription(
-        //           filteredData,
-        //           'Partially delivered agreed individual goal commitment'
-        //         );
-        //       const filterDeliveredAgreedIgc =
-        //         this.filterDataBaseOnEquivalentDescription(
-        //           filteredData,
-        //           'Delivered agreed individual goal commitment'
-        //         );
-        //       const filterExceededOrDeliveredIgc =
-        //         this.filterDataBaseOnEquivalentDescription(
-        //           filteredData,
-        //           'Exceeded or Delivered beyond individual goal commitment'
-        //         );
-        //       this.overallAverageDescriptionMap =
-        //         this.mapEquivalentDescription(filteredData);
-        //       this.dataSourceForFailedDeliveredAgreedIgc.data =
-        //         filteredFailedDeliveredAgreedIgc;
-        //       this.dataSourceForPartiallyDeliveredAgreedIgc.data =
-        //         filteredPartiallyDeliveredAgreedIgc;
-        //       this.dataSourceForDeliveredAgreedIgc.data =
-        //         filterDeliveredAgreedIgc;
-        //       this.dataSourceForExceededOrDeliveredAgreedIgc.data =
-        //         filterExceededOrDeliveredIgc;
-        //       // Now equivalentDescriptionMap contains the desired mapping of equivalent descriptions to counts
-        //     },
-        //   });
-        // }
-      },
-    });
+          this.mapNumbersBaseOnSubmittedIGCFs.set(
+            'numberOfSubmittedIGCFs',
+            filterCurrentYearOfIGCFs.length
+          );
+
+          this.mapNumbersBaseOnSubmittedIGCFs.set(
+            'numberOfDoneRatingIGCFs',
+            filterRatedIGCFs.length
+          );
+          this.dataSourceForSubmissionHistory.data = filterCurrentYearOfIGCFs;
+          this.dataSourceForRatedIgcf.data = filterRatedIGCFs;
+
+          const filteredFailedDeliveredAgreedIgc =
+            this.filterDataBaseOnEquivalentDescription(
+              this.submittedIGCFs,
+              'Failed to deliver agreed individual goal commitment'
+            );
+
+          const filteredPartiallyDeliveredAgreedIgc =
+            this.filterDataBaseOnEquivalentDescription(
+              this.submittedIGCFs,
+              'Partially delivered agreed individual goal commitment'
+            );
+          const filterDeliveredAgreedIgc =
+            this.filterDataBaseOnEquivalentDescription(
+              this.submittedIGCFs,
+              'Delivered agreed individual goal commitment'
+            );
+          const filterExceededOrDeliveredIgc =
+            this.filterDataBaseOnEquivalentDescription(
+              this.submittedIGCFs,
+              'Exceeded or Delivered beyond individual goal commitment'
+            );
+          this.overallAverageDescriptionMap = this.mapEquivalentDescription(
+            this.submittedIGCFs
+          );
+          this.dataSourceForFailedDeliveredAgreedIgc.data =
+            filteredFailedDeliveredAgreedIgc;
+          this.dataSourceForPartiallyDeliveredAgreedIgc.data =
+            filteredPartiallyDeliveredAgreedIgc;
+          this.dataSourceForDeliveredAgreedIgc.data = filterDeliveredAgreedIgc;
+          this.dataSourceForExceededOrDeliveredAgreedIgc.data =
+            filterExceededOrDeliveredIgc;
+        },
+      });
   }
 
   filterDataBaseOnEquivalentDescription(data: any[], description: string) {
     return data.filter(
-      (data: any) => data.equivalent_description === description
+      (data: any) =>
+        data.equivalent_description === description && data.rate_date
     );
   }
 
@@ -377,27 +331,50 @@ export class ReportsComponent implements OnInit, AfterViewInit {
     // Convert date to number
     const selectedYear = Number(date);
     // Filter the originalSubmittedIgcf array instead of submittedIgcf
-    const filteredData = this.originalSubmissionHistory.filter(
+    const filteredData = this.originalSubmittedIGCFs.filter(
       (submission) =>
         selectedYear === new Date(submission.completion_date).getFullYear()
     );
-    this.filteredSubmissionHistory = filteredData;
 
-    this.dataSourceForSubmissionHistory.data = filteredData;
-    this.numberOfSubmittedIgcfByDept = filteredData.length;
+    const modifiedData = filteredData.map((data) => {
+      const {
+        fullname,
+        emp_number,
+        position,
+        department,
+        completion_date,
+        rate_date,
+      } = data;
 
-    const filterRatedIgcf = filteredData.filter(
-      (submission: any) => !submission.rate_date
+      return {
+        fullname,
+        emp_number,
+        position,
+        department,
+        completion_date,
+        rate_date,
+      };
+    });
+    const ratedIGCFs = modifiedData.filter((igcf: any) => igcf.rate_date);
+    this.dataSourceForSubmissionHistory.data = modifiedData;
+    this.dataSourceForRatedIgcf.data = ratedIGCFs;
+    this.dataSourceForFailedDeliveredAgreedIgc.data =
+      this.submittedIGCFs.filter((data: any) => {
+        return (
+          data.rate_date &&
+          new Date(data.rate_date).getFullYear() === selectedYear &&
+          data.equivalent_description ===
+            'Failed to deliver agreed individual goal commitment'
+        );
+      });
+    this.mapNumbersBaseOnSubmittedIGCFs.set(
+      'numberOfSubmittedIGCFs',
+      filteredData.length
     );
-
-    const filteredIgcPartTwo = this.originalPartTwoIgcfData.filter(
-      (data: any) =>
-        new Date(data.completion_date).getFullYear() === selectedYear
+    this.mapNumbersBaseOnSubmittedIGCFs.set(
+      'numberOfDoneRatingIGCFs',
+      ratedIGCFs.length
     );
-
-    this.overallAverageDescriptionMap =
-      this.mapEquivalentDescription(filteredIgcPartTwo);
-
     const filteredFailedDeliveredAgreedIgc =
       this.filterDataBaseOnEquivalentDescription(
         filteredData,
@@ -409,124 +386,45 @@ export class ReportsComponent implements OnInit, AfterViewInit {
         filteredData,
         'Partially delivered agreed individual goal commitment'
       );
-
     const filterDeliveredAgreedIgc = this.filterDataBaseOnEquivalentDescription(
-      filteredIgcPartTwo,
+      filteredData,
       'Delivered agreed individual goal commitment'
     );
-
     const filterExceededOrDeliveredIgc =
       this.filterDataBaseOnEquivalentDescription(
-        filteredIgcPartTwo,
+        filteredData,
         'Exceeded or Delivered beyond individual goal commitment'
       );
+    this.overallAverageDescriptionMap =
+      this.mapEquivalentDescription(filteredData);
 
-    this.numberOfDoneRatingIgcByDept = filterRatedIgcf.length;
-    this.dataSourceForRatedIgcf.data = filterRatedIgcf;
-
+    this.dataSourceForFailedDeliveredAgreedIgc.data =
+      filteredFailedDeliveredAgreedIgc;
     this.dataSourceForPartiallyDeliveredAgreedIgc.data =
       filteredPartiallyDeliveredAgreedIgc;
-
-    this.dataSourceForPartiallyDeliveredAgreedIgc.data =
-      filteredFailedDeliveredAgreedIgc;
-
     this.dataSourceForDeliveredAgreedIgc.data = filterDeliveredAgreedIgc;
-
     this.dataSourceForExceededOrDeliveredAgreedIgc.data =
       filterExceededOrDeliveredIgc;
   }
 
-  // generatePDF() {
-  //   // Filter out entries with null rate_date
-  //   const submissionHistory = this.dataSourceForSubmissionHistory.data.filter(
-  //     (entry: any) => entry.rate_date !== null
-  //   );
-
-  //   // Check if filtered submissionHistory is empty
-  //   if (submissionHistory.length === 0) {
-  //     this.authService.openSnackBar(
-  //       'No IGCFs have been submitted or No Year is Selected.',
-  //       'close',
-  //       'bottom'
-  //     );
-  //     return;
-  //   }
-
-  //   // Sort the filtered submissionHistory
-  //   submissionHistory.sort((a: any, b: any) => {
-  //     // Compare emp_dept values
-  //     if (a.emp_dept < b.emp_dept) {
-  //       return -1; // a should come before b
-  //     } else if (a.emp_dept > b.emp_dept) {
-  //       return 1; // b should come before a
-  //     } else {
-  //       return 0; // emp_dept values are equal
-  //     }
-  //   });
-
-  //   const logoUrl = 'assets/images/logo/hau-logo.png';
-  //   // Fetch the image as a data URL
-  //   this.http.get(logoUrl, { responseType: 'blob' }).subscribe((blob) => {
-  //     const reader = new FileReader();
-  //     reader.onloadend = () => {
-  //       const logoDataURL = reader.result as string;
-
-  //       // Create an empty array to store content of each submittedIgcf
-  //       const pdfContent: any[] = [];
-
-  //       // Create an array of observables for each submission
-  //       const observables = submissionHistory.map((igcf) =>
-  //         this.backendService.getSubmittedIgcfDetails(igcf.id).pipe(
-  //           switchMap((data) =>
-  //             this.backendService.getSubmittedIgcfPartTwo(igcf.id).pipe(
-  //               map((data2) => ({
-  //                 igcfInformation: igcf,
-  //                 igcfPartOne: data,
-  //                 igcfPartTwo: data2,
-  //               }))
-  //             )
-  //           )
-  //         )
-  //       );
-
-  //       // Wait for all observables to complete
-  //       forkJoin(observables).subscribe((igcfDataArray: any[]) => {
-  //         igcfDataArray.forEach((igcfData, index) => {
-  //           // Call the createDocumentDefinition function with the correct arguments
-  //           const documentDefinition = this.createDocumentDefinition(
-  //             logoDataURL,
-  //             igcfData
-  //           );
-  //           // Add content to pdfContent
-  //           pdfContent.push(...documentDefinition.content);
-
-  //           // Add page break after each submittedIgcf, except for the last one
-  //           if (index !== this.submittedIgcf.length - 1) {
-  //             pdfContent.push({ text: '', pageBreak: 'after' });
-  //           }
-  //         });
-
-  //         // Create the final document definition with concatenated content
-  //         const finalDocumentDefinition = { content: pdfContent };
-
-  //         // Open the PDF document
-  //         pdfMake.createPdf(finalDocumentDefinition).open();
-  //       });
-  //     };
-  //     reader.readAsDataURL(blob);
-  //   });
-  // }
-
-  generatePDF(event: MouseEvent) {
+  generatePDF(event: MouseEvent, sortType: string) {
     event.stopPropagation();
 
-    // Filter out entries with null rate_date
-    const submissionHistory = this.dataSourceForSubmissionHistory.data.filter(
-      (entry: any) => entry.rate_date !== null
-    );
+    let toPDFData: any[] = [];
 
+    const currentYear = new Date().getFullYear();
+    const filterBySelectedYear = this.submittedIGCFs.filter(
+      (entry: any) =>
+        entry.completion_date && currentYear === new Date().getFullYear()
+    );
+    if (sortType === 'submitted') {
+      toPDFData = filterBySelectedYear;
+    } else if (sortType === 'rated') {
+      // Filter out entries with null rate_date
+      toPDFData = this.submittedIGCFs.filter((entry: any) => entry.rate_date);
+    }
     // Check if filtered submissionHistory is empty
-    if (submissionHistory.length === 0) {
+    if (this.submittedIGCFs.length === 0 || toPDFData.length === 0) {
       this.authService.openSnackBar(
         'No IGCFs have been submitted or No Year is Selected.',
         'close',
@@ -534,406 +432,21 @@ export class ReportsComponent implements OnInit, AfterViewInit {
       );
       return;
     }
+    const ratedIGCFs = this.submittedIGCFs.filter(
+      (entry: any) =>
+        entry.rate_date && currentYear === new Date().getFullYear()
+    );
+    this.mapNumbersBaseOnSubmittedIGCFs.set(
+      'numberOfSubmittedIGCFs',
+      toPDFData.length
+    );
 
-    const logoUrl = 'assets/images/logo/hau-logo.png';
-    // Fetch the image as a data URL
-    this.http.get(logoUrl, { responseType: 'blob' }).subscribe((blob) => {
-      const reader = new FileReader();
-      reader.onloadend = () => {
-        const logoDataURL = reader.result as string;
+    this.mapNumbersBaseOnSubmittedIGCFs.set(
+      'numberOfDoneRatingIGCFs',
+      ratedIGCFs.length
+    );
 
-        // Create an empty array to store content of each submittedIgcf
-        const pdfContent: any[] = [];
-
-        // Create an array of observables for each submission
-        const observables = submissionHistory.map((igcf) =>
-          this.backendService.getSubmittedIgcfDetails(igcf.id).pipe(
-            switchMap((data) =>
-              this.backendService.getSubmittedIgcfPartTwo(igcf.id).pipe(
-                map((data2) => ({
-                  igcfInformation: igcf,
-                  igcfPartOne: data,
-                  igcfPartTwo: data2,
-                }))
-              )
-            )
-          )
-        );
-
-        // Wait for all observables to complete
-        forkJoin(observables).subscribe((igcfDataArray: any[]) => {
-          igcfDataArray.forEach((igcfData, index) => {
-            // Call the createDocumentDefinition function with the correct arguments
-            const documentDefinition = this.createDocumentDefinition(
-              logoDataURL,
-              igcfData
-            );
-            // Add content to pdfContent
-            pdfContent.push(...documentDefinition.content);
-
-            // Add page break after each submittedIgcf
-            if (index !== igcfDataArray.length - 1) {
-              pdfContent.push({ text: '', pageBreak: 'after' });
-            }
-          });
-
-          // Create the final document definition with concatenated content
-          const finalDocumentDefinition = { content: pdfContent };
-
-          // Open the PDF document
-          pdfMake.createPdf(finalDocumentDefinition).open();
-        });
-      };
-      reader.readAsDataURL(blob);
-    });
-  }
-  createDocumentDefinition(logoDataURL: string, data: any): any {
-    const { fullname, emp_position, emp_number, emp_dept, completion_date } =
-      data.igcfInformation;
-
-    return {
-      content: [
-        // Logo and organization information
-        {
-          layout: 'noBorders',
-          table: {
-            body: [
-              [
-                {
-                  image: logoDataURL,
-                  width: 75,
-                  height: 75,
-                  margin: [20, 5, 0, 0],
-                },
-                {
-                  stack: [
-                    { text: 'HOLY ANGEL UNIVERSITY', bold: true },
-                    { text: 'Human Resource Management Office', bold: true },
-                    { text: 'Human Resource Development', bold: true },
-                  ],
-                  alignment: 'center',
-                  margin: [30, 20, 30, 0],
-                },
-                {
-                  margin: [20, 20, 0, 0],
-                  alignment: 'right',
-                  table: {
-                    headerRows: 1,
-                    widths: ['*'],
-                    body: [
-                      [
-                        {
-                          stack: [
-                            'FM-HRD-6020',
-                            { text: 'Revision: 0' },
-                            { text: 'Effectivity Date: August 4, 2020' },
-                          ],
-                          alignment: 'left',
-                          border: [true, true, true, true],
-                        },
-                      ],
-                    ],
-                  },
-                },
-              ],
-            ],
-          },
-        },
-        // Title
-        {
-          margin: [0, 20, 0, 0],
-          stack: [
-            {
-              text: 'Individual Goal Commitment Form',
-              bold: true,
-              fontSize: 16,
-            },
-            { text: '(Outcome-based Performance Evaluation)', bold: true },
-          ],
-          alignment: 'center',
-        },
-        // Employee information table
-        {
-          layout: 'noBorders',
-          alignment: 'center',
-          table: {
-            body: [
-              [
-                {
-                  margin: [0, 20, 0, 0],
-                  layout: 'noBorders',
-                  table: {
-                    headerRows: 1,
-                    widths: ['*'],
-                    body: [
-                      [
-                        {
-                          stack: [
-                            { text: `Employee Name.: ${fullname}` },
-                            { text: `Position: ${emp_position}` },
-                          ],
-                          alignment: 'left',
-                        },
-                      ],
-                    ],
-                  },
-                },
-                { text: '', margin: [30, 0, 30, 0] },
-                {
-                  margin: [0, 20, 0, 0],
-                  layout: 'noBorders',
-                  alignment: 'right',
-                  table: {
-                    headerRows: 1,
-                    widths: ['*'],
-                    body: [
-                      [
-                        {
-                          stack: [
-                            { text: `Employee No.: ${emp_number}` },
-                            { text: `Dept./Unit: ${emp_dept}` },
-                          ],
-                          alignment: 'left',
-                        },
-                      ],
-                    ],
-                  },
-                },
-              ],
-            ],
-          },
-        },
-        // Rating description
-        {
-          text: 'Immediate Supervisor rates accomplishment of corresponding employee using the following Evaluation Rating Equivalents:',
-          margin: [0, 10, 0, 0],
-          bold: true,
-        },
-        {
-          ul: [
-            '1.00 – 1.50 Failed to deliver agreed individual goal commitment',
-            '1.51 – 2.50 Partially delivered agreed individual goal commitment',
-            '2.51 – 3.50 Delivered agreed individual goal commitment',
-            '3.51 – 4.00 Exceeded or Delivered beyond individual goal commitment',
-          ],
-          margin: [0, 5, 0, 10],
-        },
-        // Performance table
-        // Performance table
-        {
-          table: {
-            headerRows: 1,
-            widths: ['auto', 'auto', 'auto', 'auto', 'auto', 'auto', 'auto'], // Adjust widths as needed
-            body: [
-              [
-                {
-                  text: 'Individual Commitment',
-                  style: 'tableHeader',
-                  colSpan: 4,
-                  alignment: 'center',
-                },
-                {},
-                {},
-                {},
-                {},
-                {
-                  text: 'Assessment',
-                  style: 'tableHeader',
-                  colSpan: 2,
-                  alignment: 'center',
-                },
-                { text: '', style: 'tableHeader' },
-              ],
-
-              [
-                {
-                  text: 'Personal Objective',
-                  style: 'tableHeader',
-                }, // Spanning 4 columns
-                { text: 'Personal Measures (KPI)', style: 'tableHeader' }, // Header f
-                { text: 'Target', style: 'tableHeader' }, // Header f
-                { text: 'Initiatives', style: 'tableHeader' }, // Header f
-                { text: 'Weight', style: 'tableHeader' }, // Header f
-                { text: 'Achieved', style: 'tableHeader' }, // Header f
-                { text: 'Rating (1 - 4)', style: 'tableHeader' }, // Header for 'Assessment' column
-              ],
-              ...this.generatePartOneTable(data.igcfPartOne),
-            ],
-          },
-          styles: {
-            tableHeader: { fillColor: '#CCCCCC', color: '#000000', bold: true },
-          },
-        },
-
-        this.generatePartTwo(data.igcfPartTwo, fullname, completion_date),
-      ],
-      styles: {
-        tableHeader: {
-          bold: true,
-          fillColor: '#ffffff',
-          color: '#000000',
-          alignment: 'center',
-        },
-      },
-    };
-  }
-  generatePartOneTable(igcfPartOne: any[]) {
-    const partOneValues: any[] = [];
-    const kpiPercentagesMap = new Map<string, number>();
-    igcfPartOne.forEach((data: any) => {
-      if (!partOneValues.includes(data.selected_kpi))
-        partOneValues.push(data.selected_kpi);
-      const totalWeight = kpiPercentagesMap.get(data.selected_kpi) || 0;
-      kpiPercentagesMap.set(data.selected_kpi, totalWeight + data.weight);
-      partOneValues.push(data);
-    });
-
-    return partOneValues.map((value) => {
-      if (typeof value === 'string') {
-        return [
-          {
-            text: value,
-            colSpan: 4,
-            alignment: 'center',
-            fillColor: '#FFFF00',
-            bold: true,
-          }, // Corrected typo here
-          {},
-          {},
-          {},
-          {
-            text: `${kpiPercentagesMap.get(value)}%`,
-            fillColor: '#FFFF00',
-            bold: true,
-          },
-          {
-            text: '',
-            colSpan: 2,
-            fillColor: '#FFFF00',
-          },
-          {},
-        ];
-      }
-      return [
-        { text: value.selected_plan },
-        { text: value.personal_measures_kpi },
-        { text: value.selected_plan_weight },
-        { text: value.initiatives },
-        { text: `${value.weight}%` },
-        {
-          text: value.achieved,
-        },
-        { text: value.rating },
-      ];
-    });
-  }
-
-  generatePartTwo(
-    igcfPartTwo: any,
-    rater_fullname: string,
-    completion_date: string
-  ) {
-    const {
-      overall_weighted_average_rating,
-      ratee_fullname,
-      equivalent_description,
-      rate_date,
-      rater_completion_date,
-      top_three_least_agc,
-      top_three_highly_agc,
-      top_three_competencies_improvement,
-      top_three_competency_strengths,
-      top_three_training_development_suggestion,
-    } = igcfPartTwo[0];
-    const answers = [
-      top_three_least_agc.split(','),
-      top_three_highly_agc.split(','),
-      top_three_competencies_improvement.split(','),
-      top_three_competency_strengths.split(','),
-      top_three_training_development_suggestion.split(','),
-    ];
-    // Overall Weighted Average Rating and Equivalent Description
-
-    const result: any[] = [
-      {
-        text: `Overall Weighted Average Rating: ${overall_weighted_average_rating}`,
-        margin: [0, 10, 0, 0],
-      },
-      {
-        text: `Equivalent Description: ${equivalent_description}`,
-        margin: [0, 5, 0, 10],
-      },
-    ];
-
-    this.partTwoQuestions.forEach((question: string, i) => {
-      result.push({ text: question });
-      result.push({
-        ul: answers[i],
-        margin: [0, 5, 0, 10], // Adjust margins as needed
-      });
-    });
-
-    return [
-      ...result,
-      {
-        layout: 'noBorders',
-        table: {
-          body: [
-            [
-              {
-                margin: [0, 60, 0, 0],
-                layout: 'noBorders',
-                alignment: 'left',
-                table: {
-                  headerRows: 1,
-                  widths: ['*'],
-                  body: [
-                    [
-                      {
-                        stack: [
-                          rater_fullname,
-                          {
-                            text: completion_date,
-                          },
-                        ],
-                        alignment: 'left',
-                      },
-                    ],
-                  ],
-                },
-              },
-              {
-                stack: [],
-                alignment: 'center',
-                margin: [100, 0, 100, 0],
-              },
-              {
-                margin: [0, 60, 0, 0],
-                layout: 'noBorders',
-                alignment: 'right',
-                table: {
-                  headerRows: 1,
-                  widths: ['*'],
-                  body: [
-                    [
-                      {
-                        stack: [
-                          ratee_fullname,
-                          {
-                            text: rate_date,
-                          },
-                        ],
-                        alignment: 'left',
-                      },
-                    ],
-                  ],
-                },
-              },
-            ],
-          ],
-        },
-      },
-    ];
+    this.generatePDFService.generateMultiplePagesPDF(toPDFData);
   }
 
   generateReport(event: MouseEvent, data: any[], title: string): void {

@@ -1,14 +1,18 @@
+
 import { Injectable } from '@angular/core';
 import { ActivatedRoute, NavigationEnd, Router } from '@angular/router';
 import { filter } from 'rxjs';
-
 @Injectable({
   providedIn: 'root',
 })
 export class RouterService {
   private currentRoute: string = '';
   private submittedIgcIdList: number[] = [];
-  constructor(private router: Router, private activeRoute: ActivatedRoute) {
+
+  constructor(
+    private router: Router,
+    private activeRoute: ActivatedRoute,
+  ) {
     // Subscribe to router events to update currentRoute
     this.router.events
       .pipe(filter((event) => event instanceof NavigationEnd))
@@ -42,4 +46,6 @@ export class RouterService {
   getSubmittedIgcIdList(): number[] {
     return this.submittedIgcIdList;
   }
+
+  
 }

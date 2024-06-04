@@ -4,7 +4,7 @@ import {
   RouterStateSnapshot,
   UrlTree,
 } from '@angular/router';
-import { Observable } from 'rxjs';
+import { Observable, of } from 'rxjs';
 import { AuthService } from '../services/auth.service';
 import { BackendService } from '../services/backend.service';
 import { map, switchMap } from 'rxjs/operators';
@@ -79,39 +79,44 @@ export const canAcessFillUpIgcf = (
   | UrlTree => {
   const authService = inject(AuthService);
   const backendService = inject(BackendService);
-  const currentYear = new Date().getFullYear();
   const dialog = inject(MatDialog);
   const { role, emp_number } = authService.getUserInformationFirebase();
- 
+
   return backendService
     .getSubmittedIGCFsFirebase(role, 'emp_number', emp_number)
     .pipe(
-      map((submittedIGCF: any[]) => {
+      switchMap((submittedIGCF: any[]) => {
         const history = submittedIGCF.filter((submission: any) => {
-          const yearOfCompletion = new Date(
-            submission.completion_date
-          ).getFullYear();
-          return currentYear === yearOfCompletion;        });
+          const yearOfCompletion = new Date(submission.completion_date)
+            .getFullYear()
+            .toString();          
+          return backendService
+            .getYearOfCompletions()
+            .includes(yearOfCompletion);
+        });
 
         if (history.length > 0) {
           const dialogBoxData: IDialogBox = {
-            title: 'IGCF Submission',
-            content: 'You have already submitted IGCF for this year.',
+            title: 'IGCF Already Submitted',
+            content:
+              'An IGCF for this year has already been submitted. Do you want to create an IGCF for the next available year?',
             buttons: [
-              {
-                isVisible: true,
-                matDialogCloseValue: false,
-                content: 'Ok',
-              },
+              { isVisible: true, matDialogCloseValue: false, content: 'No' },
+              { isVisible: true, matDialogCloseValue: true, content: 'Yes' },
             ],
           };
-          dialog.open(DialogBoxComponent, {
+
+          const dialogRef = dialog.open(DialogBoxComponent, {
             ...dialogBoxConfig,
             data: dialogBoxData,
           });
-          return false; // Deny access
+
+          return dialogRef.afterClosed().pipe(
+            map((result: any) =>  result || false)
+          );
         }
-        return true; // Allow access
+
+        return of(true); // Allow access if no history
       })
     );
 };

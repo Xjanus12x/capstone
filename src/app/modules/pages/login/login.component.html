@@ -17,23 +17,24 @@
 
                 <mat-form-field>
                     <mat-label>Password</mat-label>
-                    <input matInput placeholder="Password" formControlName="password" required>
+                    <input type="password" matInput placeholder="Password" formControlName="password" required>
                 </mat-form-field>
 
             </div>
             <div class="flex justify-between">
                 <a class="text-white underline" routerLink="/register">Register</a>
-                <a class="text-white underline">Forgot password</a>
+                <a class="text-white underline" >Forgot password</a>
             </div>
 
 
-            <button class="py-2 mt-2 text-white bg-black rounded-lg">Login</button>
+            <button class="py-2 mt-2 text-white bg-black rounded-lg" >Login</button>
 
         </form>
 
     </article>
     <div class="absolute inset-0 grid bg-black bg-opacity-60 place-content-center" *ngIf="isLoading">
-        <mat-spinner color="accent"></mat-spinner><span class="text-lg font-bold tracking-widest">Authenticating...</span>
+        <mat-spinner color="accent"></mat-spinner><span
+            class="text-lg font-bold tracking-widest">Authenticating...</span>
     </div>
 
 </div>

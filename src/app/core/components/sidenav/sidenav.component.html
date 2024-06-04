@@ -2,6 +2,9 @@
     <mat-drawer class="p-5 min-w-[15rem]
     bg-red-900 rounded-md bg-clip-padding backdrop-filter backdrop-blur-3xl bg-opacity-100 border border-gray-100
 " #drawer [opened]="isOpen" mode="side">
+        <div routerLink="/dashboard" class="mb-4 border-b-2 border-black cursor-pointer">
+            <img class='w-32 mx-auto aspect-square' src="../../../../assets/images/logo/hau-logo.png" alt="HAU logo">
+        </div>
 
         <div>
             <app-nested-list [items]="navItems"></app-nested-list>

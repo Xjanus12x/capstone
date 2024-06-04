@@ -2,8 +2,11 @@ import {
   ChangeDetectionStrategy,
   ChangeDetectorRef,
   Component,
+  OnInit,
+  SimpleChanges,
 } from '@angular/core';
 import {
+  AsyncValidatorFn,
   FormBuilder,
   FormControl,
   FormGroup,
@@ -26,6 +29,9 @@ import { IDialogBox } from 'src/app/core/models/DialogBox';
 import { departmentNamesMap } from 'src/app/core/constants/DepartmentData';
 import { IPendingUser } from 'src/app/core/models/PendingUser';
 import { confirmPasswordValidator } from 'src/app/core/Validators/confirmPasswordValidator';
+import { employeeNumberExistenceValidator } from 'src/app/core/Validators/employeeNumberExistenceValidator';
+import * as bcrypt from 'bcryptjs';
+import { validateHauEmployee } from 'src/app/core/Validators/hauEmployeeByEmpNumberValidator';
 
 @Component({
   selector: 'app-register',
@@ -33,7 +39,7 @@ import { confirmPasswordValidator } from 'src/app/core/Validators/confirmPasswor
   styleUrls: ['./register.component.css'],
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
-export class RegisterComponent implements IDeactivateComponent {
+export class RegisterComponent implements OnInit, IDeactivateComponent {
   // To be use somewhere
   //   signature: string = '';
   // @ViewChild('signature')
@@ -74,6 +80,9 @@ export class RegisterComponent implements IDeactivateComponent {
   };
   isLoading: boolean = false;
   isSamePassword: boolean = false;
+  saltRounds: number = 12;
+  registrationType: string = '';
+  private hauEmployeeDetails: any[] = [];
   constructor(
     private _formBuilder: FormBuilder,
     private backendService: BackendService,
@@ -88,9 +97,18 @@ export class RegisterComponent implements IDeactivateComponent {
       personalInformationFormGroup: this._formBuilder.group({
         emp_firstName: ['', Validators.required],
         emp_lastName: ['', Validators.required],
-        emp_number: ['', Validators.required],
+        emp_number: [
+          '',
+          {
+            validators: [Validators.required],
+            asyncValidators: [
+              employeeNumberExistenceValidator(this.backendService),
+            ],
+            updateOn: 'blur',
+          },
+        ],
         emp_dept: ['', Validators.required],
-        emp_position: ['', Validators.required],
+        // emp_position: ['', Validators.required],
       }),
       userAccountFormGroup: this._formBuilder.group({
         email: [
@@ -98,7 +116,7 @@ export class RegisterComponent implements IDeactivateComponent {
           {
             validators: [Validators.required, Validators.email],
             asyncValidators: [emailExistenceValidator(this.backendService)],
-            updateOn: 'change',
+            updateOn: 'blur',
           },
         ],
         password: [
@@ -133,6 +151,42 @@ export class RegisterComponent implements IDeactivateComponent {
     //     console.log(password, value);
     //   });
   }
+  ngOnInit() {
+    this.backendService.fetchHauEmployeeDetails().subscribe({
+      next: (data) => {
+        this.hauEmployeeDetails = data;    
+      },
+      error: () => {
+        this.hauEmployeeDetails = [];
+      },
+    });
+  }
+
+  setRegistrationType(registrationType: string) {
+    this.registrationType = registrationType;
+    // Check if we should apply or remove the async validator
+    if (this.registrationType === 'byEmpNumber') {
+      this.getFormControl(
+        'personalInformationFormGroup',
+        'emp_number'
+      ).addValidators(validateHauEmployee( this.hauEmployeeDetails));
+    } else {
+      this.getFormControl(
+        'personalInformationFormGroup',
+        'emp_number'
+      ).removeValidators(validateHauEmployee(this.hauEmployeeDetails));
+    }
+
+    // Trigger re-validation
+    this.getFormControl(
+      'personalInformationFormGroup',
+      'emp_number'
+    ).updateValueAndValidity();
+  }
+
+  getRegistrationType() {
+    return this.registrationType;
+  }
 
   getFormGroup(formGroup: string) {
     return this.registrationFormGroup.get(formGroup) as FormGroup;
@@ -158,69 +212,83 @@ export class RegisterComponent implements IDeactivateComponent {
   }
 
   register(): void {
-    const pendingUser: IPendingUser = {
-      ...this.registrationFormGroup.get('userAccountFormGroup')?.value,
-      ...this.registrationFormGroup.get('personalInformationFormGroup')?.value,
-    };
-    removeLeadingAndTrailingSpaces(pendingUser);
     if (this.isAllInputFilled()) {
       this.isLoading = true; // Set loading flag to true before making the registration call
-      this.backendService
-        .firebaseAddPendingRegistration(pendingUser)
-        .subscribe({
-          next: () => {
-            const dialogBoxData = {
-              title: 'Registration Successful',
-              content:
-                'Pending user account created successfully. It needs to be approved before login.',
-              buttons: [
-                {
-                  isVisible: true,
-                  matDialogCloseValue: false,
-                  content: 'Ok',
-                },
-                {
-                  isVisible: false,
-                  matDialogCloseValue: true,
-                  content: '',
-                },
-              ],
-            };
-            this.dialog.open(DialogBoxComponent, {
-              ...this.dialogBoxConfig,
-              data: dialogBoxData,
-            });
-            this.router.navigate(['/login']); // Navigate to login page
-          },
-          error: (err) => {
-            const dialogBoxData = {
-              title: 'Registration Failed',
-              content:
-                'An error occurred while processing your registration. Please try again later.',
-              buttons: [
-                {
-                  isVisible: true,
-                  matDialogCloseValue: false,
-                  content: 'Ok',
-                },
-                {
-                  isVisible: false,
-                  matDialogCloseValue: true,
-                  content: '',
-                },
-              ],
-            };
-            this.dialog.open(DialogBoxComponent, {
-              ...this.dialogBoxConfig,
-              data: dialogBoxData,
-            });
-            this.router.navigate(['/login']); // Navigate to login page
-          },
-          complete: () => {
-            this.isLoading = false;
-            this.cdr.detectChanges(); // Trigger change detection
-          },
-        });
+      const password = this.registrationFormGroup.get(
+        'userAccountFormGroup.password'
+      )?.value;
+      bcrypt.hash(password, this.saltRounds, (err: any, hash: any) => {
+        if (err) {
+          console.error('Error hashing password:', err);
+          return;
+        }
+        // Create the pending user object with the hashed password
+        const pendingUser: IPendingUser = {
+          ...this.registrationFormGroup.get('userAccountFormGroup')?.value,
+          ...this.registrationFormGroup.get('personalInformationFormGroup')
+            ?.value,
+          password: hash, // Store the hashed password in the pending user object
+        };
+
+        removeLeadingAndTrailingSpaces(pendingUser);
+
+        this.backendService
+          .firebaseAddPendingRegistration(pendingUser)
+          .subscribe({
+            next: () => {
+              const dialogBoxData = {
+                title: 'Registration Successful',
+                content:
+                  'Pending user account created successfully. It needs to be approved before login.',
+                buttons: [
+                  {
+                    isVisible: true,
+                    matDialogCloseValue: false,
+                    content: 'Ok',
+                  },
+                  {
+                    isVisible: false,
+                    matDialogCloseValue: true,
+                    content: '',
+                  },
+                ],
+              };
+              this.dialog.open(DialogBoxComponent, {
+                ...this.dialogBoxConfig,
+                data: dialogBoxData,
+              });
+              this.router.navigate(['/login']); // Navigate to login page
+            },
+            error: (err) => {
+              const dialogBoxData = {
+                title: 'Registration Failed',
+                content:
+                  'An error occurred while processing your registration. Please try again later.',
+                buttons: [
+                  {
+                    isVisible: true,
+                    matDialogCloseValue: false,
+                    content: 'Ok',
+                  },
+                  {
+                    isVisible: false,
+                    matDialogCloseValue: true,
+                    content: '',
+                  },
+                ],
+              };
+              this.dialog.open(DialogBoxComponent, {
+                ...this.dialogBoxConfig,
+                data: dialogBoxData,
+              });
+              this.router.navigate(['/login']); // Navigate to login page
+            },
+            complete: () => {
+              this.isLoading = false;
+              this.cdr.detectChanges(); // Trigger change detection
+            },
+          });
+      });
     } else {
       const dialogBoxData = {
         title: 'Incomplete Registration',
@@ -280,7 +348,6 @@ export class RegisterComponent implements IDeactivateComponent {
 
     return dialogRef.afterClosed().pipe(
       map((result) => {
-        console.log(result);
         return result || false; // If result is undefined, treat it as "No"
       })
     );

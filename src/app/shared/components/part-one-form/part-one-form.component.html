@@ -1,31 +1,32 @@
 <mat-tab-group>
-    <mat-tab *ngFor="let label of stepLabels; let i = index; trackBy: trackByIndex">
 
+    <mat-tab class="min-w-full overflow-auto" *ngFor="let label of stepLabels; let i = index; trackBy: trackByIndex">
         <ng-template mat-tab-label>
 
             <div
                 [ngClass]="{'px-10 py-8 text-center text-white bg-black transition duration-1000 ease-in-out':  getCurrentTabIndex() === i}">
-                {{'KPI ' + (i+1)}}
+                {{'Objective ' + (i+1)}}
             </div>
 
         </ng-template>
 
-
         <mat-accordion>
             <mat-expansion-panel hideToggle expanded>
                 <mat-expansion-panel-header>
-                    <mat-panel-title class="p-4 font-extrabold bg-yellow-500 rounded-sm">
-                        Department Objective: {{label | uppercase}}
+                    <mat-panel-title class="p-4 font-extrabold bg-yellow-500 rounded-sm ">
+                        <span>Department Objective: {{label | uppercase}}</span> <span *ngIf="submittedIGCF.fullname"
+                            class="ml-auto">Submitted by:
+                            {{submittedIGCF.fullname}}</span>
                     </mat-panel-title>
                 </mat-expansion-panel-header>
-                <form class="overflow-auto" [formGroup]="formGroup">
+                <form class="min-w-full overflow-auto" [formGroup]="formGroup">
                     <div [formGroupName]="getFormGroupName(label)">
                         <div class="mt-4 space-x-4" *ngIf="!isAdminRating()">
                             <label class="text-lg font-bold">Select Action Plans</label>
                             <mat-form-field class="w-80">
                                 <mat-label>Action Plans</mat-label>
                                 <mat-select formControlName="selectedActionPlans" multiple
-                                    (selectionChange)="onSelectionChange($event.value, getFormArrayName(label))">
+                                    (selectionChange)="onSelectionChange($event.value, label)">
                                     <mat-select-trigger>
                                         <ng-container
                                             *ngIf="getSelectedActionPlansControl(i)?.value && getSelectedActionPlansControl(i)?.value.length === 1; else moreThanOne">
@@ -44,8 +45,7 @@
                                     <div class="space-y-4">
 
                                         <mat-option *ngFor="let obj of getActionPlans(label)" [value]="obj">
-                                            <div
-                                                class="transition duration-300 ease-in-out hover:bg-black hover:text-white" >
+                                            <div class="transition duration-300 ease-in-out">
                                                 {{obj}}
                                             </div>
                                         </mat-option>

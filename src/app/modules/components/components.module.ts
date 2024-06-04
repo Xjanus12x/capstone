@@ -1,6 +1,5 @@
 import { NgModule } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { DashboardHeaderComponent } from './dashboard-header/dashboard-header.component';
 import { MatIconModule } from '@angular/material/icon';
 import { SubmittedFormComponent } from './submitted-form/submitted-form.component';
 import { RouterModule } from '@angular/router';
@@ -18,21 +17,19 @@ import { UpdatePendingUserComponent } from './update-pending-user/update-pending
 import { ReviewKpisComponent } from './review-kpis/review-kpis.component';
 import { MatExpansionModule } from '@angular/material/expansion';
 import { MatTableModule } from '@angular/material/table';
+import { UpdateObjAndPlansComponent } from './update-obj-and-plans/update-obj-and-plans.component';
+import { UiModule } from 'src/app/shared/ui/ui.module';
 
 @NgModule({
   declarations: [
-    DashboardHeaderComponent,
     SubmittedFormComponent,
     DialogBoxComponent,
     UpdateUserComponent,
     UpdatePendingUserComponent,
     ReviewKpisComponent,
+    UpdateObjAndPlansComponent,
   ],
-  exports: [
-    DashboardHeaderComponent,
-    SubmittedFormComponent,
-    ReviewKpisComponent,
-  ],
+  exports: [SubmittedFormComponent, ReviewKpisComponent],
   imports: [
     CommonModule,
     MatIconModule,
@@ -47,6 +44,7 @@ import { MatTableModule } from '@angular/material/table';
     MatButtonModule,
     MatExpansionModule,
     MatTableModule,
+    UiModule,
   ],
 })
 export class ComponentsModule {}

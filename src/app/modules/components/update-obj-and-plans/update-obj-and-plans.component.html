@@ -1,0 +1,178 @@
+<div>
+    <form mat-dialog-content [formGroup]="formGroup">
+        <div class="grid gap-2">
+            <label class="font-extrabold text-black">Objective Title</label>
+            <mat-form-field>
+                <mat-label>Objective Title</mat-label>
+                <input matInput placeholder="Ex. Jogn" formControlName="kpi_title" required>
+                <!-- <mat-error
+                    *ngIf="getFormControl('firstname')?.hasError('onlySpaces') && !getFormControlError('firstname','required')"
+                    class="px-1 text-white bg-red-900">Please enter valid input.</mat-error>
+                <mat-error *ngIf="getFormControlError('firstname','required') 
+                     " class="px-1 text-white bg-red-900">
+                    Firstname is required
+                </mat-error> -->
+            </mat-form-field>
+        </div>
+        <div class="grid gap-2">
+            <label class="font-extrabold text-black">Action Plan</label>
+            <mat-form-field class="min-h-[10rem]">
+                <mat-label>Action Plan</mat-label>
+                <textarea matInput placeholder="Ex. Doe" formControlName="plan"> </textarea>
+                <!-- <mat-error
+                    *ngIf="getFormControl('lastname')?.hasError('onlySpaces') && !getFormControlError('lastname','required')"
+                    class="px-1 text-white bg-red-900">Please enter valid input.</mat-error>
+                <mat-error *ngIf="getFormControlError('lastname','required')" class="px-1 text-white bg-red-900">
+                    Lastname is required
+                </mat-error> -->
+            </mat-form-field>
+        </div>
+
+
+
+        <div class="grid grid-cols-2 gap-2">
+
+
+
+            <div>
+                <label class="font-extrabold text-black">Start Date</label>
+                <app-month-day-picker [monthAndDayControl]="getControl('start_date')"
+                    [setMonthAndDay]="getDate(getControl('start_date').value)"
+                    label="Month and Day"></app-month-day-picker>
+                <!-- <div class="text-sm font-extrabold text-red-500" *ngIf="validateMonth(getActionPlanControl(groupName,j,'start_date').value
+                                                    !=='' && getMonth(groupName,j,'start_date') >
+                                                    getMonth(groupName,j,'due_date')) ||
+                                                    getActionPlanControl(groupName,j,'start_date').value
+                                                    !=='' && getDay(groupName,j,'start_date') >
+                                                    getDay(groupName,j,'due_date') && getMonth(groupName,j,'start_date') >
+                                                    getMonth(groupName,j,'due_date')
+                                                    ">
+                    Start date must be before the due date.
+                </div> -->
+            </div>
+            <div>
+                <label class="font-extrabold text-black">Due Date</label>
+                <app-month-day-picker [monthAndDayControl]="getControl('due_date')"
+                    [setMonthAndDay]="getDate(getControl('due_date').value)"
+                    label="Month and Day"></app-month-day-picker>
+
+                <!-- <div class="text-sm font-extrabold text-red-500"
+                        *ngIf="getActionPlanControl(groupName, j, 'start_date').value !== '' && getMonth(groupName, j, 'due_date') < getMonth(groupName, j, 'start_date')
+                                                     || getActionPlanControl(groupName, j, 'start_date').value !== '' && getDay(groupName, j, 'due_date') < getDay(groupName, j, 'start_date') 
+                                                     &&  getMonth(groupName, j, 'due_date') < getMonth(groupName, j, 'start_date')">
+                        Due date must be after the start date.
+                    </div> -->
+            </div>
+
+        </div>
+        <div class="grid">
+            <label class="font-extrabold text-black">Responsibles</label>
+            <mat-form-field>
+                <mat-label>Responsibles</mat-label>
+                <mat-select formControlName="responsible" multiple>
+                    <mat-select-trigger>
+                        {{getControl('responsible')?.value?.[0] || ''}}
+                        <span *ngIf="getControl('responsible')?.value?.length > 1">
+                            (+{{getControl('responsible')?.value?.length - 1}}
+                            {{getControl('responsible')?.value?.length === 2 ? 'other' : 'others'}})
+                        </span>
+                    </mat-select-trigger>
+                    <mat-option *ngFor="let responsible of responsibles"
+                        [value]="responsible">{{responsible}}</mat-option>
+                </mat-select>
+                <!-- <mat-error *ngIf="getFormControlError('dept','required') " class="px-1 text-white bg-red-900">
+        Employee Department is required
+    </mat-error> -->
+            </mat-form-field>
+
+            <!-- <mat-form-field>
+                <mat-label>Responsibles</mat-label>
+                <mat-select formControlName="dept" required>
+                    <mat-option *ngFor="let department of departments" [value]="department">
+                        {{department}}
+                    </mat-option>
+                </mat-select>
+                <mat-error *ngIf="getFormControlError('dept','required') " class="px-1 text-white bg-red-900">
+                    Employee Department is required
+                </mat-error>
+            </mat-form-field> -->
+
+            <!-- <mat-form-field>
+                <mat-label>Employee Position:</mat-label>
+                <input matInput placeholder="Ex. <Faculty>" formControlName="position">
+                <mat-error
+                    *ngIf="getFormControl('position')?.hasError('onlySpaces') && !getFormControlError('position','required')"
+                    class="px-1 text-white bg-red-900">Please enter valid input.</mat-error>
+                <mat-error *ngIf="getFormControlError('position','required') " class="px-1 text-white bg-red-900">
+                    Employee Position is required
+                </mat-error>
+            </mat-form-field> -->
+            <div class="grid gap-2 place-content-center">
+                <label class="mx-auto font-bold text-black">Effectivity</label>
+                <div class="flex gap-4">
+                    <div class="flex items-center gap-4">
+                        <label class="font-bold text-black">Start:</label>
+                        <div>
+                            <app-year-picker [yearControl]="getEffectivityControls('start')"
+                                [label]="'Choose a start year'" [setYears]="this.targetYears[0]"></app-year-picker>
+                            <div class="font-bold text-red-500" *ngIf="!isYearValids">
+                                Start and end year must be exactly 5 years apart.
+                            </div>
+                        </div>
+
+
+                    </div>
+                    <div class="flex items-center gap-4">
+                        <label class="font-bold text-black">End:</label>
+                        <div>
+                            <app-year-picker [yearControl]="getEffectivityControls('end')" [label]="'Choose a end year'"
+                                [setYears]="this.targetYears[4]"></app-year-picker>
+                            <div class="font-bold text-red-500" *ngIf="!isYearValids">
+                                Start and end year must be exactly 5 years apart.
+                            </div>
+                        </div>
+
+                    </div>
+                </div>
+            </div>
+            <div class="grid grid-cols-5 gap-2">
+
+                <ng-container formArrayName="targets">
+                    <div class="grid" *ngFor="let target of getFormArray('targets').controls; let i = index">
+                        <label class="font-extrabold text-center text-black">{{targetYears[i]}}</label>
+                        <mat-form-field>
+                            <mat-label>{{targetYears[i]}}</mat-label>
+                            <input matInput placeholder="Ex. <Faculty>" [formControlName]="i">
+                            <!-- <mat-error
+                                                *ngIf="getFormControl('position')?.hasError('onlySpaces') && !getFormControlError('position','required')"
+                                                class="px-1 text-white bg-red-900">Please enter valid input.</mat-error>
+                                            <mat-error *ngIf="getFormControlError('position','required') " class="px-1 text-white bg-red-900">
+                                                Employee Position is required
+                                            </mat-error> -->
+                        </mat-form-field>
+                    </div>
+
+                </ng-container>
+            </div>
+            <div class="grid">
+                <label class="font-extrabold text-black">Department</label>
+                <mat-form-field>
+                    <mat-label>Department</mat-label>
+                    <input matInput placeholder="Ex. <Faculty>" formControlName="dept">
+                    <!-- <mat-error
+                                                                        *ngIf="getFormControl('position')?.hasError('onlySpaces') && !getFormControlError('position','required')"
+                                                                        class="px-1 text-white bg-red-900">Please enter valid input.</mat-error>
+                                                                    <mat-error *ngIf="getFormControlError('position','required') " class="px-1 text-white bg-red-900">
+                                                                        Employee Position is required
+                                                                    </mat-error> -->
+                </mat-form-field>
+            </div>
+            <div class="grid min-w-full place-content-center" mat-dialog-actions>
+                <button class="min-w-full " mat-button type="button" color="warn" mat-raised-button
+                    mat-dialog-close>Cancel</button>
+                <button class="min-w-full" mat-button type="button" color="primary" cdkFocusInitial mat-raised-button
+                    [mat-dialog-close]="getData()">Update</button>
+            </div>
+        </div>
+    </form>
+</div>

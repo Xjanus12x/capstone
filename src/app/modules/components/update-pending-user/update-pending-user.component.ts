@@ -26,7 +26,19 @@ export class UpdatePendingUserComponent {
   signature: string = '';
   roles: string[] = ['Admin', 'Faculty', 'HRD', 'College Secretary'];
   departments: string[] = Array.from(departmentNamesMap.keys());
-
+  responsibles: string[] = [
+    'Dean',
+    'Chair',
+    'Faculty',
+    'CEB',
+    'Organizations',
+    'Lab',
+    'Staff',
+    'GPC',
+    'OBE Facilitator',
+    'Practicum',
+    'Coor',
+  ];
   ngOnInit(): void {
     const {
       emp_firstname,
@@ -34,7 +46,7 @@ export class UpdatePendingUserComponent {
       role,
       emp_number,
       emp_dept,
-      emp_position,
+      // emp_position,
     } = this.data;
 
     this.updatePendingUser = this.fb.group({
@@ -46,7 +58,7 @@ export class UpdatePendingUserComponent {
       emp_number: [emp_number, [Validators.required, notOnlySpacesValidator()]],
       role: [role, [Validators.required]],
       dept: [emp_dept, [Validators.required]],
-      position: [emp_position, [Validators.required, notOnlySpacesValidator()]],
+      // position: [emp_position, [Validators.required, notOnlySpacesValidator()]],
     });
   }
   getFormControlError(controlName: string, errorName: string) {
